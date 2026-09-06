@@ -104,5 +104,22 @@ def test_get_discrimination_act_guide():
     assert "Aktiva åtgärder" in res["employer_obligations_active_measures"]["legal_basis"]
     assert "lönekartläggning" in res["employer_obligations_active_measures"]["equal_pay_audit"].lower()
 
+def test_check_bank_days_and_deadlines():
+    from src.mcp_tools.tools import check_bank_days_and_deadlines
+    # April 2026: 25th is Saturday -> payout on Friday 24th
+    res_apr = check_bank_days_and_deadlines(check_salary_payout_for_month=4, year=2026)
+    assert res_apr["salary_payout_analysis"]["actual_payout_date"] == "2026-04-24"
+    assert res_apr["salary_payout_analysis"]["is_shifted_earlier"] is True
+
+    # December 2026: 25th is Christmas Day, 24th is Christmas Eve -> payout on Wednesday 23rd
+    res_dec = check_bank_days_and_deadlines(check_salary_payout_for_month=12, year=2026)
+    assert res_dec["salary_payout_analysis"]["actual_payout_date"] == "2026-12-23"
+
+    # Specific date check: 2026-05-01 is a holiday (Första maj)
+    res_may1 = check_bank_days_and_deadlines(date_str="2026-05-01")
+    assert res_may1["date_checked"]["is_bank_day"] is False
+    assert res_may1["date_checked"]["holiday_name"] == "Första maj"
+
+
 
 

@@ -26,7 +26,8 @@ from src.mcp_tools.tools import (
     calculate_earned_vacation_days as _calculate_earned_vacation_days,
     get_employer_certificate_info as _get_employer_certificate_info,
     get_rehabilitation_plan_info as _get_rehabilitation_plan_info,
-    get_discrimination_act_guide as _get_discrimination_act_guide
+    get_discrimination_act_guide as _get_discrimination_act_guide,
+    check_bank_days_and_deadlines as _check_bank_days_and_deadlines
 )
 
 mcp = FastMCP(
@@ -35,7 +36,7 @@ mcp = FastMCP(
         "Svensk Arbetsrätt & LAS MCP Server för AI-agenter och Claude. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
         "Arbetsdomstolens prejudikat, 17 kollektivavtal, semesterberäkningar, Försäkringskassans plan för återgång i arbete (FK 7459), "
-        "arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF) samt DO:s vägledning och aktiva åtgärder."
+        "arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF), DO:s vägledning samt Riksbankens bankdagar och helgdagar för löneutbetalning och lagstadgade frister."
     )
 )
 
@@ -256,6 +257,29 @@ def get_discrimination_act_guide(topic: Optional[str] = None, api_key: Optional[
     t0 = time.time()
     res = _get_discrimination_act_guide(topic=topic)
     auth_service.log_access(api_key or "anon", None, "get_discrimination_act_guide", {"topic": topic}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def check_bank_days_and_deadlines(
+    date_str: Optional[str] = None,
+    check_salary_payout_for_month: Optional[int] = None,
+    year: int = 2026,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Kontrollerar bankdagar och Riksbankens officiella helgdagar (helgdagar-2026),
+    beräknar datum för löneutbetalning (närmast föregående bankdag) samt lagstadgade frister enligt lag (1930:173).
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _check_bank_days_and_deadlines(
+        date_str=date_str,
+        check_salary_payout_for_month=check_salary_payout_for_month,
+        year=year
+    )
+    auth_service.log_access(api_key or "anon", None, "check_bank_days_and_deadlines", {"date": date_str, "month": check_salary_payout_for_month}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":

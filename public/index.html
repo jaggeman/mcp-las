@@ -726,12 +726,28 @@ Strukturera alltid svaren med:
             </div>
           </div>
         </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-landmark"></i></div>
+          <h3>Sveriges Riksbank</h3>
+          <p>Officiell kalender för bankdagar och helgdagar 2026 för beräkning av löneutbetalningar och lagstadgade frister (Lag 1930:173).</p>
+          <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Officiell kalender:</span>
+              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">Helgdagar 2026</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> Källa:</span>
+              <a href="https://www.riksbank.se/sv/press-och-publicerat/kalender/helgdagar-2026/" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline;">riksbank.se <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
     <section id="verktyg" style="padding-top: 2rem;">
       <h2 class="section-title">Vad du kan fråga din AI</h2>
-      <p class="section-sub">Dessa 10 intelligenta MCP-verktyg anropas automatiskt i bakgrunden när du ställer frågor till Claude, ChatGPT, Gemini eller Cursor</p>
+      <p class="section-sub">Dessa 11 intelligenta MCP-verktyg anropas automatiskt i bakgrunden när du ställer frågor till Claude, ChatGPT, Gemini eller Cursor</p>
 
       <div class="tools-table-container">
         <div class="table-responsive">
@@ -991,6 +1007,29 @@ Strukturera alltid svaren med:
                   <div class="prompt-box">
                     <span class="prompt-text">"Vilka krav ställer Diskrimineringslagen och DO på arbetsgivarens årliga lönekartläggning och aktiva åtgärder?"</span>
                     <button class="copy-prompt-btn" onclick="copyPromptDirect('Vilka krav ställer Diskrimineringslagen och DO på arbetsgivarens årliga lönekartläggning och aktiva åtgärder?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-landmark"></i></div>
+                    <div class="tool-title">
+                      <span>Bankdagar & Löneutbetalning</span>
+                      <span class="tool-badge">check_bank_days_and_deadlines</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Riksbankens officiella helgdagar (helgdagar 2026), löneutbetalningsdagar (föregående bankdag om 25:e är helg) samt fristberäkning enligt lag (1930:173).
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Vilken dag betalas lönen ut i april och december 2026 om den 25:e infaller på en helgdag/bankfridag?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vilken dag betalas lönen ut i april och december 2026 om den 25:e infaller på en helgdag/bankfridag?', this)">
                       <i class="fa-regular fa-copy"></i> Kopiera
                     </button>
                   </div>

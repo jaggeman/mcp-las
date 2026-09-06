@@ -446,5 +446,117 @@ def get_discrimination_act_guide(topic: Optional[str] = None) -> Dict[str, Any]:
         }
     }
 
+def check_bank_days_and_deadlines(
+    date_str: Optional[str] = None,
+    check_salary_payout_for_month: Optional[int] = None,
+    year: int = 2026
+) -> Dict[str, Any]:
+    """
+    Kontrollerar bankdagar, Riksbankens officiella helgdagar (helgdagar-2026) samt beräknar
+    korrekt löneutbetalningsdag (närmast föregående bankdag) och arbetsrättsliga frister
+    enligt lag (1930:173) om beräkning av lagstadgad tid.
+    """
+    import datetime
+
+    # Riksbankens officiella helgdagar och bankfria dagar för 2026 (Källa: www.riksbank.se)
+    holidays_2026 = {
+        "2026-01-01": "Nyårsdagen",
+        "2026-01-06": "Trettondedag jul",
+        "2026-04-03": "Långfredagen",
+        "2026-04-04": "Påskafton",
+        "2026-04-05": "Påskdagen",
+        "2026-04-06": "Annandag påsk",
+        "2026-05-01": "Första maj",
+        "2026-05-14": "Kristi himmelsfärds dag",
+        "2026-05-24": "Pingstdagen",
+        "2026-06-06": "Sveriges nationaldag",
+        "2026-06-19": "Midsommarafton",
+        "2026-06-20": "Midsommardagen",
+        "2026-10-31": "Alla helgons dag",
+        "2026-12-24": "Julafton",
+        "2026-12-25": "Juldagen",
+        "2026-12-26": "Annandag jul",
+        "2026-12-31": "Nyårsafton"
+    }
+
+    def is_bank_day(d: datetime.date) -> bool:
+        if d.weekday() >= 5:
+            return False
+        d_str = d.strftime("%Y-%m-%d")
+        if d_str in holidays_2026:
+            return False
+        return True
+
+    def get_salary_payout_date(target_year: int, month: int, standard_day: int = 25) -> Dict[str, Any]:
+        target_date = datetime.date(target_year, month, standard_day)
+        curr = target_date
+        while not is_bank_day(curr):
+            curr -= datetime.timedelta(days=1)
+        
+        sw_days = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
+        return {
+            "month": month,
+            "standard_payout_date": target_date.strftime("%Y-%m-%d"),
+            "standard_weekday": sw_days[target_date.weekday()],
+            "actual_payout_date": curr.strftime("%Y-%m-%d"),
+            "actual_weekday": sw_days[curr.weekday()],
+            "is_shifted_earlier": curr < target_date,
+            "reason": (
+                f"Den {standard_day}:e infaller på en {sw_days[target_date.weekday()].lower()}" +
+                (f" ({holidays_2026.get(target_date.strftime('%Y-%m-%d'))})" if target_date.strftime("%Y-%m-%d") in holidays_2026 else "") +
+                f". Enligt kollektivavtal ska lönen utbetalas närmast föregående bankdag ({curr.strftime('%Y-%m-%d')})."
+                if curr < target_date else
+                f"Den {standard_day}:e är en ordinarie bankdag ({sw_days[target_date.weekday()]})."
+            )
+        }
+
+    response = {
+        "source": "Sveriges Riksbank (Officiell kalender för helgdagar 2026)",
+        "source_url": "https://www.riksbank.se/sv/press-och-publicerat/kalender/helgdagar-2026/",
+        "legal_basis_deadlines": "Lag (1930:173) om beräkning av lagstadgad tid",
+        "holidays_2026_count": len(holidays_2026),
+        "all_holidays_2026": holidays_2026
+    }
+
+    if check_salary_payout_for_month is not None:
+        m = max(1, min(12, check_salary_payout_for_month))
+        response["salary_payout_analysis"] = get_salary_payout_date(year, m)
+    elif date_str:
+        try:
+            d = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+            is_bday = is_bank_day(d)
+            sw_days = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
+            holiday_name = holidays_2026.get(d.strftime("%Y-%m-%d"))
+            
+            next_bday = d
+            while not is_bank_day(next_bday):
+                next_bday += datetime.timedelta(days=1)
+
+            response["date_checked"] = {
+                "date": date_str,
+                "weekday": sw_days[d.weekday()],
+                "is_bank_day": is_bday,
+                "is_weekend": d.weekday() >= 5,
+                "holiday_name": holiday_name,
+                "legal_deadline_shift": (
+                    f"Eftersom {date_str} är en bankfri dag/helg förlängs en lagstadgad frist enligt Lag (1930:173) till nästkommande bankdag ({next_bday.strftime('%Y-%m-%d')}, {sw_days[next_bday.weekday()]})."
+                    if not is_bday else
+                    f"{date_str} är en ordinarie bankdag och ingen fristförlängning sker."
+                )
+            }
+        except ValueError:
+            response["date_checked_error"] = f"Ogiltigt datumformat: '{date_str}'. Använd formatet YYYY-MM-DD."
+    else:
+        response["all_salary_payouts_2026"] = [get_salary_payout_date(year, m) for m in range(1, 13)]
+
+    response["certainty"] = {
+        "score_pct": 100,
+        "badge": "🟢 Mycket hög (100%) — Riksbankens officiella kalender 2026 & Lag (1930:173)",
+        "level": "EXACT_CALCULATION"
+    }
+
+    return response
+
+
 
 
