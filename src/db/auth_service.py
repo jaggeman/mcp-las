@@ -2,6 +2,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
+from src.db.firebase_client import db_client
 
 class AuthService:
     """Hanterar validering av API-nycklar, rate limiting och loggning till Firebase."""
