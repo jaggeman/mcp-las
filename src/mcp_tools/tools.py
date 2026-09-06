@@ -1226,7 +1226,7 @@ För {c_name}:
 Namnförtydligande och titel
 """
 
-    elif "underrattelse" in t_type:
+    elif "underrattelse_personlig" in t_type or "underrattelse_30" in t_type or ("underrattelse" in t_type and "tidsbegr" not in t_type and "28" not in t_type):
         title = "Underrättelse till arbetstagare om övervägd uppsägning (30 § LAS)"
         legal_basis = "30 § första stycket Lagen (1982:80) om anställningsskydd (LAS)"
         required_elements = [
@@ -1268,57 +1268,259 @@ Arbetstagarens underskrift:
 Namnteckning ({e_name})
 """
 
-    else:
-        # Standard: Uppsägningsbesked vid arbetsbrist
-        title = "Skriftligt uppsägningsbesked vid arbetsbrist med företrädesrätt"
-        legal_basis = "8–10 §§ och 25–27 §§ Lagen (1982:80) om anställningsskydd (LAS)"
+    elif "anstallningsbevis" in t_type or "anstallningsavtal" in t_type or "villkor" in t_type:
+        title = "Anställningsbevis med information om anställningsvillkor enligt 6 c § LAS"
+        legal_basis = "6 c § Lagen (1982:80) om anställningsskydd (LAS)"
         required_elements = [
-            "Skriftlig form",
-            "Skäl för uppsägning (arbetsbrist)",
-            "Uppsägningstid och sista anställningsdag",
-            "Fullföljdsanvisning (ogiltigförklaring inom 2 veckor / skadestånd inom 4 månader enligt 40–41 §§ LAS)",
-            "Besked om företrädesrätt till återanställning (25–27 §§ LAS) och krav på anmälan"
+            "Arbetsgivarens och arbetstagarens namn, personnummer/org.nr och adress",
+            "Tillträdesdag och arbetsplats/driftsenhet",
+            "Befattning, yrkesbenämning och huvudsakliga arbetsuppgifter",
+            "Anställningsform (tillsvidare, provanställning 6 § LAS, eller tidsbegränsad anställning som särskild visstid/vikariat)",
+            "Begynnelselön, löneförmåner, utbetalningsintervall och löneutbetalningssätt",
+            "Normal arbetstid, förläggning, regler för övertid/mertid",
+            "Semestervillkor och uppsägningsregler",
+            "Tillämpligt kollektivavtal (centralt och lokalt)",
+            "Information om social trygghet och pensionsavtal (PA16, TGL-S, PSA)"
         ]
-        doc_text = f"""Datum: {today}
-Arbetsgivare: {c_name}
+        doc_text = f"""ANSTÄLLNINGSBEVIS
+(Information om anställningsvillkor enligt 6 c § lagen [1982:80] om anställningsskydd)
 
-UPPSÄGNINGSBESKED PÅ GRUND AV ARBETSBRIST
-(Enligt 8–10 §§ lagen om anställningsskydd, LAS)
+Organisation / Arbetsgivare: {c_name}
+Datum: {today} | Diarienummer / Anställnings-ID: [Dnr/ID]
 
-Till: {e_name} ({p_num})
-Befattning: {j_title}
-Driftsenhet: {w_loc}
+1. ARBETSTAGAREN
+Namn (efternamn, tilltalsnamn): {e_name}
+Personnummer: {p_num}
+Adress: [Arbetstagarens bostadsadress]
+Telefon / E-post: [Telefonnummer / e-postadress]
 
-Härmed sägs du upp från din tillsvidareanställning hos {c_name} på grund av arbetsbrist.
+2. ANSTÄLLNING
+Anställd som: {j_title}
+För närvarande placerad vid: {w_loc}
+Omfattning: [t.ex. 100% / Heltid / Deltid X %]
+Tillträdesdag: [ÅÅÅÅ-MM-DD]
+Huvudsakliga arbetsuppgifter: [Beskriv arbetsuppgifternas art och huvudsakliga innehåll]
 
-Din uppsägningstid är [X] månader i enlighet med LAS / Kollektivavtal.
-Din sista anställningsdag är: [ÅÅÅÅ-MM-DD].
+3. ANSTÄLLNINGSFORM
+[  ] Provanställning enligt 6 § LAS fr.o.m. [ÅÅÅÅ-MM-DD] under längst [X] månader (max 6 mån).
+[  ] Tills vidare fr.o.m. [ÅÅÅÅ-MM-DD].
+[  ] Tidsbegränsad anställning, bestämd tid fr.o.m. [ÅÅÅÅ-MM-DD] t.o.m. [ÅÅÅÅ-MM-DD].
+[  ] Tidsbegränsad anställning, tills vidare fr.o.m. [ÅÅÅÅ-MM-DD], dock längst t.o.m. [ÅÅÅÅ-MM-DD].
+Grund för tidsbegränsad anställning:
+[  ] Särskild visstidsanställning (SÄVA)
+[  ] Vikariat (namn på den som vikarien ersätter: .......................................)
+[  ] Säsongsarbete
+[  ] Annan grund enligt lag/avtal: ....................................................
 
-FÖRETRÄDESRÄTT TILL ÅTERANSTÄLLNING (25–27 §§ LAS)
-[  ] Du HAR företrädesrätt till återanställning enligt 25 § LAS under uppsägningstiden samt i nio (9) månader från anställningens upphörande.
-     OBS! För att göra företrädesrätten gällande måste du skriftligen anmäla ditt anspråk till arbetsgivaren.
-[  ] Du har inte uppnått kvalificeringstid för företrädesrätt.
+4. LÖN OCH FÖRMÅNER
+Begynnelselön: [XX XXX kr/månad]
+Löneutbetalning: Månadsvis i efterskott via bank (den 25:e eller närmast föregående bankdag).
+Andra eventuella löneförmåner: [Friskvårdsbidrag, tjänstepension, lunchförmån m.m.].
 
-BESVÄRSHÄNVISNING / FULLFÖLJDSANVISNING (8 § 2 st LAS)
-Om du vill göra gällande att uppsägningen är ogiltig, ska du underrätta arbetsgivaren om detta senast två (2) veckor efter det att du fick del av uppsägningen (enligt 40 § LAS).
-Om du vill kräva skadestånd med anledning av uppsägningen, ska du underrätta arbetsgivaren om detta senast fyra (4) månader efter det att du fick del av uppsägningen (enligt 41 § LAS).
+5. ARBETSTID
+Normal arbetstid: [40 timmar/vecka, måndag–fredag].
+Regler för mertid och övertid: Ersätts i enlighet med gällande kollektivavtal.
 
-Ort och datum: .....................................................................................
+6. KOLLEKTIVAVTAL OCH SOCIAL TRYGGHET
+Tillämpligt kollektivavtal: {u_name} / Centralt villkorsavtal.
+Social trygghet och försäkringar: Arbetsgivaren betalar lagstadgade arbetsgivaravgifter samt kollektivavtalade försäkringar (TGL, AGS, PA16 / ITP).
+Rätt till utbildning: Arbetstagaren har rätt till nödvändig kompetensutveckling och arbetsmiljöutbildning.
 
-För {c_name}:
+7. AVSLUTA ANSTÄLLNING
+Uppsägningstider regleras i enlighet med LAS (11 §) och tillämpligt kollektivavtal.
+
+Underskrift för {c_name}:
 .....................................................................................................
-Namnteckning & Namnförtydligande
+Behörig företrädare
 
--------------------------------------------------------------------------------------
-MOTTAGANDEKVITTENS
+Mottagits och godkänts av arbetstagaren ({e_name}):
+.....................................................................................................
+Ort och datum: {today}
+"""
 
-Jag har denna dag personligen mottagit detta uppsägningsbesked:
+    elif "anmalan_foretradesratt" in t_type or "ansprak_foretradesratt" in t_type or "anmalan" in t_type:
+        title = "Anmälan om anspråk på företrädesrätt till återanställning (25–27 §§ LAS)"
+        legal_basis = "25–27 §§ Lagen (1982:80) om anställningsskydd (LAS)"
+        required_elements = [
+            "Arbetstagarens namn och kontaktuppgifter",
+            "Hänvisning till tidigare uppsägningsbesked och datum",
+            "Tidsperiod under vilken företrädesrätten gäller (under uppsägningstid + 9 månader)",
+            "Formell skriftlig förklaring om anspråk på företrädesrätt",
+            "Datum och underskrift"
+        ]
+        doc_text = f"""Ort och datum: {today}
+
+Till Arbetsgivaren: {c_name}
+Avdelning / HR: [HR-avdelningen / Enhetschef]
+
+ANMÄLAN OM ANSPRÅK PÅ FÖRETRÄDESRÄTT TILL ÅTERANSTÄLLNING
+(Enligt 25–27 §§ lagen [1982:80] om anställningsskydd, LAS)
+
+I uppsägningsbesked daterat [ÅÅÅÅ-MM-DD] har jag underrättats om att jag uppfyller kvalifikationstiden och har företrädesrätt till återanställning till och med [ÅÅÅÅ-MM-DD].
+
+Härmed anmäler jag skriftligen mitt anspråk på denna företrädesrätt till återanställning hos {c_name}.
+
+Mina aktuella kontaktuppgifter:
+Namn: {e_name}
+Personnummer: {p_num}
+Adress: [Gatuadress, Postnummer, Ort]
+Telefonnummer: [Telefonnummer]
+E-postadress: [E-postadress]
+
+Jag ber om skriftlig bekräftelse på att denna anmälan har mottagits och registrerats.
 
 Ort och datum: .....................................................................................
 
 Arbetstagarens underskrift:
 .....................................................................................................
 Namnteckning ({e_name})
+"""
+
+    elif "begaran_forhandling" in t_type or "forhandling_32" in t_type or "32_las" in t_type:
+        title = "Begäran om förhandling enligt 32 § LAS (Företrädesrätt)"
+        legal_basis = "32 § Lagen (1982:80) om anställningsskydd (LAS)"
+        required_elements = [
+            "Mottagare: Lokal arbetstagarorganisation",
+            "Påkallande av förhandling enligt 32 § LAS",
+            "Beskrivning av ärendet (kravprofil, omfattning, företrädesrättsanspråk)",
+            "Förslag om tid och plats för förhandling",
+            "Underskrift av behörig företrädare"
+        ]
+        doc_text = f"""Datum: {today}
+Arbetsgivare: {c_name}
+Diarienummer / Ärendenummer: [Dnr/Ärende]
+
+Till: {u_name}
+(Lokal arbetstagarorganisation)
+
+BEGÄRAN OM FÖRHANDLING ENLIGT 32 § LAS
+
+Härmed påkallas förhandling enligt 32 § lagen (1982:80) om anställningsskydd (LAS).
+
+1. Beskrivning av ärendet
+Arbetsgivaren avser att tillsätta följande anställning och önskar förhandla om företrädesrätt till återanställning enligt 25 § LAS:
+- Befattning / Anställning: {off_title}
+- Kravprofil och kvalifikationer: [Ange nödvändiga kompetenskrav och utbildning]
+- Omfattning och varaktighet: [Heltid / Deltid / Tillsvidare / Visstid fr.o.m. ÅÅÅÅ-MM-DD]
+- Arbetsställe / Driftsenhet: {w_loc}
+- Berörd arbetstagare med företrädesrättsanspråk: {e_name} ({p_num})
+
+2. Förslag om tid och plats för förhandling
+Datum: [ÅÅÅÅ-MM-DD]  |  Tid: [Kl. XX:XX]
+Plats / Möteslänk: [Mötesrum / Digital länk]
+
+Ort och datum: .....................................................................................
+
+För {c_name}:
+.....................................................................................................
+Signatur & Namnförtydligande
+"""
+
+    elif "underrattelse_tidsbegransad" in t_type or "28_las" in t_type:
+        title = "Underrättelse om tidsbegränsad anställning enligt 28 § LAS"
+        legal_basis = "28 § Lagen (1982:80) om anställningsskydd (LAS)"
+        required_elements = [
+            "Mottagare: Lokal arbetstagarorganisation",
+            "Den anställdes namn och personnummer",
+            "Tidsbegränsad befattning och placering",
+            "Anställningens period och varaktighet (start- och slutdatum)"
+        ]
+        doc_text = f"""Datum: {today}
+Arbetsgivare: {c_name}
+Diarienummer: [Dnr]
+
+Till: {u_name}
+(Lokal arbetstagarorganisation)
+
+UNDERRÄTTELSE OM TIDSBEGRÄNSAD ANSTÄLLNING ENLIGT 28 § LAS
+
+Den här underrättelsen sker enligt 28 § lagen (1982:80) om anställningsskydd (LAS).
+
+Arbetstagare:
+Namn: {e_name}
+Personnummer: {p_num}
+
+har den {today} anställts tidsbegränsat som:
+Befattning / Placering: {j_title}, {w_loc}
+från och med den: [ÅÅÅÅ-MM-DD]
+till och med den: [ÅÅÅÅ-MM-DD]
+
+Upplysningar om anställningens period och varaktighet:
+[Ange anställningsform, t.ex. Vikariat / Särskild visstidsanställning samt skäl för tidsbegränsningen].
+
+Ort och datum: .....................................................................................
+
+För {c_name}:
+.....................................................................................................
+Signatur & Namnförtydligande
+"""
+
+    else:
+        # Standard: Fullständigt 2-sidigt Uppsägningsbesked vid arbetsbrist (SKR & Arbetsgivarverket)
+        title = "Uppsägningsbesked på grund av arbetsbrist (Fullständigt standardformulär)"
+        legal_basis = "8–10 §§ och 25–27 §§ Lagen (1982:80) om anställningsskydd (LAS)"
+        required_elements = [
+            "Skriftlig form och orsak (arbetsbrist)",
+            "Uppsägningstid i månader och sista anställningsdag",
+            "Besked om företrädesrätt till återanställning (25–27 §§ LAS / 9 månader) och krav på skriftlig anmälan",
+            "Fullföljdsanvisning för talan om ogiltighet (underrätta inom 2 veckor / talan inom 2 el. 4 veckor enligt lag 1974:371)",
+            "Fullföljdsanvisning för talan om skadestånd (underrätta inom 4 månader / talan inom 4 el. 8 månader)",
+            "Tidpunkt när uppsägning anses ske enligt 10 § LAS (personligt överlämnande, rek. brev 10 dagar, semesterregel)",
+            "Signaturer och dubbelsidig mottagandekvittens"
+        ]
+        doc_text = f"""UPPSÄGNINGSBESKED PÅ GRUND AV ARBETSBRIST
+(Sida 1 av 2)
+
+Arbetsgivare: {c_name}
+Ort & Datum: {today} | Diarienummer / Ärendenummer: [Dnr]
+Mottagare (Arbetstagarens namn): {e_name} ({p_num})
+
+1. BESKED OM UPPSÄGNING
+Du sägs härmed upp från din anställning som {j_title} med placering vid {w_loc}.
+Orsaken till detta är arbetsbrist.
+
+Du har enligt gällande bestämmelser rätt till en uppsägningstid av [X] månader.
+Uppsägningstiden räknas från den dag då uppsägningen sker.
+Din sista anställningsdag är: [ÅÅÅÅ-MM-DD].
+
+2. FÖRETRÄDESRÄTT TILL ÅTERANSTÄLLNING
+[  ] Du har inte företrädesrätt.
+[  ] Du har företrädesrätt. Vill du göra anspråk på den ska du skriftligen anmäla det till arbetsgivaren.
+     Från den dag du är uppsagd och därefter till dess nio (9) månader har förflutit från anställningens upphörande har du företrädesrätt till återanställning hos {c_name} enligt bestämmelserna i 25–27 §§ lagen (1982:80) om anställningsskydd (LAS) samt gällande kollektivavtal ({u_name}).
+
+3. TALAN OM OGILTIGHET (8 § 2 st & 40 § LAS)
+Om du avser att yrka att uppsägningen ska förklaras ogiltig, ska du underrätta arbetsgivaren om detta senast två (2) veckor efter det att uppsägningen skedde.
+Har din arbetstagarorganisation inom två veckor efter det att uppsägningen skedde påkallat förhandling om uppsägningens giltighet, ska talan väckas inom två (2) veckor efter det att förhandlingen avslutades. I annat fall ska talan väckas inom fyra (4) veckor efter det att uppsägningen skedde.
+Lämnas inte underrättelse eller väcks inte talan inom de angivna tiderna, är rätten till talan om uppsägningens giltighet förlorad. Talan om ogiltighet skall väckas enligt lagen (1974:371) om rättegången i arbetstvister.
+
+-------------------------------------------------------------------------------------
+(Sida 2 av 2)
+
+4. TALAN OM SKADESTÅND (41 § LAS)
+Om du vill kräva skadestånd med anledning av uppsägningen, ska du underrätta arbetsgivaren om detta inom fyra (4) månader efter det att uppsägningen skedde.
+Har din arbetstagarorganisation inom fyra månader efter det att uppsägningen skedde påkallat förhandling om skadestånd på grund av uppsägningen, ska talan väckas inom fyra (4) månader efter det att förhandlingen avslutades. I annat fall ska talan väckas inom åtta (8) månader efter det att uppsägningen skedde.
+Lämnas inte underrättelse eller väcks inte talan inom de angivna tiderna, är rätten till talan om skadestånd förlorad.
+
+5. TIDPUNKT NÄR UPPSÄGNINGEN ANSES SKE (10 § LAS)
+Vilken dag en uppsägning sker framgår av 10 § LAS:
+"Uppsägningsbeskedet skall lämnas till arbetstagaren personligen. Är det inte skäligt att kräva detta, får beskedet i stället sändas i rekommenderat brev till arbetstagarens senast kända adress.
+Uppsägning anses ske när arbetstagaren får del av uppsägningen. Om arbetstagaren inte kan anträffas och ett uppsägningsbesked har sänts i brev enligt första stycket, anses uppsägning ha skett tio dagar efter det att brevet lämnades till posten för befordran. Har arbetstagaren semester, anses uppsägning ha skett tidigast dagen efter den då semestern upphörde."
+
+För {c_name}:
+.....................................................................................................
+Signatur & Namnförtydligande
+
+-------------------------------------------------------------------------------------
+KVITTERAR MOTTAGANDET
+Jag har denna dag tagit del av detta uppsägningsbesked:
+
+Ort och datum: .....................................................................................
+
+Arbetstagarens signatur:
+.....................................................................................................
+Namnteckning ({e_name})
+
+(Arbetsgivaren och arbetstagaren ska ha varsitt exemplar av denna blankett).
 """
 
     return {
@@ -1333,7 +1535,7 @@ Namnteckning ({e_name})
         ),
         "certainty": {
             "score_pct": 98,
-            "badge": "🟢 Mycket hög (98%) — SKR / Officiell LAS-standardmall",
+            "badge": "🟢 Mycket hög (98%) — SKR & Arbetsgivarverket Officiell LAS-standard",
             "level": "STATUTORY_LEGAL_TEMPLATE"
         }
     }

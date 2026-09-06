@@ -211,6 +211,59 @@ def test_get_hr_document_template():
     assert "EN VECKA" in res_varsel["document_template_text"]
     assert "Vision Avdelning 45" in res_varsel["document_template_text"]
 
+    # 4. Anställningsbevis (6 c § LAS)
+    res_anstallning = get_hr_document_template(
+        template_type="anstallningsbevis",
+        company_name="Svenska AB",
+        employee_name="Maria Karlsson",
+        job_title="Systemarkitekt"
+    )
+    assert "6 c §" in res_anstallning["legal_basis"]
+    assert "ANSTÄLLNINGSBEVIS" in res_anstallning["document_template_text"]
+    assert "Provanställning" in res_anstallning["document_template_text"]
+    assert "Svenska AB" in res_anstallning["document_template_text"]
+
+    # 5. Anmälan om företrädesrätt
+    res_anmalan = get_hr_document_template(
+        template_type="anmalan_foretradesratt",
+        company_name="Svenska AB",
+        employee_name="Sara Nilsson"
+    )
+    assert "25–27 §§" in res_anmalan["legal_basis"]
+    assert "ANMÄLAN OM ANSPRÅK PÅ FÖRETRÄDESRÄTT" in res_anmalan["document_template_text"]
+    assert "Sara Nilsson" in res_anmalan["document_template_text"]
+
+    # 6. Begäran om förhandling 32 § LAS
+    res_forhandling = get_hr_document_template(
+        template_type="begaran_forhandling_32_las",
+        company_name="Svenska AB",
+        union_name="Unionen Klubben"
+    )
+    assert "32 §" in res_forhandling["legal_basis"]
+    assert "FÖRHANDLING ENLIGT 32 §" in res_forhandling["document_template_text"]
+
+    # 7. Underrättelse tidsbegränsad 28 § LAS
+    res_tidsbegr = get_hr_document_template(
+        template_type="underrattelse_tidsbegransad_28_las",
+        company_name="Svenska AB",
+        employee_name="Lars Olofsson"
+    )
+    assert "28 §" in res_tidsbegr["legal_basis"]
+    assert "Lars Olofsson" in res_tidsbegr["document_template_text"]
+
+    # 8. Uppsägningsbesked arbetsbrist (2 sidor med 10 § delgivningsregler)
+    res_uppsagn = get_hr_document_template(
+        template_type="uppsagningsbesked_arbetsbrist",
+        company_name="Svenska AB",
+        employee_name="Olof Lind"
+    )
+    assert "8–10 §§" in res_uppsagn["legal_basis"]
+    assert "UPPSÄGNINGSBESKED PÅ GRUND AV ARBETSBRIST" in res_uppsagn["document_template_text"]
+    assert "TALAN OM OGILTIGHET" in res_uppsagn["document_template_text"]
+    assert "TALAN OM SKADESTÅND" in res_uppsagn["document_template_text"]
+    assert "10 § LAS" in res_uppsagn["document_template_text"]
+
+
 
 
 
