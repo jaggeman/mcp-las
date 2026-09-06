@@ -29,6 +29,17 @@ CENTRAL_AD_CASES = [
         "slut": "Avskedandet ogiltigförklaras, men anställningen upphör genom uppsägning."
     },
     {
+        "id": "AD_2019_nr_44",
+        "case_number": "AD 2019 nr 44",
+        "year": 2019,
+        "title": "Samarbetssvårigheter och trakasserier på arbetsplatsen",
+        "summary": "Uppsägning på grund av allvarliga samarbetssvårigheter, kränkande bemötande mot kollegor och chefer samt ovilja att medverka till lösningar.",
+        "legal_provisions_referenced": ["LAS 7 §", "Arbetsmiljölagen 3 kap"],
+        "parties": "Kommunal mot Kommun Y",
+        "domskal": "När samarbetssvårigheterna är allvarliga, varaktiga och påverkar arbetsmiljön och verksamheten menligt, och omplacering prövats utan framgång, föreligger sakliga skäl för uppsägning.",
+        "slut": "Käromålet avslås. Uppsägningen var sakligt grundad."
+    },
+    {
         "id": "AD_2021_nr_55",
         "case_number": "AD 2021 nr 55",
         "year": 2021,
@@ -49,17 +60,6 @@ CENTRAL_AD_CASES = [
         "parties": "Sveriges Ingenjörer mot Företag X",
         "domskal": "Tillräckliga kvalifikationer innebär att arbetstagaren ska klara de grundläggande kraven efter en rimlig inlärningsperiod (normalt upp till sex månader).",
         "slut": "Arbetsgivaren bröt mot turordningsreglerna och förpliktades betala allmänt skadestånd."
-    },
-    {
-        "id": "AD_2019_nr_44",
-        "case_number": "AD 2019 nr 44",
-        "year": 2019,
-        "title": "Samarbetssvårigheter och trakasserier på arbetsplatsen",
-        "summary": "Uppsägning på grund av allvarliga samarbetssvårigheter och kränkande särbehandling gentemot kollegor.",
-        "legal_provisions_referenced": ["LAS 7 §", "Arbetsmiljölagen 3 kap"],
-        "parties": "Kommunal mot Kommun Y",
-        "domskal": "När samarbetssvårigheterna påverkar verksamheten och arbetsmiljön menligt, och omplacering inte är möjlig eller skälig, föreligger sakliga skäl för uppsägning.",
-        "slut": "Uppsägningen var sakligt grundad."
     },
     {
         "id": "AD_2018_nr_15",
@@ -118,11 +118,11 @@ CENTRAL_AD_CASES = [
     }
 ]
 
-print(f"Laddar upp {len(CENTRAL_AD_CASES)} vägledande AD-domar till Firebase...")
-for case in CENTRAL_AD_CASES:
-    c_dict = dict(case)
+print(f"Laddar upp {len(CENTRAL_AD_CASES)} AD-domar till Firestore...")
+for c in CENTRAL_AD_CASES:
+    c_dict = dict(c)
     c_dict["embedding"] = Embedder.get_embedding(c_dict["title"] + " " + c_dict["summary"] + " " + c_dict["domskal"])
     db_client.save_precedent(c_dict)
-    print(f" - Sparad i Firestore: {c_dict['case_number']} ({c_dict['title'][:45]}...)")
+    print(f" - Sparad: {c_dict['case_number']}")
 
-print("\nAlla AD-domar har laddats upp till Firebase Firestore!")
+print("\nKlar! Nu finns alla 10 AD-domar i Firestore!")

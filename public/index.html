@@ -1,0 +1,146 @@
+﻿<!DOCTYPE html>
+<html lang="sv" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCP LAS — Svensk Arbetsrätt & Kollektivavtal för AI-Agenter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' },
+            slate: { 850: '#0f172a', 900: '#0b0f19', 950: '#05070e' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-brand-500 selection:text-slate-950">
+
+  <!-- Nav -->
+  <nav class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-brand-500/20">
+          ⚖️
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">MCP LAS</span>
+          <span class="ml-2 text-xs bg-brand-500/10 text-brand-400 border border-brand-500/20 px-2 py-0.5 rounded-full font-medium">FastMCP + Firebase</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4 text-sm font-medium">
+        <a href="#kallor" class="text-slate-400 hover:text-white transition">Källor & Data</a>
+        <a href="#verktyg" class="text-slate-400 hover:text-white transition">MCP-Verktyg</a>
+        <a href="#ansok" class="bg-brand-500 hover:bg-brand-600 text-slate-950 px-3.5 py-1.5 rounded-lg font-semibold transition">Ansök om nyckel</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="relative overflow-hidden pt-16 pb-14 text-center border-b border-slate-900">
+    <div class="max-w-4xl mx-auto px-4">
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-4">
+        Svensk Arbetsrätt & Kollektivavtal <br/>
+        <span class="bg-gradient-to-r from-brand-400 to-emerald-300 bg-clip-text text-transparent">direkt till din AI-Agent</span>
+      </h1>
+      <p class="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto mb-8">
+        Sök i Riksdagens lagar (LAS, MBL m.fl.), 17 centrala kollektivavtal och Arbetsdomstolens prejudikat i realtid.
+      </p>
+      <a href="#ansok" class="bg-brand-500 hover:bg-brand-600 text-slate-950 font-semibold px-6 py-3 rounded-xl shadow-lg shadow-brand-500/25 transition inline-flex items-center space-x-2">
+        <i class="fa-solid fa-key"></i>
+        <span>Ansök om API-nyckel</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Ansökningsformulär Section -->
+  <section id="ansok" class="max-w-2xl mx-auto px-4 py-16">
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-xl mx-auto mb-3 border border-brand-500/20">
+          🔑
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-1">Ansök om personlig API-nyckel</h2>
+        <p class="text-xs text-slate-400">Fyll i dina uppgifter så granskar administratören din förfrågan.</p>
+      </div>
+
+      <form id="keyForm" onsubmit="submitForm(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Ditt Namn *</label>
+          <input type="text" id="name" required placeholder="t.ex. Anna Svensson" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">E-postadress *</label>
+          <input type="email" id="email" required placeholder="anna@foretag.se" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Företag / Organisation</label>
+          <input type="text" id="company" placeholder="t.ex. Svensson Advokatbyrå" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Användningsområde</label>
+          <textarea id="reason" rows="2" placeholder="t.ex. Claude Desktop för HR-rådgivning" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition"></textarea>
+        </div>
+        <button type="submit" id="submitBtn" class="w-full bg-brand-500 hover:bg-brand-600 text-slate-950 font-semibold py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
+          <span>Skicka ansökan</span>
+          <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+      </form>
+
+      <div id="formSuccess" class="hidden text-center py-6">
+        <div class="text-4xl mb-3">🎉</div>
+        <h3 class="text-lg font-bold text-white mb-1">Tack för din ansökan!</h3>
+        <p class="text-xs text-slate-400">Vi granskar din ansökan och skickar din personliga MCP-nyckel till din e-post så fort den är godkänd.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-600">
+    <p>MCP LAS &copy; 2026 — Svensk Arbetsrätt för AI-Agenter.</p>
+  </footer>
+
+  <script>
+    async function submitForm(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = 'Skickar...';
+
+      const payload = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        company: document.getElementById('company').value,
+        reason: document.getElementById('reason').value
+      };
+
+      try {
+        const res = await fetch('/api/request-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('keyForm').classList.add('hidden');
+          document.getElementById('formSuccess').classList.remove('hidden');
+        } else {
+          alert('Fel: ' + data.message);
+          btn.disabled = false;
+          btn.innerText = 'Skicka ansökan';
+        }
+      } catch (err) {
+        alert('Ett fel uppstod vid skickandet.');
+        btn.disabled = false;
+        btn.innerText = 'Skicka ansökan';
+      }
+    }
+  </script>
+</body>
+</html>
