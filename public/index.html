@@ -387,13 +387,15 @@
         </div>
       </a>
       <div class="nav-links">
+        <a href="#connector" class="nav-link">Anslut AI</a>
         <a href="#kallor" class="nav-link">Källor & Data</a>
         <a href="#verktyg" class="nav-link">MCP-Verktyg</a>
-        <a href="#connector" class="nav-link">Claude Setup</a>
         <button class="theme-toggle-btn" id="themeToggle" title="Växla ljust/mörkt läge" aria-label="Toggle theme">
           <i class="fa-solid fa-moon" id="themeIcon"></i>
         </button>
-        <a href="#ansok" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Ansök om nyckel</a>
+        <a href="#connector" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+          <i class="fa-solid fa-plug"></i> Anslut direkt
+        </a>
       </div>
     </div>
   </nav>
@@ -409,13 +411,13 @@
         Fullständig tillgång till Riksdagens lagar (LAS, MBL, Semesterlagen), 17 centrala kollektivavtal och Arbetsdomstolens prejudikat via Model Context Protocol.
       </p>
       <div class="hero-actions">
-        <a href="#ansok" class="btn btn-primary">
-          <i class="fa-solid fa-key"></i>
-          <span>Ansök om API-nyckel</span>
-        </a>
-        <a href="#connector" class="btn btn-secondary">
+        <a href="#connector" class="btn btn-primary">
           <i class="fa-solid fa-plug"></i>
-          <span>Anslut till Claude</span>
+          <span>Anslut direkt till din AI</span>
+        </a>
+        <a href="#ansok" class="btn btn-secondary">
+          <i class="fa-solid fa-key"></i>
+          <span>Begär dedikerad åtkomst</span>
         </a>
       </div>
     </div>
@@ -633,8 +635,8 @@ Strukturera alltid svaren med:
     <section id="ansok" class="form-section" style="scroll-margin-top: 5rem;">
       <div style="text-align: center; margin-bottom: 1.75rem;">
         <div class="feature-icon" style="margin: 0 auto 1rem;"><i class="fa-solid fa-key"></i></div>
-        <h2 style="font-size: 1.4rem; font-weight: 800;">Ansök om API-nyckel</h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">Fyll i dina uppgifter så aktiveras din personliga MCP-nyckel.</p>
+        <h2 style="font-size: 1.4rem; font-weight: 800;">Begär dedikerad API-nyckel</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">För organisationer och utvecklare som önskar egen nyckel med högre kapacitetsgränser och audit-loggning.</p>
       </div>
 
       <form id="keyForm" onsubmit="submitForm(event)">
