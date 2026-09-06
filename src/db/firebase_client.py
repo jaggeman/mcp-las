@@ -1,5 +1,6 @@
 ﻿import os
 from typing import List, Dict, Any, Optional
+from google.cloud.firestore_v1.base_query import FieldFilter
 from src.config import settings
 from src.embeddings.embedder import Embedder
 
@@ -34,7 +35,6 @@ class FirebaseLaborLawDB:
                 elif settings.FIREBASE_PROJECT_ID:
                     firebase_admin.initialize_app(options={'projectId': settings.FIREBASE_PROJECT_ID})
                 else:
-                    # Default credential attempt
                     firebase_admin.initialize_app()
                     
             self.db = firestore.client()
@@ -137,7 +137,7 @@ class FirebaseLaborLawDB:
         # 2. Firestore query
         if self.db:
             try:
-                query = self.db.collection("statute_sections").where("section_number", "==", sec_clean)
+                query = self.db.collection("statute_sections").where(filter=FieldFilter("section_number", "==", sec_clean))
                 docs = query.stream()
                 for doc in docs:
                     data = doc.to_dict()
@@ -152,9 +152,17 @@ class FirebaseLaborLawDB:
         q_lower = query.lower()
         q_emb = Embedder.get_embedding(query)
         
+        # Pull from local cache or Firestore
+        items = list(self._local_sections.values())
+        if not items and self.db:
+            try:
+                docs = self.db.collection("statute_sections").limit(500).stream()
+                items = [d.to_dict() for d in docs]
+            except Exception:
+                pass
+
         scored_sections = []
-        for s in self._local_sections.values():
-            # Keyword/lexical match score
+        for s in items:
             lex_score = 0.0
             content = s.get("content", "").lower()
             title = (s.get("section_title") or "").lower()
@@ -168,7 +176,6 @@ class FirebaseLaborLawDB:
                 if any(word in kw for kw in keywords):
                     lex_score += 2.5
                     
-            # Semantic score
             sem_score = 0.0
             if s.get("embedding"):
                 sem_score = Embedder.cosine_similarity(q_emb, s["embedding"])
@@ -177,7 +184,7 @@ class FirebaseLaborLawDB:
             
             if total_score > 0.05 or lex_score > 0:
                 scored_sections.append({
-                    "score": total_score,
+                    "score": round(total_score, 3),
                     "statute": s.get("statute_short"),
                     "sfs_number": s.get("statute_id"),
                     "chapter": s.get("chapter"),
@@ -197,13 +204,21 @@ class FirebaseLaborLawDB:
         if self.db:
             try:
                 self.db.collection("precedents").document(doc_id).set(precedent)
-            except Exception as e:
+            except Exception:
                 pass
 
     def search_precedents(self, query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 5) -> List[Dict[str, Any]]:
         q_emb = Embedder.get_embedding(query)
+        items = list(self._local_precedents.values())
+        if not items and self.db:
+            try:
+                docs = self.db.collection("precedents").stream()
+                items = [d.to_dict() for d in docs]
+            except Exception:
+                pass
+
         results = []
-        for p in self._local_precedents.values():
+        for p in items:
             if year_from and p.get("year") and p["year"] < year_from:
                 continue
             if statute_ref and not any(statute_ref.lower() in ref.lower() for ref in p.get("legal_provisions_referenced", [])):
@@ -211,7 +226,7 @@ class FirebaseLaborLawDB:
                 
             score = Embedder.cosine_similarity(q_emb, p.get("embedding", []))
             results.append({
-                "score": score,
+                "score": round(score, 3),
                 "case_number": p.get("case_number"),
                 "year": p.get("year"),
                 "title": p.get("title"),
@@ -230,7 +245,7 @@ class FirebaseLaborLawDB:
         if self.db:
             try:
                 self.db.collection("agreement_rules").document(doc_id).set(rule)
-            except Exception as e:
+            except Exception:
                 pass
 
     def get_cba_exception(self, statute: str, section: str, agreement_name: str) -> Optional[Dict[str, Any]]:
@@ -238,7 +253,15 @@ class FirebaseLaborLawDB:
         sec_clean = section.strip().lower().replace("§", "").strip()
         ag_clean = agreement_name.strip().lower()
         
-        for r in self._local_rules.values():
+        items = list(self._local_rules.values())
+        if not items and self.db:
+            try:
+                docs = self.db.collection("agreement_rules").stream()
+                items = [d.to_dict() for d in docs]
+            except Exception:
+                pass
+
+        for r in items:
             if (ag_clean in r.get("agreement_name", "").lower() and 
                 statute_clean in r.get("statute", "").upper() and 
                 sec_clean == r.get("section", "").lower()):
@@ -250,12 +273,19 @@ class FirebaseLaborLawDB:
         ag_clean = agreement_name.strip().lower()
         top_clean = topic.strip().lower()
         
-        for r in self._local_rules.values():
+        items = list(self._local_rules.values())
+        if not items and self.db:
+            try:
+                docs = self.db.collection("agreement_rules").stream()
+                items = [d.to_dict() for d in docs]
+            except Exception:
+                pass
+
+        for r in items:
             if ag_clean in r.get("agreement_name", "").lower():
                 if top_clean in r.get("topic", "").lower() or top_clean in r.get("rule_content", "").lower():
                     matched_rules.append(r)
                     
-        # Look up baseline statute for the first matched rule or general topic
         statute_baseline = None
         if matched_rules:
             first = matched_rules[0]
