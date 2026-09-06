@@ -90,4 +90,19 @@ def test_get_employer_certificate_info():
     assert "arbetsgivarintyg.nu" in res["official_service_url"]
     assert "47 §" in res["legal_duty"]["section"]
 
+def test_get_rehabilitation_plan_info():
+    from src.mcp_tools.tools import get_rehabilitation_plan_info
+    res = get_rehabilitation_plan_info()
+    assert "FK 7459" in res["template_pdf"]["form_number"]
+    assert "30 kap. 6 §" in res["legal_duty"]["statute"]
+    assert "dag 30" in res["legal_duty"]["deadline"]
+
+def test_get_discrimination_act_guide():
+    from src.mcp_tools.tools import get_discrimination_act_guide
+    res = get_discrimination_act_guide()
+    assert len(res["grounds_of_discrimination"]) == 7
+    assert "Aktiva åtgärder" in res["employer_obligations_active_measures"]["legal_basis"]
+    assert "lönekartläggning" in res["employer_obligations_active_measures"]["equal_pay_audit"].lower()
+
+
 

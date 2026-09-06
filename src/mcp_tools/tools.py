@@ -363,4 +363,88 @@ def get_employer_certificate_info() -> Dict[str, Any]:
         }
     }
 
+def get_rehabilitation_plan_info() -> Dict[str, Any]:
+    """
+    Returnerar lagkrav, tidsfrister, mallar (blankett FK7459 PDF) och vägledning för
+    'Plan för återgång i arbete' enligt 30 kap. 6 § Socialförsäkringsbalken (SFB) och Försäkringskassan.
+    """
+    return {
+        "title": "Plan för återgång i arbete (Rehabiliteringsplan)",
+        "authority": "Försäkringskassan",
+        "official_url": "https://www.forsakringskassan.se/arbetsgivare/att-forebygga-sjukfranvaro/plan-for-atergang-i-arbete",
+        "template_pdf": {
+            "form_number": "FK 7459",
+            "name": "Arbetsgivarens plan för återgång i arbete",
+            "download_url": "https://www.forsakringskassan.se/download/18.398e2a521762d534987369/1777963998354/7459-arbetsgivarens-plan-for-atergang-i-arbete.pdf",
+            "help_guide_url": "https://www.forsakringskassan.se/download/18.73da25b81888fb1e89b9e4/1695379733662/hjalptext-till-blankett-7459-plan-atergang-till-arbetet.pdf"
+        },
+        "legal_duty": {
+            "statute": "Socialförsäkringsbalken (2010:110) 30 kap. 6 §",
+            "deadline": "Senast dag 30 i sjukperioden om den anställde väntas vara sjukskriven i minst 60 dagar.",
+            "cooperation": "Planen ska upprättas i samråd med arbetstagaren och justeras löpande vid behov.",
+            "enforcement": "Planen ska uppvisas för Försäkringskassan på begäran. Vid upprepade försummelser kan Försäkringskassan anmäla till Arbetsmiljöverket (AML 3 kap.)."
+        },
+        "key_rehab_measures": [
+            "Anpassning av arbetsuppgifter och arbetsmiljö",
+            "Deltidsarbete / deltidssjukskrivning",
+            "Arbetstekniska hjälpmedel och ergonomiska anpassningar",
+            "Tillfällig eller permanent omplacering",
+            "Utbildning eller omskolning",
+            "Inkoppling av företagshälsovård eller extern rehabaktör"
+        ],
+        "financial_support": {
+            "name": "Arbetsplatsinriktat rehabiliteringsstöd",
+            "description": "Bidrag från Försäkringskassan för att köpa in expertstöd från företagshälsovård (upp till 10 000 kr/insats och max 200 000 kr/år per arbetsgivare)."
+        },
+        "certainty": {
+            "score_pct": 99,
+            "badge": "🟢 Mycket hög (99%) — Direkt lagstadgat krav (30 kap. 6 § SFB) & Försäkringskassans officiella föreskrifter",
+            "level": "DIRECT_STATUTE"
+        }
+    }
+
+def get_discrimination_act_guide(topic: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Vägledning och lagregler från Diskrimineringsombudsmannen (DO) och Diskrimineringslagen (2008:567),
+    inklusive de 7 diskrimineringsgrunderna, aktiva åtgärder (lönekartläggning) och repressalieförbud.
+    """
+    return {
+        "title": "Diskrimineringslagen (2008:567) & DO:s Vägledning",
+        "official_url": "https://www.do.se",
+        "authority": "Diskrimineringsombudsmannen (DO)",
+        "grounds_of_discrimination": [
+            "1. Kön",
+            "2. Könsöverskridande identitet eller uttryck",
+            "3. Etnisk tillhörighet",
+            "4. Religion eller annan trosuppfattning",
+            "5. Funktionsnedsättning",
+            "6. Sexuell läggning",
+            "7. Ålder"
+        ],
+        "forms_of_discrimination": [
+            "Direkt diskriminering (missgynnande med koppling till diskrimineringsgrund)",
+            "Indirekt diskriminering (till synes neutral bestämmelse som särskilt missgynnar en grupp)",
+            "Bristande tillgänglighet (uteblivna skäliga åtgärder för personer med funktionsnedsättning)",
+            "Trakasserier och sexuella trakasserier (kränkande uppträdande)",
+            "Instruktioner att diskriminera"
+        ],
+        "employer_obligations_active_measures": {
+            "legal_basis": "Diskrimineringslagen 3 kap. (Aktiva åtgärder)",
+            "four_steps": "1. Undersöka risker -> 2. Analysera orsaker -> 3. Genomföra åtgärder -> 4. Följa upp och utvärdera",
+            "areas": ["Arbetsförhållanden", "Löner och anställningsvillkor", "Rekrytering och befordran", "Utbildning och kompetensutveckling", "Föräldraskap och arbete"],
+            "equal_pay_audit": "Årlig lönekartläggning är obligatorisk för alla arbetsgivare. Arbetsgivare med minst 10 anställda måste dokumentera den skriftligt varje år.",
+            "written_documentation": "Arbetsgivare med minst 25 anställda måste skriftligt dokumentera hela arbetet med aktiva åtgärder."
+        },
+        "investigation_and_retaliation": {
+            "investigation_duty": "Arbetsgivaren är enligt 2 kap. 3 § DL skyldig att skyndsamt utreda och vidta åtgärder vid kännedom om trakasserier eller sexuella trakasserier.",
+            "ban_on_retaliation": "Arbetsgivaren får enligt 2 kap. 18–19 §§ DL inte utsätta en arbetstagare för repressalier (bestraffning/missgynnande) för att denne påtalat diskriminering eller deltagit i en utredning."
+        },
+        "certainty": {
+            "score_pct": 98,
+            "badge": "🟢 Mycket hög (98%) — Direkt lagstadgad rätt (Diskrimineringslagen 2008:567) & DO-praxis",
+            "level": "DIRECT_STATUTE"
+        }
+    }
+
+
 

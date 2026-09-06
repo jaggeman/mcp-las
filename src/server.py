@@ -24,15 +24,18 @@ from src.mcp_tools.tools import (
     calculate_vacation_pay as _calculate_vacation_pay,
     calculate_unpaid_vacation_deduction as _calculate_unpaid_vacation_deduction,
     calculate_earned_vacation_days as _calculate_earned_vacation_days,
-    get_employer_certificate_info as _get_employer_certificate_info
+    get_employer_certificate_info as _get_employer_certificate_info,
+    get_rehabilitation_plan_info as _get_rehabilitation_plan_info,
+    get_discrimination_act_guide as _get_discrimination_act_guide
 )
 
 mcp = FastMCP(
     name=settings.MCP_SERVER_NAME,
     instructions=(
         "Svensk Arbetsrätt & LAS MCP Server för AI-agenter och Claude. "
-        "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen), "
-        "Arbetsdomstolens prejudikat, 17 kollektivavtal, semesterberäkningar samt arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF)."
+        "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
+        "Arbetsdomstolens prejudikat, 17 kollektivavtal, semesterberäkningar, Försäkringskassans plan för återgång i arbete (FK 7459), "
+        "arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF) samt DO:s vägledning och aktiva åtgärder."
     )
 )
 
@@ -225,6 +228,34 @@ def get_employer_certificate_info(api_key: Optional[str] = None) -> Dict[str, An
     t0 = time.time()
     res = _get_employer_certificate_info()
     auth_service.log_access(api_key or "anon", None, "get_employer_certificate_info", {}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def get_rehabilitation_plan_info(api_key: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Ger lagkrav, tidsfrister och direktlänk till Försäkringskassans mall/blankett (FK 7459 PDF)
+    för 'Plan för återgång i arbete' enligt 30 kap. 6 § Socialförsäkringsbalken (SFB).
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _get_rehabilitation_plan_info()
+    auth_service.log_access(api_key or "anon", None, "get_rehabilitation_plan_info", {}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def get_discrimination_act_guide(topic: Optional[str] = None, api_key: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Vägledning och lagregler från Diskrimineringsombudsmannen (DO) och Diskrimineringslagen (2008:567),
+    inklusive de 7 diskrimineringsgrunderna, aktiva åtgärder (lönekartläggning) och repressalieförbud.
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _get_discrimination_act_guide(topic=topic)
+    auth_service.log_access(api_key or "anon", None, "get_discrimination_act_guide", {"topic": topic}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":
