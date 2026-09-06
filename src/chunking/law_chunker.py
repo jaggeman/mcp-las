@@ -1,4 +1,4 @@
-﻿import re
+import re
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
@@ -43,10 +43,19 @@ class LawChunker:
         default_chapter: Optional[str] = None
     ) -> List[StatuteSection]:
         cleaned = cls.clean_text(full_text)
+        
+        # Strip transitional provisions (övergångsbestämmelser) so they don't overwrite real sections
+        trans_pattern = re.compile(
+            r'(?:^|\n)\s*(?:övergångsbestämmelser|ikraftträdande-?\s*och övergångsbestämmelser)\b',
+            re.IGNORECASE
+        )
+        trans_match = trans_pattern.search(cleaned)
+        main_text = cleaned[:trans_match.start()] if trans_match else cleaned
+        
         sections: List[StatuteSection] = []
         
         # Check for multi-chapter statutes
-        chapter_splits = re.split(r'(?=(?:^|\n)\s*\d+\s*kap(?:\.|\s+))', cleaned, flags=re.IGNORECASE)
+        chapter_splits = re.split(r'(?=(?:^|\n)\s*\d+\s*kap(?:\.|\s+))', main_text, flags=re.IGNORECASE)
         
         if len(chapter_splits) > 1:
             for split in chapter_splits:
@@ -65,7 +74,7 @@ class LawChunker:
             cls._extract_sections_from_block(
                 statute_id=statute_id,
                 statute_short=statute_short,
-                block_text=cleaned,
+                block_text=main_text,
                 chapter=default_chapter,
                 sections=sections
             )
@@ -81,50 +90,60 @@ class LawChunker:
         chapter: Optional[str],
         sections: List[StatuteSection]
     ) -> None:
-        # Match sections with optional preceding heading and inline chapter
-        # Pattern captures:
-        # group 1: optional inline chapter e.g. "2"
-        # group 2: section number e.g. "7" or "7 a"
-        # group 3: content until next section or end
-        sec_split_pattern = re.compile(
-            r'(?:^|\n)(?:([^\n]+)\n+)?(?:(\d+)\s*kap\.\s*)?(\d+\s*[a-z]?)\s*§\s*(.*?)(?=(?:\n(?:[^\n]+\n+)?(?:(?:\d+\s*kap\.\s*)?\d+\s*[a-z]?\s*§))|\Z)',
-            re.DOTALL | re.IGNORECASE
-        )
-        
-        # Simpler and more robust: find positions of all § occurrences
         pos_pattern = re.compile(
             r'(?:^|\n)\s*(?:(\d+)\s*kap\.\s*)?(\d+\s*[a-z]?)\s*§',
             re.IGNORECASE
         )
         
         matches = list(pos_pattern.finditer(block_text))
+        if not matches:
+            return
+
+        pending_heading = None
+        # Extract initial heading for the very first section if present
+        first_pre = block_text[:matches[0].start()].strip()
+        if first_pre:
+            first_lines = [l.strip() for l in first_pre.split('\n') if l.strip()]
+            if first_lines:
+                cand = first_lines[-1]
+                if len(cand) < 100 and not cand.endswith(('.', ':', ';', ',')):
+                    pending_heading = cand
+
         for i, m in enumerate(matches):
             start_idx = m.end()
             end_idx = matches[i + 1].start() if i + 1 < len(matches) else len(block_text)
             
             inline_chap = m.group(1)
             sec_num = m.group(2).strip().lower()
-            content_raw = block_text[start_idx:end_idx].strip()
+            block_between = block_text[start_idx:end_idx].strip()
             
             effective_chap = inline_chap if inline_chap else chapter
             
-            # Find heading preceding this section
-            prev_end = matches[i - 1].end() if i > 0 else 0
-            preceding_text = block_text[prev_end:m.start()].strip()
+            lines = [l for l in block_between.split('\n')]
+            while lines and not lines[-1].strip():
+                lines.pop()
+                
+            curr_title = pending_heading
+            pending_heading = None
             
-            sec_title = None
-            if preceding_text:
-                candidate_lines = [l.strip() for l in preceding_text.split('\n') if l.strip()]
-                if candidate_lines:
-                    last_line = candidate_lines[-1]
-                    if len(last_line) < 80 and not last_line.endswith(('.', ':', ';')):
-                        sec_title = last_line
+            # Check if trailing lines belong to next section's heading
+            if i + 1 < len(matches) and len(lines) > 1:
+                last_line = lines[-1].strip()
+                if (len(last_line) < 100 and 
+                    not last_line.endswith(('.', ':', ';', ',')) and 
+                    not last_line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.', '-', '–'))):
+                    pending_heading = last_line
+                    lines.pop()
+                    while lines and not lines[-1].strip():
+                        lines.pop()
+                        
+            content_cleaned = '\n'.join(lines).strip()
             
             safe_sfs = statute_id.replace(':', '_')
             chap_part = f"_k{effective_chap}" if effective_chap else ""
             doc_id = f"{safe_sfs}{chap_part}_s{sec_num}"
 
-            keywords = cls._extract_keywords(content_raw + " " + (sec_title or ""), statute_short, sec_num)
+            keywords = cls._extract_keywords(content_cleaned + " " + (curr_title or ""), statute_short, sec_num)
 
             sections.append(StatuteSection(
                 id=doc_id,
@@ -132,9 +151,9 @@ class LawChunker:
                 statute_short=statute_short,
                 chapter=effective_chap,
                 section_number=sec_num,
-                section_title=sec_title,
-                content=content_raw,
-                raw_text=f"{effective_chap + ' kap. ' if effective_chap else ''}{sec_num} § {content_raw}",
+                section_title=curr_title,
+                content=content_cleaned,
+                raw_text=f"{effective_chap + ' kap. ' if effective_chap else ''}{sec_num} § {content_cleaned}",
                 keywords=keywords
             ))
 
