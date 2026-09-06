@@ -747,7 +747,36 @@ Strukturera alltid svaren med:
 
     <section id="verktyg" style="padding-top: 2rem;">
       <h2 class="section-title">Vad du kan fråga din AI</h2>
-      <p class="section-sub">Dessa 11 intelligenta MCP-verktyg anropas automatiskt i bakgrunden när du ställer frågor till Claude, ChatGPT, Gemini eller Cursor</p>
+      <p class="section-sub">Dessa 13 intelligenta MCP-verktyg anropas automatiskt i bakgrunden när du ställer frågor till Claude, ChatGPT, Gemini eller Cursor</p>
+
+      <!-- AI Tip Banner -->
+      <div style="background: var(--brand-light); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 1rem; padding: 1.1rem 1.4rem; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow);">
+        <div style="width: 2.75rem; height: 2.75rem; border-radius: 0.75rem; background: var(--brand); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+          <i class="fa-solid fa-lightbulb"></i>
+        </div>
+        <div style="font-size: 0.92rem; color: var(--text); line-height: 1.5;">
+          <strong>💡 AI-Tips:</strong> Du behöver inte memorera verktygen! När du är ansluten i Claude, ChatGPT eller Cursor kan du bara fråga din AI: <br/>
+          <code style="background: var(--card-bg); padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; font-weight: 700; color: var(--brand-text); display: inline-block; margin-top: 0.25rem;">"Vilka verktyg har du tillgång till via MCP LAS?"</code>
+          <span> eller be den lista alla tillgängliga funktioner direkt i chatten.</span>
+        </div>
+      </div>
+
+      <!-- Search & Category Filters -->
+      <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+          <div style="position: relative; flex: 1; min-width: 260px;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
+            <input type="text" id="toolSearchInput" oninput="handleToolSearch()" placeholder="Sök verktyg (t.ex. semester, turordning, excel, LAS 7 §, varsel)..." class="form-control" style="padding-left: 2.5rem; border-radius: 0.75rem; height: 2.75rem; font-size: 0.9rem;">
+          </div>
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="categoryFilterContainer">
+            <button class="btn btn-secondary category-btn active" onclick="setCategoryFilter('all', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">Alla (<span id="totalToolBadge">13</span>)</button>
+            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('lag', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-scale-balanced"></i> Lagar & Paragrafer</button>
+            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('semester', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-calculator"></i> Semester & Lön</button>
+            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('turordning', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-file-excel"></i> Turordning & Excel</button>
+            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('mallar', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-file-lines"></i> HR-Mallar</button>
+          </div>
+        </div>
+      </div>
 
       <div class="tools-table-container">
         <div class="table-responsive">
@@ -759,8 +788,8 @@ Strukturera alltid svaren med:
                 <th style="width: 36%;">Exempel på prompt för din AI</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
+            <tbody id="toolsTbody">
+              <tr class="tool-row" data-category="lag">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-magnifying-glass"></i></div>
@@ -783,7 +812,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="lag">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-brain"></i></div>
@@ -806,7 +835,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="lag">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-gavel"></i></div>
@@ -829,7 +858,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="lag avtal">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-code-compare"></i></div>
@@ -852,7 +881,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="lag avtal">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-file-contract"></i></div>
@@ -875,7 +904,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="semester">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-calculator"></i></div>
@@ -898,7 +927,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="semester">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-calendar-xmark"></i></div>
@@ -921,7 +950,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="semester">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-calendar-check"></i></div>
@@ -944,7 +973,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="mallar lag">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-file-invoice"></i></div>
@@ -967,7 +996,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="mallar lag">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-heart-pulse"></i></div>
@@ -990,7 +1019,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="lag">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-scale-unbalanced"></i></div>
@@ -1013,7 +1042,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="semester lag">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-landmark"></i></div>
@@ -1036,7 +1065,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="turordning lag">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-users-gear"></i></div>
@@ -1059,7 +1088,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="turordning">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box" style="background: rgba(34, 197, 94, 0.15); color: var(--brand);"><i class="fa-solid fa-file-excel"></i></div>
@@ -1082,7 +1111,7 @@ Strukturera alltid svaren med:
                 </td>
               </tr>
 
-              <tr>
+              <tr class="tool-row" data-category="mallar">
                 <td>
                   <div class="tool-meta">
                     <div class="tool-icon-box"><i class="fa-solid fa-file-lines"></i></div>
@@ -1106,6 +1135,20 @@ Strukturera alltid svaren med:
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-wrapper" style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.25rem; flex-wrap: wrap; gap: 1rem; padding: 0.5rem 0.25rem;">
+          <span id="pageInfoText" style="font-size: 0.88rem; color: var(--text-muted); font-weight: 600;">Visar 1–5 av 15 verktyg</span>
+          <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <button class="btn btn-secondary" id="prevPageBtn" onclick="changePage(-1)" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;" disabled>
+              <i class="fa-solid fa-chevron-left"></i> Föregående
+            </button>
+            <div id="paginationNumbers" style="display: flex; gap: 0.3rem;"></div>
+            <button class="btn btn-secondary" id="nextPageBtn" onclick="changePage(1)" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;">
+              Nästa <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -1336,6 +1379,129 @@ Strukturera alltid svaren med:
         btn.innerText = 'Skicka ansökan';
       }
     }
+
+    // ---------------------------------------------------------
+    // Tools Table Pagination, Search & Category Filter Logic
+    // ---------------------------------------------------------
+    let currentToolPage = 1;
+    const toolsPerPage = 5;
+    let currentCategory = 'all';
+    let currentSearchTerm = '';
+
+    function getMatchingToolRows() {
+      const rows = Array.from(document.querySelectorAll('.tool-row'));
+      return rows.filter(row => {
+        const categories = (row.getAttribute('data-category') || '').split(' ');
+        const matchesCat = currentCategory === 'all' || categories.includes(currentCategory);
+        
+        const text = row.innerText.toLowerCase();
+        const matchesSearch = !currentSearchTerm || text.includes(currentSearchTerm.toLowerCase());
+        
+        return matchesCat && matchesSearch;
+      });
+    }
+
+    function renderToolsTable() {
+      const allRows = Array.from(document.querySelectorAll('.tool-row'));
+      const matchingRows = getMatchingToolRows();
+      const totalMatching = matchingRows.length;
+      const totalPages = Math.ceil(totalMatching / toolsPerPage) || 1;
+
+      if (currentToolPage > totalPages) currentToolPage = totalPages;
+      if (currentToolPage < 1) currentToolPage = 1;
+
+      const startIndex = (currentToolPage - 1) * toolsPerPage;
+      const endIndex = startIndex + toolsPerPage;
+
+      // Dölj alla rader först
+      allRows.forEach(row => row.style.display = 'none');
+
+      // Visa matchande rader för aktuell sida
+      matchingRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+
+      // Uppdatera info-text
+      const pageInfo = document.getElementById('pageInfoText');
+      if (totalMatching === 0) {
+        pageInfo.innerText = 'Inga verktyg matchade din sökning.';
+      } else {
+        const startDisp = startIndex + 1;
+        const endDisp = Math.min(endIndex, totalMatching);
+        pageInfo.innerText = `Visar ${startDisp}–${endDisp} av ${totalMatching} verktyg`;
+      }
+
+      // Uppdatera knappar
+      const prevBtn = document.getElementById('prevPageBtn');
+      const nextBtn = document.getElementById('nextPageBtn');
+      if (prevBtn) prevBtn.disabled = currentToolPage <= 1;
+      if (nextBtn) nextBtn.disabled = currentToolPage >= totalPages;
+
+      // Rendera sidnummer
+      const numContainer = document.getElementById('paginationNumbers');
+      if (numContainer) {
+        numContainer.innerHTML = '';
+        for (let i = 1; i <= totalPages; i++) {
+          const numBtn = document.createElement('button');
+          numBtn.className = 'btn btn-secondary';
+          numBtn.innerText = i;
+          numBtn.style.padding = '0.45rem 0.75rem';
+          numBtn.style.fontSize = '0.85rem';
+          numBtn.style.minWidth = '2.2rem';
+          if (i === currentToolPage) {
+            numBtn.style.background = 'var(--brand)';
+            numBtn.style.color = '#ffffff';
+            numBtn.style.borderColor = 'var(--brand)';
+          }
+          numBtn.onclick = () => {
+            currentToolPage = i;
+            renderToolsTable();
+          };
+          numContainer.appendChild(numBtn);
+        }
+      }
+
+      // Uppdatera totalbadge
+      const badge = document.getElementById('totalToolBadge');
+      if (badge && currentCategory === 'all' && !currentSearchTerm) {
+        badge.innerText = allRows.length;
+      }
+    }
+
+    function handleToolSearch() {
+      const input = document.getElementById('toolSearchInput');
+      currentSearchTerm = input ? input.value.trim() : '';
+      currentToolPage = 1;
+      renderToolsTable();
+    }
+
+    function setCategoryFilter(category, btn) {
+      currentCategory = category;
+      currentToolPage = 1;
+      document.querySelectorAll('.category-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'var(--card-bg)';
+        b.style.color = 'var(--text)';
+        b.style.borderColor = 'var(--card-border)';
+      });
+      if (btn) {
+        btn.classList.add('active');
+        btn.style.background = 'var(--brand-light)';
+        btn.style.color = 'var(--brand-text)';
+        btn.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+      }
+      renderToolsTable();
+    }
+
+    function changePage(delta) {
+      currentToolPage += delta;
+      renderToolsTable();
+    }
+
+    // Initiera verktygstabellen vid sidladdning
+    document.addEventListener('DOMContentLoaded', () => {
+      renderToolsTable();
+    });
+    // Kör direkt ifall DOMContentLoaded redan har triggats
+    renderToolsTable();
   </script>
 </body>
 </html>
