@@ -71,3 +71,23 @@ def test_calculate_unpaid_vacation_deduction():
     assert "advance_vacation_rules" in res_adv
     assert res_adv["advance_vacation_rules"]["debt_amount_kr"] == 13800.0
 
+def test_calculate_earned_vacation_days():
+    from src.mcp_tools.tools import calculate_earned_vacation_days
+    # Started half year (182 days out of 365) with 25 days right:
+    # 25 * 182 / 365 = 12.465 -> ceil -> 13 paid days, 12 unpaid days
+    res = calculate_earned_vacation_days(employment_days_in_earning_year=182, annual_vacation_right=25)
+    assert res["result"]["paid_vacation_days"] == 13
+    assert res["result"]["unpaid_vacation_days"] == 12
+
+    # Full year (365 days): 25 paid, 0 unpaid
+    res_full = calculate_earned_vacation_days(employment_days_in_earning_year=365, annual_vacation_right=25)
+    assert res_full["result"]["paid_vacation_days"] == 25
+    assert res_full["result"]["unpaid_vacation_days"] == 0
+
+def test_get_employer_certificate_info():
+    from src.mcp_tools.tools import get_employer_certificate_info
+    res = get_employer_certificate_info()
+    assert "arbetsgivarintyg.nu" in res["official_service_url"]
+    assert "47 §" in res["legal_duty"]["section"]
+
+

@@ -270,3 +270,97 @@ def calculate_unpaid_vacation_deduction(
 
     return response
 
+def calculate_earned_vacation_days(
+    employment_days_in_earning_year: int = 365,
+    annual_vacation_right: int = 25,
+    non_qualifying_absence_days: int = 0,
+    earning_year_days: int = 365
+) -> Dict[str, Any]:
+    """
+    Beräknar antal betalda och obetalda semesterdagar enligt Semesterlagen (1977:480) 7 §
+    och Unionens/svenska kollektivavtalsregler med lagstadgad uppǻtavrundning.
+    """
+    import math
+    if annual_vacation_right <= 0:
+        return {"error": "Årlig semesterrätt måste vara minst 1 dag (normalt 25 enligt lag)."}
+    if employment_days_in_earning_year < 0:
+        return {"error": "Anställningsdagar kan inte vara negativa."}
+    if non_qualifying_absence_days < 0:
+        return {"error": "Frånvarodagar kan inte vara negativa."}
+
+    qualifying_days = max(0, employment_days_in_earning_year - non_qualifying_absence_days)
+    qualifying_days = min(qualifying_days, earning_year_days)
+
+    # Semesterlagen 7 § st 2: "Uppkommer vid beräkningen av antalet betalda semesterdagar ett brutet dagantal, avrundas detta uppåt till närmaste hela dagantal."
+    exact_paid_days = (annual_vacation_right * qualifying_days) / float(earning_year_days)
+    paid_vacation_days = math.ceil(exact_paid_days)
+    paid_vacation_days = min(paid_vacation_days, annual_vacation_right)
+
+    unpaid_vacation_days = max(0, annual_vacation_right - paid_vacation_days)
+
+    return {
+        "input": {
+            "employment_days_in_earning_year": employment_days_in_earning_year,
+            "annual_vacation_right": annual_vacation_right,
+            "non_qualifying_absence_days": non_qualifying_absence_days,
+            "earning_year_days": earning_year_days
+        },
+        "result": {
+            "paid_vacation_days": paid_vacation_days,
+            "unpaid_vacation_days": unpaid_vacation_days,
+            "total_vacation_right": annual_vacation_right,
+            "exact_unrounded_paid_days": round(exact_paid_days, 2),
+            "qualifying_days_count": qualifying_days
+        },
+        "legal_basis": "Semesterlagen (1977:480) 7 § samt Unionens kollektivavtalsregler",
+        "rounding_rule": "Avrundas alltid UPPÅT till helt dagantal enligt Semesterlagen 7 § andra stycket.",
+        "summary": (
+            f"Du har rätt till {paid_vacation_days} betalda semesterdagar och "
+            f"{unpaid_vacation_days} obetalda semesterdagar (av totalt {annual_vacation_right} semesterdagar per år)."
+        ),
+        "certainty": {
+            "score_pct": 99,
+            "badge": "🟢 Mycket hög (99%) — Exakt matematisk beräkning enligt Semesterlagen 7 §",
+            "level": "EXACT_CALCULATION"
+        }
+    }
+
+def get_employer_certificate_info() -> Dict[str, Any]:
+    """
+    Returnerar information och lagkrav gällande Arbetsgivarintyg för a-kassa enligt 47 § lagen (1997:238) om arbetslöshetsförsäkring
+    samt länk till den officiella digitala e-tjänsten www.arbetsgivarintyg.nu.
+    """
+    return {
+        "title": "Arbetsgivarintyg för A-kassa & Ersättning",
+        "official_service_url": "https://www.arbetsgivarintyg.nu",
+        "service_name": "Arbetsgivarintyg.nu (Sveriges a-kassor)",
+        "legal_duty": {
+            "statute": "Lag (1997:238) om arbetslöshetsförsäkring (ALF)",
+            "section": "47 §",
+            "summary": "Arbetsgivaren är enligt 47 § lagstadgat skyldig att på begäran av arbetstagaren snarast utfärda arbetsgivarintyg.",
+            "enforcement": "Om arbetsgivaren vägrar eller fördröjer intyget kan arbetstagaren begära vitesföreläggande och arbetsgivaren kan bli skadeståndsskyldig."
+        },
+        "how_it_works": {
+            "for_employers": (
+                "Arbetsgivaren loggar in på https://www.arbetsgivarintyg.nu med BankID eller Freja eID, "
+                "fyller i arbetad tid och lön för de senaste 12–13 månaderna och signerar digitalt. "
+                "Intyget skickas automatiskt digitalt till den anställdes a-kassa."
+            ),
+            "for_employees": (
+                "Begär av din arbetsgivare att de utfärdar intyget via www.arbetsgivarintyg.nu. "
+                "När arbetsgivaren har signerat får du ett meddelande och kan godkänna intyget på Mina sidor hos din a-kassa."
+            )
+        },
+        "distinction": {
+            "arbetsgivarintyg": "Specifikt intyg om arbetad tid och inkomst avsett för prövning av ersättning hos A-kassan (lagkrav enligt 47 § ALF).",
+            "tjanstgoringsintyg": "Intyg som bekräftar att du varit anställd, befattning och anställningstid (för framtida arbetsgivare).",
+            "tjanstgoringsbetyg": "Intyg med personligt omdöme och vitsord över hur arbetet har utförts."
+        },
+        "certainty": {
+            "score_pct": 99,
+            "badge": "🟢 Mycket hög (99%) — Direkt lagstadgad skyldighet (47 § ALF) & Officiell e-tjänst",
+            "level": "DIRECT_STATUTE"
+        }
+    }
+
+

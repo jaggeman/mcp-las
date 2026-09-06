@@ -28,6 +28,8 @@ Dessa 7 intelligenta verktyg anropas automatiskt i bakgrunden av Claude, ChatGPT
 | **Avtalsundantag & Särregler** | `get_cba_exception` | Kontrollerar specifika semidispositiva avtalsundantag för uppsägningstid, övertid och semester. | *"Har Almega IT något undantag från LAS gällande uppsägningstid vid 5 års anställning?"* |
 | **Räkna ut Semesterlön** | `calculate_vacation_pay` | Beräknar semesterlön & tillägg enligt Semesterlagen (16 a–b §§) vs Unionens kollektivavtal (0,8% fast / 0,5% rörlig). | *"Räkna ut mitt semestertillägg för 25 dagar med 45 000 kr i månadslön och 20 000 kr i bonus."* |
 | **Avdrag för Obetald Semester** | `calculate_unpaid_vacation_deduction` | Beräknar löneavdrag vid obetalda semesterdagar (4,6% per dag) samt skuldavräkning vid förskottssemester (29 a §). | *"Hur stort löneavdrag får jag om jag tar ut 5 obetalda semesterdagar med 40 000 kr i månadslön?"* |
+| **Betalda & Obetalda Dagar** | `calculate_earned_vacation_days` | Beräknar intjänade betalda vs obetalda semesterdagar baserat på anställningstid och frånvaro (SemL 7 § uppåtavrundning). | *"Jag började jobba 1 november. Hur många betalda semesterdagar har jag tjänat in till 1 april?"* |
+| **Arbetsgivarintyg & A-kassa** | `get_employer_certificate_info` | Visar lagstadgad skyldighet enligt 47 § ALF och hänvisar till Sveriges a-kassors e-tjänst www.arbetsgivarintyg.nu. | *"Är min arbetsgivare skyldig att ge mig arbetsgivarintyg för a-kassa och hur görs det digitalt?"* |
 
 ---
 

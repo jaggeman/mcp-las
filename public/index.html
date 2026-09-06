@@ -631,12 +631,14 @@
         <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">2. System Prompt för Custom GPTs</div>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Klistra in denna instruktion i din Custom GPT:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="gptPrompt">Du är en svensk arbetsrättsexpert driven av MCP LAS.
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="gptPrompt">Du är en svensk arbetsrättsexpert driven av MCP LAS (https://mcp-las-rules.web.app/mcp).
 När användaren ställer frågor om svensk arbetsrätt, anställningsskydd (LAS), medbestämmande (MBL), semester eller kollektivavtal:
 1. Slå alltid upp gällande lagtext och exakt paragraf via MCP LAS.
-2. Kontrollera alltid om tillämpligt kollektivavtal (t.ex. Teknikavtalet, Almega IT, Handels) har semidispositiva avvikelser från lagen.
-3. Hänvisa till relevanta AD-prejudikat vid tvister om sakliga skäl, personliga skäl eller arbetsbrist.
-4. Var pedagogisk och tydliggör att svaren är informativa och inte utgör formell juridisk rådgivning.</pre>
+2. Kontrollera alltid om tillämpligt kollektivavtal (t.ex. Teknikavtalet, Almega IT, Handels, Unionen) har semidispositiva avvikelser från lagen.
+3. Vid semesterfrågor: använd MCP-verktygen för att beräkna semesterlön/tillägg, avdrag för obetald semester och intjänade semesterdagar.
+4. Vid frågor om arbetsgivarintyg för a-kassa: förklara arbetsgivarens lagstadgade skyldighet enligt 47 § lag om arbetslöshetsförsäkring (ALF) och hänvisa alltid till Sveriges a-kassors officiella e-tjänst: https://www.arbetsgivarintyg.nu.
+5. Hänvisa till relevanta AD-prejudikat vid tvister om sakliga skäl, personliga skäl eller arbetsbrist.
+6. Tydliggör att svaren är informativa och inte utgör formell juridisk rådgivning.</pre>
           <button class="copy-btn" onclick="copyText('gptPrompt', this)"><i class="fa-solid fa-copy"></i> Kopiera Prompt</button>
         </div>
       </div>
@@ -647,11 +649,12 @@ När användaren ställer frågor om svensk arbetsrätt, anställningsskydd (LAS
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Klistra in denna instruktion i din Gemini Gem eller AI Studio Agent:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
           <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="geminiPrompt">Du är en specialiserad rådgivare inom svensk arbetsrätt och den svenska partsmodellen.
-Använd MCP LAS (https://mcp-las-rules.web.app/mcp) för att hämta gällande lagstiftning från Riksdagen, 17 centrala kollektivavtal och vägledande domar från Arbetsdomstolen (AD).
+Använd MCP LAS (https://mcp-las-rules.web.app/mcp) för att hämta gällande lagstiftning från Riksdagen, 17 centrala kollektivavtal, vägledande domar från Arbetsdomstolen (AD) samt beräkna semester och avdrag.
 Strukturera alltid svaren med:
 - Lagens grundregel (§)
 - Eventuella avvikelser i kollektivavtal
 - Relevanta AD-domar och praxis
+- Vid arbetsgivarintyg för a-kassa: hänvisa till arbetsgivarens lagplikt (47 § ALF) och https://www.arbetsgivarintyg.nu
 - Sammanfattande slutsats.</pre>
           <button class="copy-btn" onclick="copyText('geminiPrompt', this)"><i class="fa-solid fa-copy"></i> Kopiera Prompt</button>
         </div>
@@ -896,6 +899,52 @@ Strukturera alltid svaren med:
                   <div class="prompt-box">
                     <span class="prompt-text">"Hur stort löneavdrag får jag om jag tar ut 5 obetalda semesterdagar med 40 000 kr i månadslön?"</span>
                     <button class="copy-prompt-btn" onclick="copyPromptDirect('Hur stort löneavdrag får jag om jag tar ut 5 obetalda semesterdagar med 40 000 kr i månadslön?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="tool-title">
+                      <span>Betalda & Obetalda Dagar</span>
+                      <span class="tool-badge">calculate_earned_vacation_days</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Beräknar intjänade betalda vs obetalda semesterdagar baserat på anställningstid och frånvaro under intjänandeåret (Semesterlagen 7 § med uppåtavrundning).
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Jag började min anställning 1 november. Hur många betalda semesterdagar har jag tjänat in till 1 april?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Jag började min anställning 1 november. Hur många betalda semesterdagar har jag tjänat in till 1 april?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-file-invoice"></i></div>
+                    <div class="tool-title">
+                      <span>Arbetsgivarintyg & A-kassa</span>
+                      <span class="tool-badge">get_employer_certificate_info</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Visar lagkrav enligt 47 § lag om arbetslöshetsförsäkring (ALF) samt guidar till Sveriges a-kassors officiella digitala tjänst www.arbetsgivarintyg.nu.
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Hur fungerar arbetsgivarintyg för a-kassa och är min arbetsgivare skyldig att ge mig det?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Hur fungerar arbetsgivarintyg för a-kassa och är min arbetsgivare skyldig att ge mig det?', this)">
                       <i class="fa-regular fa-copy"></i> Kopiera
                     </button>
                   </div>

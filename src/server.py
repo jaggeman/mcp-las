@@ -22,12 +22,18 @@ from src.mcp_tools.tools import (
     get_cba_exception as _get_cba_exception,
     compare_statute_vs_cba as _compare_statute_vs_cba,
     calculate_vacation_pay as _calculate_vacation_pay,
-    calculate_unpaid_vacation_deduction as _calculate_unpaid_vacation_deduction
+    calculate_unpaid_vacation_deduction as _calculate_unpaid_vacation_deduction,
+    calculate_earned_vacation_days as _calculate_earned_vacation_days,
+    get_employer_certificate_info as _get_employer_certificate_info
 )
 
 mcp = FastMCP(
     name=settings.MCP_SERVER_NAME,
-    instructions="Svensk Arbetsrätt & LAS MCP Server för AI-agenter och Claude."
+    instructions=(
+        "Svensk Arbetsrätt & LAS MCP Server för AI-agenter och Claude. "
+        "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen), "
+        "Arbetsdomstolens prejudikat, 17 kollektivavtal, semesterberäkningar samt arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF)."
+    )
 )
 
 # Tillåt CORS för alla webbläsare och Claude
@@ -180,6 +186,45 @@ def calculate_unpaid_vacation_deduction(
         agreement_name=agreement_name
     )
     auth_service.log_access(api_key or "anon", None, "calculate_unpaid_vacation_deduction", {"monthly_salary": monthly_salary, "unpaid_days": unpaid_days}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def calculate_earned_vacation_days(
+    employment_days_in_earning_year: int = 365,
+    annual_vacation_right: int = 25,
+    non_qualifying_absence_days: int = 0,
+    earning_year_days: int = 365,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Beräknar antal betalda och obetalda semesterdagar enligt Semesterlagen (1977:480) 7 §
+    och Unionens kollektivavtal baserat på anställningstid och frånvaro under intjänandeåret.
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _calculate_earned_vacation_days(
+        employment_days_in_earning_year=employment_days_in_earning_year,
+        annual_vacation_right=annual_vacation_right,
+        non_qualifying_absence_days=non_qualifying_absence_days,
+        earning_year_days=earning_year_days
+    )
+    auth_service.log_access(api_key or "anon", None, "calculate_earned_vacation_days", {"employment_days": employment_days_in_earning_year, "right": annual_vacation_right}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def get_employer_certificate_info(api_key: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Ger information om lagkrav och rutiner för Arbetsgivarintyg för a-kassa (47 § ALF)
+    samt hänvisning till den officiella digitala tjänsten www.arbetsgivarintyg.nu.
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _get_employer_certificate_info()
+    auth_service.log_access(api_key or "anon", None, "get_employer_certificate_info", {}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":
