@@ -173,6 +173,45 @@ def test_generate_turordningslista_excel():
     assert "EMP-001" in res["markdown_table"]
     assert "Karin" in res["markdown_table"]
 
+def test_get_hr_document_template():
+    from src.mcp_tools.tools import get_hr_document_template
+    
+    # 1. Omplaceringsutredning
+    res_utredning = get_hr_document_template(
+        template_type="omplaceringsutredning",
+        company_name="Region Stockholm",
+        employee_name="Anna Svensson",
+        personal_identity_number="19850512-1234",
+        job_title="Sjuksköterska",
+        reason_type="arbetsbrist"
+    )
+    assert "7 § andra stycket" in res_utredning["legal_basis"]
+    assert "Anna Svensson" in res_utredning["document_template_text"]
+    assert "Region Stockholm" in res_utredning["document_template_text"]
+    assert len(res_utredning["statutory_required_elements"]) > 3
+
+    # 2. Omplaceringserbjudande
+    res_offer = get_hr_document_template(
+        template_type="omplaceringserbjudande",
+        employee_name="Erik Johansson",
+        offered_position_title="Verksamhetsutvecklare"
+    )
+    assert "OMPLACERINGSERBJUDANDE" in res_offer["document_template_text"]
+    assert "Tackar JA" in res_offer["document_template_text"]
+    assert "Tackar NEJ" in res_offer["document_template_text"]
+    assert "Erik Johansson" in res_offer["document_template_text"]
+
+    # 3. Varsel personliga skäl
+    res_varsel = get_hr_document_template(
+        template_type="varsel_personliga_skal",
+        employee_name="Johan Berg",
+        union_name="Vision Avdelning 45"
+    )
+    assert "30 §" in res_varsel["legal_basis"]
+    assert "EN VECKA" in res_varsel["document_template_text"]
+    assert "Vision Avdelning 45" in res_varsel["document_template_text"]
+
+
 
 
 

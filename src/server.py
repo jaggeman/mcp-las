@@ -30,6 +30,7 @@ from src.mcp_tools.tools import (
     check_bank_days_and_deadlines as _check_bank_days_and_deadlines,
     calculate_redundancy_turnorder_and_exceptions as _calculate_redundancy_turnorder_and_exceptions,
     generate_turordningslista_excel as _generate_turordningslista_excel,
+    get_hr_document_template as _get_hr_document_template,
     GENERATED_EXCEL_FILES
 )
 
@@ -38,6 +39,7 @@ mcp = FastMCP(
     instructions=(
         "Svensk Arbetsrätt & LAS MCP Server för AI-agenter och Claude. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
+        "HR-dokumentmallar (omplaceringsutredning 7 § LAS, omplaceringserbjudande, varsel 30 § LAS, uppsägningsbesked), "
         "turordningsregler, Excel-export av turordningslista vid arbetsbrist (Unionen & 22 § LAS), "
         "Arbetsdomstolens prejudikat, 17 kollektivavtal, semesterberäkningar, Försäkringskassans plan för återgång i arbete (FK 7459), "
         "arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF), DO:s vägledning samt Riksbankens bankdagar och helgdagar för löneutbetalning och lagstadgade frister."
@@ -371,6 +373,49 @@ def generate_turordningslista_excel(
         as_of_date=as_of_date
     )
     auth_service.log_access(api_key or "anon", None, "generate_turordningslista_excel", {"company": company_name, "count": len(employees) if employees else 0}, (time.time() - t0)*1000)
+@mcp.tool()
+def get_hr_document_template(
+    template_type: str,
+    company_name: Optional[str] = "Arbetsgivaren AB / Organisationen",
+    employee_name: Optional[str] = "[Arbetstagarens Förnamn Efternamn]",
+    personal_identity_number: Optional[str] = "[ÅÅÅÅMMDD-XXXX]",
+    job_title: Optional[str] = "[Nuvarande Befattning]",
+    workplace_location: Optional[str] = "[Driftsenhet / Arbetsställe]",
+    reason_type: Optional[str] = "arbetsbrist",
+    union_name: Optional[str] = "[Lokal arbetstagarorganisation / Fackförbund]",
+    offered_position_title: Optional[str] = "[Erbjuden ny befattning]",
+    offered_position_terms: Optional[str] = "[Anställningsvillkor, sysselsättningsgrad, lön, placering]",
+    response_deadline: Optional[str] = "[Datum för svar, t.ex. ÅÅÅÅ-MM-DD]",
+    date_str: Optional[str] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Hämtar och anpassar officiella svenska HR-dokumentmallar enligt SKR / LAS-standard:
+    1. 'omplaceringsutredning' (7 § andra stycket LAS - arbetsbrist / personliga skäl)
+    2. 'omplaceringserbjudande' (skriftligt erbjudande med svarsfält Ja/Nej och signatur)
+    3. 'varsel_personliga_skal' (Varsel till facklig organisation enligt 30 § LAS)
+    4. 'underrattelse_personliga_skal' (Underrättelse till arbetstagaren enligt 30 § LAS)
+    5. 'uppsagningsbesked_arbetsbrist' (Uppsägningsbesked vid arbetsbrist med företrädesrätt 8 § & 25 § LAS)
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _get_hr_document_template(
+        template_type=template_type,
+        company_name=company_name,
+        employee_name=employee_name,
+        personal_identity_number=personal_identity_number,
+        job_title=job_title,
+        workplace_location=workplace_location,
+        reason_type=reason_type,
+        union_name=union_name,
+        offered_position_title=offered_position_title,
+        offered_position_terms=offered_position_terms,
+        response_deadline=response_deadline,
+        date_str=date_str
+    )
+    auth_service.log_access(api_key or "anon", None, "get_hr_document_template", {"type": template_type}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":
