@@ -1188,7 +1188,7 @@ Arbetstagarens underskrift:
 Namnteckning ({e_name})
 """
 
-    elif "varsel" in t_type:
+    elif ("varsel_personliga_skal" in t_type or "varsel" in t_type) and "avsked" not in t_type:
         title = "Varsel om uppsägning på grund av personliga skäl (till facklig organisation)"
         legal_basis = "30 § första stycket Lagen (1982:80) om anställningsskydd (LAS)"
         required_elements = [
@@ -1455,6 +1455,177 @@ För {c_name}:
 Signatur & Namnförtydligande
 """
 
+    elif "avskedande_varsel" in t_type or "varsel_avskedande" in t_type:
+        title = "Varsel om avskedande enligt 30 § LAS (Arbetsgivarverket & SKR)"
+        legal_basis = "30 § och 18 § Lagen (1982:80) om anställningsskydd (LAS)"
+        required_elements = [
+            "Mottagare: Lokal arbetstagarorganisation",
+            "Den anställdes namn, personnummer och befattning",
+            "Underrättelse om att arbetsgivaren avser att avskeda arbetstagaren",
+            "Information om rätt till överläggning inom en vecka från varslet",
+            "Datum och behörig underskrift"
+        ]
+        doc_text = f"""Datum: {today}
+Arbetsgivare / Myndighet: {c_name}
+Diarienummer: [Dnr]
+
+Till: {u_name}
+(Lokal arbetstagarorganisation)
+
+VARSEL OM AVSKEDANDE ENLIGT 30 § LAS
+
+Härmed varslas den lokala arbetstagarorganisationen enligt 30 § lagen (1982:80) om anställningsskydd (LAS) om att arbetsgivaren avser att avskeda följande arbetstagare:
+
+Arbetstagare:
+Namn: {e_name}
+Personnummer: {p_num}
+Befattning / Tjänst: {j_title}
+Arbetsställe / Placering: {w_loc}
+
+Grund för den tilltänkta åtgärden:
+Arbetstagaren har grovt åsidosatt sina åligganden mot arbetsgivaren enligt 18 § LAS genom följande agerande:
+[Specificera de faktiska omständigheterna och datum för händelserna].
+
+Överläggning:
+Arbetstagarorganisationen har enligt 30 § andra stycket LAS rätt till överläggning med arbetsgivaren om den tilltänkta åtgärden. Begäran om överläggning ska framställas senast en (1) vecka efter det att varslet lämnades.
+
+Ort och datum: .....................................................................................
+
+För {c_name}:
+.....................................................................................................
+Signatur & Namnförtydligande
+"""
+
+    elif "avskedande_beslut" in t_type or "besked_avskedande" in t_type or "avsked" in t_type:
+        title = "Besked om avskedande (18–19 §§ LAS / Arbetsgivarverket)"
+        legal_basis = "18–19 §§ och 40–41 §§ Lagen (1982:80) om anställningsskydd (LAS)"
+        required_elements = [
+            "Skriftlig form och orsak (grovt åsidosättande enligt 18 § LAS)",
+            "Omedelbart upphörande utan uppsägningstid",
+            "Fullföljdsanvisning för ogiltighetstalan (2 veckor / 4 veckor)",
+            "Fullföljdsanvisning för skadeståndstalan (4 månader / 8 månader)",
+            "Tidpunkt då avskedandet anses ske (19 § / 10 § LAS)",
+            "Mottagandekvittens"
+        ]
+        doc_text = f"""BESKED OM AVSKEDANDE
+(Enligt 18–19 §§ lagen [1982:80] om anställningsskydd, LAS)
+
+Arbetsgivare / Myndighet: {c_name}
+Ort & Datum: {today} | Dnr: [Dnr]
+Mottagare (Arbetstagarens namn): {e_name} ({p_num})
+
+1. BESKED OM AVSKEDANDE
+Du avskedas härmed med omedelbar verkan från din anställning som {j_title} vid {w_loc}.
+Anställningen upphör omedelbart från och med den dag du får del av detta besked.
+
+2. GRUND FÖR AVSKEDANDET
+Grund för avskedandet är att du grovt har åsidosatt dina åligganden mot arbetsgivaren enligt 18 § LAS.
+[Skriftlig uppgift om de omständigheter som åberopas som grund för avskedandet skall lämnas till arbetstagaren om arbetstagaren begär det enligt 19 § 3 st LAS].
+
+3. TALAN OM OGILTIGHET (19 § 2 st & 40 § LAS)
+Om du avser att yrka att avskedandet ska förklaras ogiltigt, ska du underrätta arbetsgivaren om detta senast två (2) veckor efter det att avskedandet skedde.
+Har din fackliga organisation inom två veckor efter det att avskedandet skedde påkallat överläggning/förhandling, ska talan väckas inom två (2) veckor efter det att förhandlingen avslutades. I annat fall ska talan väckas inom fyra (4) veckor efter avskedandet.
+
+4. TALAN OM SKADESTÅND (41 § LAS)
+Om du vill kräva skadestånd med anledning av avskedandet, ska du underrätta arbetsgivaren om detta inom fyra (4) månader och väcka talan inom fyra månader efter förhandlingens avslut (eller åtta månader om förhandling inte påkallats).
+
+Ort och datum: .....................................................................................
+
+För {c_name}:
+.....................................................................................................
+Signatur & Namnförtydligande
+
+-------------------------------------------------------------------------------------
+KVITTERAR MOTTAGANDET
+Jag har denna dag tagit del av detta besked om avskedande:
+
+Ort och datum: .....................................................................................
+Arbetstagarens underskrift: .........................................................................
+"""
+
+    elif "69_ar" in t_type or "pension" in t_type or "32_a" in t_type:
+        title = "Skriftligt besked om anställningens upphörande för arbetstagare som fyllt 69 år (32 a–33 §§ LAS)"
+        legal_basis = "32 a–33 §§ Lagen (1982:80) om anställningsskydd (LAS)"
+        required_elements = [
+            "Arbetsgivarens skriftliga besked enligt 33 § LAS",
+            "Minst en månads varsel före upphörandet",
+            "Angivande av att uppsägningen sker med stöd av uppnådd LAS-ålder (69 år)",
+            "Inga sakliga skäl eller företrädesrätt krävs enligt 32 a §",
+            "Underskrift och kvittens"
+        ]
+        doc_text = f"""BESKED OM ANSTÄLLNINGENS UPPHÖRANDE VID UPPNÅDD LAS-ÅLDER (69 ÅR)
+(Enligt 32 a och 33 §§ lagen [1982:80] om anställningsskydd, LAS)
+
+Arbetsgivare / Myndighet: {c_name}
+Ort & Datum: {today}
+Till Arbetstagaren: {e_name} ({p_num})
+
+Härmed meddelas att din anställning som {j_title} vid {w_loc} upphör i och med att du har uppnått 69 års ålder, i enlighet med 32 a § och 33 § LAS.
+
+1. Anställningens upphörande
+Anställningen upphör att gälla den: [ÅÅÅÅ-MM-DD] (vilket är minst 1 månad efter att detta besked lämnats).
+
+2. Rättslig reglering
+Enligt 32 a § LAS har en arbetstagare rätt att kvarstå i anställningen till utgången av den månad då arbetstagaren fyller 69 år. Därefter har arbetsgivaren rätt att avsluta anställningen genom ett skriftligt besked minst en månad i förväg utan krav på sakliga skäl (7 § LAS) eller företrädesrätt till återanställning (25 § LAS).
+
+Ort och datum: .....................................................................................
+
+För {c_name}:
+.....................................................................................................
+Signatur & Namnförtydligande
+
+KVITTERAS:
+Jag har tagit del av detta besked:
+.....................................................................................................
+Namnteckning ({e_name})
+"""
+
+    elif "ura" in t_type or "utlandsstationering" in t_type:
+        title = "Avtal om utlandskontrakt och villkorsbilaga (URA – Arbetsgivarverket)"
+        legal_basis = "URA (Avtal om utlandskontrakt och riktlinjer för anställningsvillkor vid tjänstgöring utomlands)"
+        required_elements = [
+            "Myndighet / Arbetsgivare och Arbetstagare",
+            "Stationeringsort, land och tidsperiod för utlandsuppdraget",
+            "Tjänstgöringens art och befattning under utlandsvistelsen",
+            "Ersättningar: URA-tillägg, merkostnadstillägg, bostadsförmån, medflyttandeersättning",
+            "Försäkringsskydd (Kammarkollegiets URA-försäkring)",
+            "Hemresor och semestervillkor under utlandsstationering",
+            "Återgångsvillkor till hemarbetsplatsen i Sverige"
+        ]
+        doc_text = f"""AVTAL OM UTLANDSKONTRAKT ENLIGT URA-AVTALET
+(Arbetsgivarverket / Statliga avtalsområdet)
+
+1. PARTER
+Statlig myndighet / Arbetsgivare: {c_name}
+Arbetstagare: {e_name} ({p_num})
+
+2. STATIONERINGSORT OCH UPPDRAG
+Stationeringsland: [Land]
+Stationeringsort: [Stad / Plats]
+Befattning utomlands: {j_title}
+Tjänstgöringsperiod: Fr.o.m. [ÅÅÅÅ-MM-DD] t.o.m. [ÅÅÅÅ-MM-DD]
+
+3. ERSÄTTNINGAR OCH FÖRMÅNER ENLIGT URA
+- Grundlön i Sverige: [XX XXX kr/månad]
+- URA-utlandstillägg: [Belopp kr/månad]
+- Merkostnadstillägg (UD/Skatteverkets schablon för stationeringsorten): [Belopp kr/månad]
+- Bostad: [Tillhandahålls av myndigheten / Bostadsbidrag enligt URA]
+- Medflyttande familj: [Make/maka/partner och X barn]
+- Medflyttandetillägg: [Specificeras enligt URA-bestämmelser]
+
+4. FÖRSÄKRING OCH SJUKVÅRD
+Arbetstagaren och medföljande familjemedlemmar omfattas av Kammarkollegiets URA-försäkring för läkekostnader, olycksfall och hemtransport.
+
+5. ÅTERGÅNG TILL TJÄNST I SVERIGE
+Efter avslutad utlandsstationering återgår arbetstagaren till ordinarie tjänst vid hemorganisationen {w_loc} i enlighet med centrala kollektivavtal.
+
+Ort och datum: .....................................................................................
+
+För {c_name}:                                      Arbetstagaren:
+...........................................        ...........................................
+Signatur & Namnförtydligande                       {e_name}
+"""
+
     else:
         # Standard: Fullständigt 2-sidigt Uppsägningsbesked vid arbetsbrist (SKR & Arbetsgivarverket)
         title = "Uppsägningsbesked på grund av arbetsbrist (Fullständigt standardformulär)"
@@ -1539,6 +1710,182 @@ Namnteckning ({e_name})
             "level": "STATUTORY_LEGAL_TEMPLATE"
         }
     }
+
+
+def calculate_travel_deduction_and_mileage(
+    transport_mode: str = "egen_bil",
+    distance_km_one_way: float = 25.0,
+    work_days_per_year: int = 210,
+    public_transit_time_minutes_roundtrip: Optional[int] = None,
+    car_time_minutes_roundtrip: Optional[int] = None,
+    public_transit_cost_yearly: Optional[float] = 0.0,
+    tax_year: int = 2026,
+    has_public_transit: bool = True,
+    marginal_tax_pct: float = 32.0
+) -> Dict[str, Any]:
+    """
+    Beräknar avdrag för resor till och från arbetet (reseavdrag & milersättning) enligt Skatteverkets regler.
+    
+    Regler och gränsvärden (Inkomstskattelagen 12 kap. 26–30 §§):
+    - Egen bil: 25,00 kr per mil.
+    - Förmånsbil (ren elbil): 9,50 kr per mil.
+    - Förmånsbil (övriga drivmedel bensin/diesel/hybrid): 12,00 kr per mil.
+    - Motorcykel / Mopedbil: 12,50 kr per mil.
+    - Moped: 6,00 kr per mil.
+    - Cykel: Schablon 350 kr/år.
+    - Kollektivtrafik: Faktiska biljettkostnader (avstånd >= 2 km).
+    
+    Villkor för bilavdrag:
+    - Minst 5 km enkel resa (eller minst 2 km om kollektivtrafik saknas).
+    - Tidsvinst: Du måste regelmässigt tjäna minst 2 timmar (120 min) per dag tur och retur jämfört med kollektivtrafik.
+    
+    Självrisk / Beloppsgräns:
+    - Inkomstår 2026 (Deklaration 2027): 15 000 kr.
+    - Inkomstår 2025 (Deklaration 2026): 11 000 kr.
+    """
+    mode = transport_mode.strip().lower()
+    
+    # Validering
+    if distance_km_one_way <= 0 and mode != "kollektivtrafik":
+        return {"error": "Avstånd enkel resa (distance_km_one_way) måste vara större än 0 km."}
+    if work_days_per_year <= 0:
+        return {"error": "Antal arbetsdagar per år måste vara minst 1."}
+        
+    total_km_daily = distance_km_one_way * 2.0
+    total_km_yearly = total_km_daily * work_days_per_year
+    total_mil_yearly = total_km_yearly / 10.0
+    
+    threshold = 15000.0 if tax_year >= 2026 else 11000.0
+    
+    # Beräkning per transportmedel
+    rate_per_mil = 0.0
+    mode_name = "Egen bil"
+    total_expense = 0.0
+    conditions_met = True
+    condition_notes = []
+    
+    if "formansbil_el" in mode or "elbil" in mode:
+        mode_name = "Förmånsbil (Ren Elbil)"
+        rate_per_mil = 9.50
+        total_expense = total_mil_yearly * rate_per_mil
+    elif "formansbil" in mode:
+        mode_name = "Förmånsbil (Bensin / Diesel / Hybrid)"
+        rate_per_mil = 12.00
+        total_expense = total_mil_yearly * rate_per_mil
+    elif "motorcykel" in mode or "mopedbil" in mode:
+        mode_name = "Motorcykel / Mopedbil"
+        rate_per_mil = 12.50
+        total_expense = total_mil_yearly * rate_per_mil
+    elif "moped" in mode:
+        mode_name = "Moped"
+        rate_per_mil = 6.00
+        total_expense = total_mil_yearly * rate_per_mil
+    elif "cykel" in mode:
+        mode_name = "Cykel"
+        rate_per_mil = 0.0
+        total_expense = 350.0  # Fast schablon per år
+    elif "kollektiv" in mode or "buss" in mode or "tag" in mode:
+        mode_name = "Kollektivtrafik (Buss/Tåg/Spårvagn)"
+        total_expense = float(public_transit_cost_yearly or 0.0)
+        if distance_km_one_way < 2.0:
+            conditions_met = False
+            condition_notes.append("För kollektivtrafik krävs normalt att avståndet mellan bostad och arbetsplats är minst 2 km.")
+    else:
+        # Default: Egen privat bil
+        mode_name = "Egen privat bil"
+        rate_per_mil = 25.00
+        total_expense = total_mil_yearly * rate_per_mil
+
+    # Kontrollera villkor för bil / MC
+    time_saved_minutes = None
+    if mode in ["egen_bil", "formansbil_el", "formansbil_drivmedel", "motorcykel_mopedbil", "formansbil"]:
+        # 1. Avståndskrav
+        min_dist = 2.0 if not has_public_transit else 5.0
+        if distance_km_one_way < min_dist:
+            conditions_met = False
+            condition_notes.append(
+                f"Avståndet ({distance_km_one_way} km) är kortare än minimikravet på {min_dist} km enkel väg."
+            )
+            
+        # 2. Tidsvinstkrav (om kollektivtrafik finns)
+        if has_public_transit:
+            if public_transit_time_minutes_roundtrip is not None and car_time_minutes_roundtrip is not None:
+                time_saved_minutes = public_transit_time_minutes_roundtrip - car_time_minutes_roundtrip
+                if time_saved_minutes < 120:
+                    conditions_met = False
+                    condition_notes.append(
+                        f"Tidsvinsten med bil är {time_saved_minutes} minuter/dag. Skatteverket kräver minst 120 minuters (2 timmars) tidsvinst per dag tur och retur jämfört med kollektivtrafik."
+                    )
+            else:
+                condition_notes.append(
+                    "Obs: För fullständigt avdrag kräver Skatteverket att du sparar minst 2 timmar per dag jämfört med kollektivtrafik."
+                )
+
+    deductible_amount = max(0.0, total_expense - threshold) if conditions_met else 0.0
+    tax_reduction = deductible_amount * (marginal_tax_pct / 100.0)
+    
+    return {
+        "transport_mode": mode_name,
+        "tax_year": tax_year,
+        "distance_km_one_way": distance_km_one_way,
+        "work_days_per_year": work_days_per_year,
+        "total_mil_yearly": round(total_mil_yearly, 1),
+        "rate_per_mil_sek": rate_per_mil,
+        "total_travel_cost_sek": round(total_expense, 2),
+        "threshold_deductible_floor_sek": threshold,
+        "deductible_amount_sek": round(deductible_amount, 2),
+        "estimated_tax_savings_sek": round(tax_reduction, 2),
+        "marginal_tax_rate_applied": f"{marginal_tax_pct}%",
+        "conditions_met": conditions_met,
+        "time_saved_minutes_per_day": time_saved_minutes,
+        "condition_notes": condition_notes,
+        "declaration_guide": {
+            "deklarationsruta": "Under 'Avdrag för resor till och från arbetet' i Inkomstdeklaration 1",
+            "belopp_att_fylla_i": f"{int(round(deductible_amount))} kr (efter avdragen självrisk om {int(threshold)} kr)",
+            "regelverk": "Inkomstskattelagen (1999:1229) 12 kap. 26–30 §§ samt Skatteverkets allmänna råd."
+        },
+        "certainty": {
+            "score_pct": 100,
+            "badge": "🟢 100% — Skatteverkets Officiella Skatteregler",
+            "level": "STATUTORY_TAX_REGULATION"
+        }
+    }
+
+
+def get_base_amounts_and_indices(
+    year: Optional[int] = 2026,
+    compare_all_years: bool = False
+) -> Dict[str, Any]:
+    """
+    Hämtar officiella prisbasbelopp (PBB), förhöjt prisbasbelopp, inkomstbasbelopp (IBB)
+    och inkomstindex från SCB och Regeringen/Pensionsmyndigheten för 2026 och tidigare år.
+    Inkluderar automatisk årlig kontrollfunktion för 1 januari.
+    """
+    from src.services.base_amount_service import BaseAmountService
+    
+    if compare_all_years:
+        return BaseAmountService.list_all_years()
+        
+    target_year = year or 2026
+    data = BaseAmountService.get_amounts_for_year(target_year)
+    update_info = BaseAmountService.check_and_update_yearly()
+    
+    return {
+        "target_year": target_year,
+        "data": data,
+        "auto_update_status": update_info,
+        "summary_text": (
+            f"För år {target_year} är Prisbasbeloppet (PBB) {data.get('prisbasbelopp', 0):,} kr "
+            f"och Inkomstbasbeloppet (IBB) {data.get('inkomstbasbelopp', 0):,} kr "
+            f"(Inkomstindex {data.get('inkomstindex', 0)})."
+        ),
+        "certainty": {
+            "score_pct": 100,
+            "badge": "🟢 100% — Officiellt fastställt av Regeringen & SCB",
+            "level": "OFFICIAL_STATUTORY_INDEX"
+        }
+    }
+
 
 
 

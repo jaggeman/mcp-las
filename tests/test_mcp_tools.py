@@ -263,6 +263,115 @@ def test_get_hr_document_template():
     assert "TALAN OM SKADESTÅND" in res_uppsagn["document_template_text"]
     assert "10 § LAS" in res_uppsagn["document_template_text"]
 
+    # 9. Varsel om avskedande (Arbetsgivarverket / 30 §)
+    res_avsked_varsel = get_hr_document_template(
+        template_type="arbetsgivarverket_avskedande_varsel",
+        company_name="Skatteverket",
+        employee_name="Nils Nilsson",
+        union_name="ST Inom Skatteverket"
+    )
+    assert "30 §" in res_avsked_varsel["legal_basis"]
+    assert "VARSEL OM AVSKEDANDE" in res_avsked_varsel["document_template_text"]
+    assert "Nils Nilsson" in res_avsked_varsel["document_template_text"]
+
+    # 10. Besked om avskedande (Arbetsgivarverket / 18–19 §§)
+    res_avsked_beslut = get_hr_document_template(
+        template_type="arbetsgivarverket_avskedande_beslut",
+        company_name="Trafikverket",
+        employee_name="Per Persson"
+    )
+    assert "18–19 §§" in res_avsked_beslut["legal_basis"]
+    assert "BESKED OM AVSKEDANDE" in res_avsked_beslut["document_template_text"]
+
+    # 11. 69-årsregeln (32 a § LAS)
+    res_69 = get_hr_document_template(
+        template_type="arbetsgivarverket_69_ar_upphorande",
+        company_name="Länsstyrelsen",
+        employee_name="Gunilla Andersson"
+    )
+    assert "32 a" in res_69["legal_basis"]
+    assert "69 ÅR" in res_69["document_template_text"]
+
+    # 12. URA Utlandsstationering
+    res_ura = get_hr_document_template(
+        template_type="arbetsgivarverket_ura_kontrakt",
+        company_name="Sida",
+        employee_name="Carl Bildt"
+    )
+    assert "URA" in res_ura["legal_basis"]
+    assert "UTLANDSKONTRAKT" in res_ura["document_template_text"]
+
+def test_calculate_travel_deduction_and_mileage():
+    from src.mcp_tools.tools import calculate_travel_deduction_and_mileage
+    
+    # 1. Egen bil 2026 (25 kr/mil, 15 000 kr självrisk, 2h tidsvinst)
+    res_car_2026 = calculate_travel_deduction_and_mileage(
+        transport_mode="egen_bil",
+        distance_km_one_way=30.0,
+        work_days_per_year=210,
+        public_transit_time_minutes_roundtrip=180,
+        car_time_minutes_roundtrip=50,
+        tax_year=2026
+    )
+    assert res_car_2026["conditions_met"] is True
+    assert res_car_2026["rate_per_mil_sek"] == 25.0
+    assert res_car_2026["total_travel_cost_sek"] == 31500.0
+    assert res_car_2026["threshold_deductible_floor_sek"] == 15000.0
+    assert res_car_2026["deductible_amount_sek"] == 16500.0
+    assert res_car_2026["estimated_tax_savings_sek"] == 5280.0
+
+    # 2. Förmånsbil Elbil 2025 (9.50 kr/mil, 11 000 kr självrisk)
+    res_el_2025 = calculate_travel_deduction_and_mileage(
+        transport_mode="formansbil_el",
+        distance_km_one_way=40.0,
+        work_days_per_year=210,
+        public_transit_time_minutes_roundtrip=200,
+        car_time_minutes_roundtrip=60,
+        tax_year=2025
+    )
+    assert res_el_2025["rate_per_mil_sek"] == 9.50
+    assert res_el_2025["threshold_deductible_floor_sek"] == 11000.0
+    assert res_el_2025["deductible_amount_sek"] == 4960.0
+
+    # 3. Cykel schablon 350 kr
+    res_bike = calculate_travel_deduction_and_mileage(
+        transport_mode="cykel",
+        tax_year=2026
+    )
+    assert res_bike["total_travel_cost_sek"] == 350.0
+    assert res_bike["deductible_amount_sek"] == 0.0
+
+def test_get_base_amounts_and_indices():
+    from src.mcp_tools.tools import get_base_amounts_and_indices
+    
+    # 2026
+    res_2026 = get_base_amounts_and_indices(year=2026)
+    assert res_2026["data"]["prisbasbelopp"] == 59200
+    assert res_2026["data"]["forhojt_prisbasbelopp"] == 60500
+    assert res_2026["data"]["inkomstbasbelopp"] == 83400
+    assert res_2026["data"]["inkomstindex"] == 228.08
+    assert res_2026["data"]["sgi_tak"] == 592000
+    assert res_2026["data"]["max_pgi_manad"] == 56050
+
+    # Compare all years
+    res_all = get_base_amounts_and_indices(compare_all_years=True)
+    assert len(res_all["historik"]) >= 5
+    assert res_all["senaste_ar"] == 2026
+
+def test_expanded_ad_case_law():
+    from src.mcp_tools.tools import search_case_law
+    
+    # Sökning efter LAS 18 § grov misskötsamhet / avskedande
+    cases_avsked = search_case_law(query="avskedande illojalitet konkurrens", limit=5)
+    assert len(cases_avsked) > 0
+    assert any("AD 2022 nr 12" in c["case_number"] or "AD 2003 nr 24" in c["case_number"] for c in cases_avsked)
+
+    # Sökning efter 29/29-principen / arbetsvägran
+    cases_29 = search_case_law(query="29/29-principen arbetsskyldighet arbetsvägran", limit=5)
+    assert len(cases_29) > 0
+    assert any("AD 1994 nr 101" in c["case_number"] or "AD 2021 nr 41" in c["case_number"] for c in cases_29)
+
+
 
 
 

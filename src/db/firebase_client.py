@@ -1,8 +1,9 @@
-﻿import os
+import os
 import re
 from typing import List, Dict, Any, Optional
 from src.config import settings
 from src.embeddings.embedder import Embedder
+from src.db.ad_cases_data import AD_PRECEDENTS_DATA
 
 class FirebaseLaborLawDB:
     def __init__(self):
@@ -10,6 +11,11 @@ class FirebaseLaborLawDB:
         self._local_statutes: Dict[str, Any] = {}
         self._local_sections: Dict[str, Any] = {}
         self._local_precedents: Dict[str, Any] = {}
+        for c in AD_PRECEDENTS_DATA:
+            c_copy = dict(c)
+            if not c_copy.get("embedding"):
+                c_copy["embedding"] = Embedder.get_embedding(c_copy.get("title", "") + " " + c_copy.get("summary", "") + " " + c_copy.get("domskal", ""))
+            self._local_precedents[c_copy["id"]] = c_copy
         self._local_rules: Dict[str, Any] = {}
         self._init_firebase()
 
@@ -174,13 +180,24 @@ class FirebaseLaborLawDB:
 
             # Calculate semantic & keyword relevance
             sem_score = Embedder.cosine_similarity(q_emb, p.get("embedding", []))
-            full_text = (p.get("title", "") + " " + p.get("summary", "") + " " + p.get("domskal", "")).lower()
+            title_text = p.get("title", "").lower()
+            summary_text = p.get("summary", "").lower()
+            case_num = p.get("case_number", "").lower()
+            domskal_text = p.get("domskal", "").lower()
+            full_text = f"{case_num} {title_text} {summary_text} {domskal_text}"
             
-            words = [w for w in q_lower.split() if len(w) > 2]
-            matched_words = [w for w in words if w in full_text]
-            lex_score = len(matched_words) * 2.0
+            # Extract search tokens
+            tokens = [w for w in re.findall(r'[\w/]+', q_lower) if len(w) > 2]
+            lex_score = 0.0
+            for t in tokens:
+                if t in title_text or t in case_num:
+                    lex_score += 4.0
+                elif t in summary_text:
+                    lex_score += 2.5
+                elif t in domskal_text:
+                    lex_score += 1.5
             
-            total_score = (0.5 * sem_score) + (0.5 * lex_score)
+            total_score = (0.3 * sem_score) + (0.7 * lex_score)
             
             results.append({
                 "score": round(total_score, 3),

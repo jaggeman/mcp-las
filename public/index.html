@@ -827,7 +827,7 @@ Strukturera alltid svaren med:
 
     <section id="verktyg" style="padding-top: 2rem;">
       <h2 class="section-title">Vad du kan fråga din AI</h2>
-      <p class="section-sub">Dessa 13 intelligenta MCP-verktyg anropas automatiskt i bakgrunden när du ställer frågor till Claude, ChatGPT, Gemini eller Cursor</p>
+      <p class="section-sub">Dessa 17 intelligenta verktyg anropas automatiskt i bakgrunden via MCP eller direkt via snabbt REST API för AI-granskning</p>
 
       <!-- AI Tip Banner -->
       <div style="background: var(--brand-light); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 1rem; padding: 1.1rem 1.4rem; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow);">
@@ -846,10 +846,10 @@ Strukturera alltid svaren med:
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
           <div style="position: relative; flex: 1; min-width: 260px;">
             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
-            <input type="text" id="toolSearchInput" oninput="handleToolSearch()" placeholder="Sök verktyg (t.ex. semester, turordning, excel, LAS 7 §, varsel)..." class="form-control" style="padding-left: 2.5rem; border-radius: 0.75rem; height: 2.75rem; font-size: 0.9rem;">
+            <input type="text" id="toolSearchInput" oninput="handleToolSearch()" placeholder="Sök verktyg (t.ex. semester, turordning, excel, LAS 7 §, varsel, basbelopp, reseavdrag)..." class="form-control" style="padding-left: 2.5rem; border-radius: 0.75rem; height: 2.75rem; font-size: 0.9rem;">
           </div>
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="categoryFilterContainer">
-            <button class="btn btn-secondary category-btn active" onclick="setCategoryFilter('all', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">Alla (<span id="totalToolBadge">13</span>)</button>
+            <button class="btn btn-secondary category-btn active" onclick="setCategoryFilter('all', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">Alla (<span id="totalToolBadge">17</span>)</button>
             <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('lag', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-scale-balanced"></i> Lagar & Paragrafer</button>
             <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('semester', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-calculator"></i> Semester & Lön</button>
             <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('turordning', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-file-excel"></i> Turordning & Excel</button>
@@ -1202,12 +1202,58 @@ Strukturera alltid svaren med:
                   </div>
                 </td>
                 <td>
-                  Hämtar och fyller i officiella svenska arbetsrättsmallar enligt SKR / LAS-standard: omplaceringsutredning (7 § LAS), omplaceringserbjudande med Ja/Nej-kryssrutor, varsel till fack (30 § LAS), underrättelse och uppsägningsbesked.
+                  Hämtar och fyller i officiella svenska arbetsrättsmallar enligt SKR / Arbetsgivarverket / LAS-standard: omplaceringsutredning (7 §), varsel om avskedande (30 §), besked om avskedande (18–19 §§), 69-årsregeln (32 a §), URA utlandsstationering, anställningsbevis (6 c §) och uppsägningsbesked.
                 </td>
                 <td>
                   <div class="prompt-box">
                     <span class="prompt-text">"Ge mig en färdig mall för omplaceringsutredning enligt 7 § LAS som jag kan ladda ner och fylla i."</span>
                     <button class="copy-prompt-btn" onclick="copyPromptDirect('Ge mig en färdig mall för omplaceringsutredning enligt 7 § LAS som jag kan ladda ner och fylla i.', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="tool-row" data-category="semester lag">
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box" style="background: rgba(14, 165, 233, 0.15); color: #0284c7;"><i class="fa-solid fa-car-side"></i></div>
+                    <div class="tool-title">
+                      <span>Reseavdrag & Milersättning</span>
+                      <span class="tool-badge">calculate_travel_deduction_and_mileage</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Beräknar Skatteverkets reseavdrag för resor till och från arbetet: egen bil (25 kr/mil), förmånsbil el (9,50 kr/mil) vs bensin/diesel (12 kr/mil), cykel (350 kr/år), självrisk (15 000 kr för 2026 / 11 000 kr för 2025) samt tidsvinstkrav (2 timmar/dag).
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Hur mycket får jag göra i reseavdrag för deklarationen 2026 om jag pendlar 35 km enkel väg med egen bil 210 dagar och sparar 2,5 timmar per dag jämfört med bussen?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Hur mycket får jag göra i reseavdrag för deklarationen 2026 om jag pendlar 35 km enkel väg med egen bil 210 dagar och sparar 2,5 timmar per dag jämfört med bussen?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="tool-row" data-category="semester lag">
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box" style="background: rgba(234, 179, 8, 0.15); color: #ca8a04;"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="tool-title">
+                      <span>Prisbasbelopp & Inkomstbasbelopp</span>
+                      <span class="tool-badge">get_base_amounts_and_indices</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Officiella basbelopp från SCB och Regeringen/Pensionsmyndigheten för 2026 (PBB 59 200 kr, IBB 83 400 kr, index 228,08, SGI-tak 592 000 kr, max PGI 56 050 kr/mån) med automatisk årlig synkronisering den 1 januari.
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Vad är prisbasbeloppet och inkomstbasbeloppet för 2026 och hur påverkar det max SGI och pensionsgrundande inkomst?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vad är prisbasbeloppet och inkomstbasbeloppet för 2026 och hur påverkar det max SGI och pensionsgrundande inkomst?', this)">
                       <i class="fa-regular fa-copy"></i> Kopiera
                     </button>
                   </div>
@@ -1228,6 +1274,41 @@ Strukturera alltid svaren med:
             <button class="btn btn-secondary" id="nextPageBtn" onclick="changePage(1)" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;">
               Nästa <i class="fa-solid fa-chevron-right"></i>
             </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Direct REST API Section for AI Reviewers & Agents -->
+    <section id="ai-reviewer-api" style="margin-bottom: 3.5rem;">
+      <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(14, 165, 233, 0.08) 100%); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 1.25rem; padding: 2rem; box-shadow: var(--shadow);">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <div style="width: 3rem; height: 3rem; border-radius: 0.75rem; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+            <i class="fa-solid fa-microchip"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.2rem;">Koppla på en granskande AI utan MCP-timeouts (Direkt REST API)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.45;">Kör blixtsnabba direkta JSON-anrop via HTTP POST från andra AI-modeller, gransknings-pipelines eller Python/Node-script utan SSE-handshakes eller timeout-risker.</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 1.25rem;">
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.85rem; padding: 1.25rem;">
+            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--brand-text);"><i class="fa-solid fa-terminal" style="margin-right: 0.4rem;"></i> Direkt REST Endpoint</div>
+            <code style="display: block; background: var(--code-bg); padding: 0.6rem 0.8rem; border-radius: 0.5rem; font-size: 0.82rem; font-weight: 600; overflow-x: auto; color: var(--text);">POST https://mcp-las-511579677488.europe-north1.run.app/api/tools/{tool_name}</code>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem;">Svara med 100% ren JSON på under 15 ms. Stödjer alla 17 verktyg!</p>
+          </div>
+
+          <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.85rem; padding: 1.25rem;">
+            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--brand-text);"><i class="fa-brands fa-python" style="margin-right: 0.4rem;"></i> Exempel (Python / AI Reviewer)</div>
+            <code style="display: block; background: var(--code-bg); padding: 0.6rem 0.8rem; border-radius: 0.5rem; font-size: 0.78rem; line-height: 1.4; color: var(--text); overflow-x: auto;">
+import requests<br/>
+res = requests.post(<br/>
+&nbsp;&nbsp;"https://mcp-las-511579677488.europe-north1.run.app/api/tools/search_case_law",<br/>
+&nbsp;&nbsp;json={"query": "avskedande illojalitet", "limit": 3}<br/>
+)<br/>
+verified_data = res.json()["result"]
+            </code>
           </div>
         </div>
       </div>

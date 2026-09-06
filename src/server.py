@@ -31,6 +31,8 @@ from src.mcp_tools.tools import (
     calculate_redundancy_turnorder_and_exceptions as _calculate_redundancy_turnorder_and_exceptions,
     generate_turordningslista_excel as _generate_turordningslista_excel,
     get_hr_document_template as _get_hr_document_template,
+    calculate_travel_deduction_and_mileage as _calculate_travel_deduction_and_mileage,
+    get_base_amounts_and_indices as _get_base_amounts_and_indices,
     GENERATED_EXCEL_FILES
 )
 
@@ -113,6 +115,83 @@ async def handle_key_request(request):
         return JSONResponse({"success": True, "message": "Din ansökan har tagits emot! Vi återkommer via e-post."})
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+DIRECT_TOOLS_MAP = {
+    "lookup_statute": _lookup_statute,
+    "search_labor_law": _search_labor_law,
+    "search_case_law": _search_case_law,
+    "get_cba_exception": _get_cba_exception,
+    "compare_statute_vs_cba": _compare_statute_vs_cba,
+    "calculate_vacation_pay": _calculate_vacation_pay,
+    "calculate_unpaid_vacation_deduction": _calculate_unpaid_vacation_deduction,
+    "calculate_earned_vacation_days": _calculate_earned_vacation_days,
+    "get_employer_certificate_info": _get_employer_certificate_info,
+    "get_rehabilitation_plan_info": _get_rehabilitation_plan_info,
+    "get_discrimination_act_guide": _get_discrimination_act_guide,
+    "check_bank_days_and_deadlines": _check_bank_days_and_deadlines,
+    "calculate_redundancy_turnorder_and_exceptions": _calculate_redundancy_turnorder_and_exceptions,
+    "generate_turordningslista_excel": _generate_turordningslista_excel,
+    "get_hr_document_template": _get_hr_document_template,
+    "calculate_travel_deduction_and_mileage": _calculate_travel_deduction_and_mileage,
+    "get_base_amounts_and_indices": _get_base_amounts_and_indices,
+}
+
+@mcp.custom_route("/api/tools/list", methods=["GET", "OPTIONS"])
+async def list_available_tools_rest(request):
+    """Returnerar lista över alla tillgängliga verktyg för direkt anrop av AI-agenter."""
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
+    return JSONResponse({
+        "success": True,
+        "tools_count": len(DIRECT_TOOLS_MAP),
+        "tools": list(DIRECT_TOOLS_MAP.keys()),
+        "endpoint_pattern": "/api/tools/{tool_name}",
+        "instructions": "Skicka HTTP POST med JSON-body innehållande parametrar för att köra direkt utan MCP/SSE-timeout."
+    }, headers={"Access-Control-Allow-Origin": "*"})
+
+@mcp.custom_route("/api/tools/{tool_name}", methods=["POST", "OPTIONS"])
+async def execute_tool_direct_rest(request):
+    """
+    Direkt REST-endpoint för att köra vilket verktyg som helst som ren JSON via HTTP POST.
+    Perfekt för sekundära AI-granskningssystem, automatiserade pipelines och externa script utan MCP-timeouts.
+    """
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
+    
+    tool_name = request.path_params.get("tool_name", "").strip()
+    if tool_name not in DIRECT_TOOLS_MAP:
+        return JSONResponse({
+            "error": f"Verktyget '{tool_name}' finns inte.",
+            "available_tools": list(DIRECT_TOOLS_MAP.keys())
+        }, status_code=404, headers={"Access-Control-Allow-Origin": "*"})
+        
+    try:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:
+            pass
+            
+        api_key = request.headers.get("X-API-Key") or body.pop("api_key", None)
+        rl_err = _check_rate_limit(api_key)
+        if rl_err:
+            return JSONResponse(rl_err, status_code=429, headers={"Access-Control-Allow-Origin": "*"})
+            
+        func = DIRECT_TOOLS_MAP[tool_name]
+        t0 = time.time()
+        result = func(**body)
+        duration_ms = (time.time() - t0) * 1000
+        
+        auth_service.log_access(api_key or "anon_rest", None, tool_name, body, duration_ms)
+        
+        return JSONResponse({
+            "success": True,
+            "tool": tool_name,
+            "execution_time_ms": round(duration_ms, 2),
+            "result": result
+        }, headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500, headers={"Access-Control-Allow-Origin": "*"})
 
 def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
     client_id = api_key if api_key else "anon"
@@ -416,6 +495,63 @@ def get_hr_document_template(
         date_str=date_str
     )
     auth_service.log_access(api_key or "anon", None, "get_hr_document_template", {"type": template_type}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def calculate_travel_deduction_and_mileage(
+    transport_mode: Optional[str] = "egen_bil",
+    distance_km_one_way: float = 25.0,
+    work_days_per_year: int = 210,
+    public_transit_time_minutes_roundtrip: Optional[int] = None,
+    car_time_minutes_roundtrip: Optional[int] = None,
+    public_transit_cost_yearly: Optional[float] = 0.0,
+    tax_year: int = 2026,
+    has_public_transit: bool = True,
+    marginal_tax_pct: float = 32.0,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Beräknar Skatteverkets reseavdrag för resor till och från arbetet (egen bil 25 kr/mil, förmånsbil el 9.50 kr/mil, bensin/diesel 12 kr/mil, moped, cykel 350 kr/år, kollektivtrafik).
+    Hanterar självrisknivåer (15 000 kr för 2026, 11 000 kr för 2025), tidsvinstkrav (minst 2 timmar) och avståndskrav (minst 5 km / 2 km).
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _calculate_travel_deduction_and_mileage(
+        transport_mode=transport_mode or "egen_bil",
+        distance_km_one_way=distance_km_one_way,
+        work_days_per_year=work_days_per_year,
+        public_transit_time_minutes_roundtrip=public_transit_time_minutes_roundtrip,
+        car_time_minutes_roundtrip=car_time_minutes_roundtrip,
+        public_transit_cost_yearly=public_transit_cost_yearly,
+        tax_year=tax_year,
+        has_public_transit=has_public_transit,
+        marginal_tax_pct=marginal_tax_pct
+    )
+    auth_service.log_access(api_key or "anon", None, "calculate_travel_deduction_and_mileage", {"mode": transport_mode, "year": tax_year}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def get_base_amounts_and_indices(
+    year: Optional[int] = 2026,
+    compare_all_years: bool = False,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Hämtar officiella prisbasbelopp (PBB), förhöjt prisbasbelopp, inkomstbasbelopp (IBB) och inkomstindex
+    från SCB och Regeringen/Pensionsmyndigheten för 2026, 2025, 2024 m.fl.
+    Inkluderar automatisk årlig hämtning/kontrollfunktion för 1 januari.
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _get_base_amounts_and_indices(
+        year=year,
+        compare_all_years=compare_all_years
+    )
+    auth_service.log_access(api_key or "anon", None, "get_base_amounts_and_indices", {"year": year, "all": compare_all_years}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":
