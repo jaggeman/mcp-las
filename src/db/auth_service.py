@@ -1,11 +1,34 @@
-﻿import time
+import time
+from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
-from src.db.firebase_client import db_client
+from typing import Optional, Dict, Any, List
 
 class AuthService:
-    """Hanterar validering av API-nycklar och loggning av anrop till Firebase."""
+    """Hanterar validering av API-nycklar, rate limiting och loggning till Firebase."""
     
+    def __init__(self):
+        # In-memory sliding window rate limiter: client_id -> list of timestamps
+        self._request_history: Dict[str, List[float]] = defaultdict(list)
+
+    def check_rate_limit(self, client_id: str = "anon", max_requests: int = 60, window_seconds: int = 60) -> bool:
+        """
+        Sliding-window rate limiter.
+        Returnerar True om anropet tillåts, False om gränsen är nådd.
+        """
+        now = time.time()
+        cutoff = now - window_seconds
+        
+        # Rensa gamla tidsstämplar
+        history = [t for t in self._request_history[client_id] if t > cutoff]
+        
+        if len(history) >= max_requests:
+            self._request_history[client_id] = history
+            return False
+            
+        history.append(now)
+        self._request_history[client_id] = history
+        return True
+
     @staticmethod
     def validate_key(api_key: str) -> Optional[Dict[str, Any]]:
         if not api_key:

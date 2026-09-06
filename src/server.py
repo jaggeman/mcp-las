@@ -70,8 +70,21 @@ async def handle_key_request(request):
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
+def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    client_id = api_key if api_key else "anon"
+    limit = 300 if api_key else 60
+    if not auth_service.check_rate_limit(client_id, max_requests=limit, window_seconds=60):
+        return {
+            "error": "Rate limit exceeded (max 60 förfrågningar/minut). Vänligen vänta en kort stund innan du skickar fler anrop.",
+            "status": "rate_limited"
+        }
+    return None
+
 @mcp.tool()
 def lookup_statute(law: str, section: str, chapter: Optional[str] = None, api_key: Optional[str] = None) -> Dict[str, Any]:
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
     t0 = time.time()
     res = _lookup_statute(law=law, section=section, chapter=chapter)
     auth_service.log_access(api_key or "anon", None, "lookup_statute", {"law": law, "section": section}, (time.time() - t0)*1000)
@@ -79,6 +92,9 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, api_ke
 
 @mcp.tool()
 def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return [rl_err]
     t0 = time.time()
     res = _search_labor_law(query=query, filters=filters, limit=limit)
     auth_service.log_access(api_key or "anon", None, "search_labor_law", {"query": query}, (time.time() - t0)*1000)
@@ -86,6 +102,9 @@ def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit
 
 @mcp.tool()
 def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return [rl_err]
     t0 = time.time()
     res = _search_case_law(query=query, statute_ref=statute_ref, year_from=year_from, limit=limit)
     auth_service.log_access(api_key or "anon", None, "search_case_law", {"query": query, "statute_ref": statute_ref}, (time.time() - t0)*1000)
@@ -93,6 +112,9 @@ def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Op
 
 @mcp.tool()
 def get_cba_exception(statute: str, section: str, agreement_name: str, api_key: Optional[str] = None) -> Dict[str, Any]:
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
     t0 = time.time()
     res = _get_cba_exception(statute=statute, section=section, agreement_name=agreement_name)
     auth_service.log_access(api_key or "anon", None, "get_cba_exception", {"statute": statute, "section": section, "agreement": agreement_name}, (time.time() - t0)*1000)
@@ -100,6 +122,9 @@ def get_cba_exception(statute: str, section: str, agreement_name: str, api_key: 
 
 @mcp.tool()
 def compare_statute_vs_cba(topic: str, agreement_name: str, api_key: Optional[str] = None) -> Dict[str, Any]:
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
     t0 = time.time()
     res = _compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
     auth_service.log_access(api_key or "anon", None, "compare_statute_vs_cba", {"topic": topic, "agreement": agreement_name}, (time.time() - t0)*1000)
