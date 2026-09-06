@@ -558,5 +558,154 @@ def check_bank_days_and_deadlines(
     return response
 
 
+def calculate_redundancy_turnorder_and_exceptions(
+    total_employees_in_unit: Optional[int] = None,
+    redundancy_count: Optional[int] = None,
+    has_collective_bargaining_agreement: bool = True,
+    single_operating_unit_only: bool = False,
+    merged_operating_units_in_municipality: bool = False,
+    contract_areas_count: int = 1,
+    employees_list: Optional[List[Dict[str, Any]]] = None
+) -> Dict[str, Any]:
+    """
+    Beräknar turordning och undantag vid uppsägning på grund av arbetsbrist enligt
+    Unionens kollektivavtalsregler och Lagen om anställningsskydd (LAS 3 §, 7 §, 22 § och 25-27 §§).
+    Källa: https://www.unionen.se/rad-och-stod/regler-turordning-vid-uppsagning
+    """
+    # 1. Undantagsberäkningar (Exemption calculations)
+    las_max_exemptions = 3
+    cba_alternatives = {}
+    
+    # Alternativ 1: 3 arbetstagare per berörd driftsenhet och avtalsområde
+    cba_alternatives["alternativ_1"] = {
+        "name": "Standardundantag per driftsenhet & avtalsområde",
+        "allowed_exemptions": 3,
+        "rule": "Arbetsgivaren kan vid berörd driftsenhet och avtalsområde undanta 3 arbetstagare.",
+        "applies_per": "Per berörd driftsenhet och avtalsområde"
+    }
+    
+    # Alternativ 2: Om arbetsgivaren endast har en enda driftsenhet totalt
+    cba_alternatives["alternativ_2"] = {
+        "name": "Ensam driftsenhet i företaget (totalt för samtliga avtalsområden)",
+        "allowed_exemptions": 4 if single_operating_unit_only else None,
+        "rule": "Arbetsgivare som endast har en driftsenhet i hela bolaget kan istället välja att undanta totalt 4 arbetstagare för samtliga avtalsområden gemensamt.",
+        "is_applicable": single_operating_unit_only
+    }
+    
+    # Alternativ 3: Sammanslagna driftsenheter på samma ort (22 § 3 st LAS)
+    alt3_count = 3 + contract_areas_count if merged_operating_units_in_municipality else None
+    cba_alternatives["alternativ_3"] = {
+        "name": "Sammanslagna driftsenheter på samma ort",
+        "allowed_exemptions": alt3_count,
+        "rule": f"Om driftsenheter slagits samman till en gemensam krets på samma ort (22 § 3 st LAS) medges 3 undantag + 1 ytterligare per avtalsområde ({alt3_count} st totalt).",
+        "is_applicable": merged_operating_units_in_municipality
+    }
+    
+    # Alternativ 4: Procentregeln (15% av de uppsagda, max 10% av enhetens totala personal)
+    if total_employees_in_unit is not None and redundancy_count is not None:
+        raw_15_pct = int(redundancy_count * 0.15)
+        raw_10_pct_cap = int(total_employees_in_unit * 0.10)
+        final_pct_exemptions = min(raw_15_pct, raw_10_pct_cap)
+        cba_alternatives["alternativ_4_procentregel"] = {
+            "name": "Procentregeln (15 % av uppsagda, max 10 % av arbetsstyrkan)",
+            "allowed_exemptions": final_pct_exemptions,
+            "calculation_details": {
+                "redundancy_count": redundancy_count,
+                "fifteen_percent_of_redundant": raw_15_pct,
+                "total_employees": total_employees_in_unit,
+                "ten_percent_cap": raw_10_pct_cap,
+                "final_allowed": final_pct_exemptions
+            },
+            "rule": "Undanta 15 % av de som slutligen sägs upp på grund av arbetsbrist, dock högst 10 % av totala personalen vid driftsenheten per avtalsområde.",
+            "is_applicable": True
+        }
+    else:
+        cba_alternatives["alternativ_4_procentregel"] = {
+            "name": "Procentregeln (15 % av uppsagda, max 10 % av arbetsstyrkan)",
+            "allowed_exemptions": "Kräver totalt antal anställda och antal varslade för exakt siffra",
+            "rule": "Undanta 15 % av de som slutligen sägs upp på grund av arbetsbrist, dock högst 10 % av totala personalen vid driftsenheten per avtalsområde.",
+            "is_applicable": False
+        }
+
+    # 2. Turordningslista sortering om anställda skickats med
+    processed_employees = None
+    if employees_list and isinstance(employees_list, list):
+        # Sortera: Flest anställningsdagar först (sist in = minst dagar = sägs upp först)
+        # Vid lika anställningstid: Äldre före yngre (störst age först)
+        sorted_emps = sorted(
+            employees_list,
+            key=lambda x: (x.get("seniority_days", 0), x.get("age", 0)),
+            reverse=True
+        )
+        processed_employees = []
+        for rank, emp in enumerate(sorted_emps, start=1):
+            processed_employees.append({
+                "rank_seniority": rank,
+                "name": emp.get("name", f"Anställd {rank}"),
+                "seniority_days": emp.get("seniority_days", 0),
+                "age": emp.get("age", 0),
+                "has_qualifications": emp.get("has_qualifications", True),
+                "is_exempt": emp.get("is_exempt", False),
+                "protection_status": (
+                    "⭐ Undantagen från turordning (Behåller tjänst)" if emp.get("is_exempt") else
+                    "⚠️ Saknar tillräckliga kvalifikationer (Kan gå före i uppsägning)" if not emp.get("has_qualifications", True) else
+                    "🛡️ Skyddad genom turordning (Längre anställningstid)" if rank <= (len(sorted_emps) - (redundancy_count or 0)) else
+                    "🚨 Risk för uppsägning (Kortast anställningstid)"
+                )
+            })
+
+    result = {
+        "source": "Unionen & Lagen om anställningsskydd (LAS 3 §, 7 §, 22 §, 25-27 §§)",
+        "source_url": "https://www.unionen.se/rad-och-stod/regler-turordning-vid-uppsagning",
+        "core_steps_and_rules": {
+            "step_1_omplacering": {
+                "legal_basis": "7 § 2 st LAS",
+                "title": "Omplaceringsutredning före turordning",
+                "description": "Innan turordning blir aktuell måste arbetsgivaren utreda och erbjuda eventuella lediga tjänster som den anställde har tillräckliga kvalifikationer för. Tackar arbetstagaren nej till skäligt omplaceringserbjudande föreligger normalt sakliga skäl för uppsägning utan turordning."
+            },
+            "step_2_turordningskrets": {
+                "title": "Indelning i turordningskretsar",
+                "description": "Kretsen fastställs utifrån organisationsnummer, driftsenhet (geografiskt arbetsställe) och avtalsområde (tjänstemän vs arbetare). Facket kan begära gemensam krets för flera driftsenheter på samma ort. Yttersta gränsen är alltid kommunen."
+            },
+            "step_3_anstallningstid": {
+                "legal_basis": "3 § LAS",
+                "title": "Beräkning av anställningstid",
+                "description": "All sammanlagd anställningstid hos arbetsgivaren räknas (heltid/deltid/visstid/tillsvidare). Föräldraledighet och studieledighet tillgodoräknas. Vid särskild visstid: har man haft 3+ anställningar under samma kalendermånad räknas även mellanliggande dagar."
+            },
+            "step_4_kvalifikationer": {
+                "title": "Krav på tillräckliga kvalifikationer",
+                "description": "För att behålla en tjänst med stöd av längre anställningstid krävs 'tillräckliga kvalifikationer'. Det innebär allmänna kvalifikationer som normalt ställs och möjlighet att lära sig inom rimlig tid (ej krav på att vara bäst kvalificerad)."
+            },
+            "step_5_huvudregel_kollektivavtal": {
+                "title": "Avtalsturlista (Huvudregel vid kollektivavtal)",
+                "description": "Fack och arbetsgivare (PTK-L) förhandlar i första hand om en avtalsturlista utifrån verksamhetens behov av kompetens med 'sist in, först ut' som grund."
+            }
+        },
+        "exemption_rules": {
+            "las_statutory_exemption": {
+                "legal_basis": "22 § LAS",
+                "max_exemptions": las_max_exemptions,
+                "description": "Arbetsgivaren får undanta högst 3 arbetstagare av särskild betydelse för verksamheten.",
+                "freeze_period_months": 3,
+                "freeze_rule": "En arbetsgivare som använt undantag får inte göra nya undantag vid uppsägning som sker inom 3 månader."
+            },
+            "cba_exemption_alternatives": cba_alternatives,
+            "recommendation_summary": (
+                "Vid kollektivavtal kan arbetsgivaren välja det mest förmånliga alternativet (Alternativ 1, 2, 3 eller 4/Procentregeln) om inte avtalsturlista träffas."
+                if has_collective_bargaining_agreement else
+                "Utan kollektivavtal gäller strikt 22 § LAS med max 3 undantagna arbetstagare."
+            )
+        },
+        "sorted_turordningslista": processed_employees,
+        "certainty": {
+            "score_pct": 95,
+            "badge": "🟢 Hög (95%) — Unionens officiella turordningsregler & LAS (1982:80)",
+            "level": "CBA_AND_STATUTORY_RULE"
+        }
+    }
+
+    return result
+
+
 
 

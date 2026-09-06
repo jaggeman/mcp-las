@@ -27,7 +27,8 @@ from src.mcp_tools.tools import (
     get_employer_certificate_info as _get_employer_certificate_info,
     get_rehabilitation_plan_info as _get_rehabilitation_plan_info,
     get_discrimination_act_guide as _get_discrimination_act_guide,
-    check_bank_days_and_deadlines as _check_bank_days_and_deadlines
+    check_bank_days_and_deadlines as _check_bank_days_and_deadlines,
+    calculate_redundancy_turnorder_and_exceptions as _calculate_redundancy_turnorder_and_exceptions
 )
 
 mcp = FastMCP(
@@ -35,6 +36,7 @@ mcp = FastMCP(
     instructions=(
         "Svensk Arbetsrätt & LAS MCP Server för AI-agenter och Claude. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
+        "turordningsregler och undantagsberäkningar vid arbetsbrist (Unionen & 22 § LAS), "
         "Arbetsdomstolens prejudikat, 17 kollektivavtal, semesterberäkningar, Försäkringskassans plan för återgång i arbete (FK 7459), "
         "arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF), DO:s vägledning samt Riksbankens bankdagar och helgdagar för löneutbetalning och lagstadgade frister."
     )
@@ -290,6 +292,37 @@ def check_bank_days_and_deadlines(
         year=year
     )
     auth_service.log_access(api_key or "anon", None, "check_bank_days_and_deadlines", {"date": date_str, "month": check_salary_payout_for_month}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def calculate_redundancy_turnorder_and_exceptions(
+    total_employees_in_unit: Optional[int] = None,
+    redundancy_count: Optional[int] = None,
+    has_collective_bargaining_agreement: bool = True,
+    single_operating_unit_only: bool = False,
+    merged_operating_units_in_municipality: bool = False,
+    contract_areas_count: int = 1,
+    employees_list: Optional[List[Dict[str, Any]]] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Beräknar turordningslista och undantag vid arbetsbrist (undantagsregler 1-4, procentregeln 15%/10%, LAS 22 § vs kollektivavtal)
+    samt krav på omplaceringsutredning (7 § LAS) och anställningstid (3 § LAS).
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _calculate_redundancy_turnorder_and_exceptions(
+        total_employees_in_unit=total_employees_in_unit,
+        redundancy_count=redundancy_count,
+        has_collective_bargaining_agreement=has_collective_bargaining_agreement,
+        single_operating_unit_only=single_operating_unit_only,
+        merged_operating_units_in_municipality=merged_operating_units_in_municipality,
+        contract_areas_count=contract_areas_count,
+        employees_list=employees_list
+    )
+    auth_service.log_access(api_key or "anon", None, "calculate_redundancy_turnorder_and_exceptions", {"total": total_employees_in_unit, "redundant": redundancy_count}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":

@@ -33,6 +33,7 @@ Dessa 11 intelligenta verktyg anropas automatiskt i bakgrunden av Claude, ChatGP
 | **Plan för återgång i arbete** | `get_rehabilitation_plan_info` | Rehabiliteringsplan enligt 30 kap. 6 § SFB (senast dag 30 vid &ge; 60 dgr sjukdom) samt länk till Försäkringskassans blankett FK 7459 (PDF). | *"När måste en arbetsgivare upprätta en plan för återgång i arbete och var finns blanketten (FK 7459)?"* |
 | **Diskrimineringslagen & DO** | `get_discrimination_act_guide` | DO:s vägledning (do.se) om de 7 diskrimineringsgrunderna, aktiva åtgärder (årlig lönekartläggning), utredningsplikt och repressalieförbud. | *"Vilka krav ställer Diskrimineringslagen och DO på arbetsgivarens årliga lönekartläggning och aktiva åtgärder?"* |
 | **Bankdagar & Löneutbetalning** | `check_bank_days_and_deadlines` | Riksbankens officiella helgdagar 2026, löneutbetalning (föregående bankdag om 25:e är helg) och fristberäkning (Lag 1930:173). | *"Vilken dag betalas lönen ut i april och december 2026 om den 25:e infaller på en helgdag?"* |
+| **Turordning & Undantagsberäkning** | `calculate_redundancy_turnorder_and_exceptions` | Turordning vid arbetsbrist (LAS 22 § vs Unionens kollektivavtal), undantagsregler 1–4 inkl. procentregeln (15% / 10%), omplaceringsutredning (7 §) och sorterad turordningslista. | *"Hur många personer får arbetsgivaren undanta från turordningslistan enligt Unionens kollektivavtal vid en arbetsbrist där 20 av 100 anställda berörs?"* |
 
 ---
 

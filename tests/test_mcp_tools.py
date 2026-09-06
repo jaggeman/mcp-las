@@ -120,6 +120,39 @@ def test_check_bank_days_and_deadlines():
     assert res_may1["date_checked"]["is_bank_day"] is False
     assert res_may1["date_checked"]["holiday_name"] == "Första maj"
 
+def test_calculate_redundancy_turnorder_and_exceptions():
+    from src.mcp_tools.tools import calculate_redundancy_turnorder_and_exceptions
+    
+    # 1. Test calculation with total 100 employees, 20 redundancies (Alternative 4 / 15% rule -> 3, max 10% cap -> 10)
+    res = calculate_redundancy_turnorder_and_exceptions(
+        total_employees_in_unit=100,
+        redundancy_count=20,
+        has_collective_bargaining_agreement=True,
+        single_operating_unit_only=False
+    )
+    assert res["exemption_rules"]["las_statutory_exemption"]["max_exemptions"] == 3
+    assert res["exemption_rules"]["cba_exemption_alternatives"]["alternativ_1"]["allowed_exemptions"] == 3
+    assert res["exemption_rules"]["cba_exemption_alternatives"]["alternativ_4_procentregel"]["allowed_exemptions"] == 3
+
+    # 2. Test sorting employees list
+    employees = [
+        {"name": "Alice", "seniority_days": 1500, "age": 40, "has_qualifications": True},
+        {"name": "Bob", "seniority_days": 300, "age": 28, "has_qualifications": True},
+        {"name": "Charlie", "seniority_days": 300, "age": 35, "has_qualifications": True}, # older than Bob -> prioritized
+        {"name": "Diana", "seniority_days": 800, "age": 30, "is_exempt": True} # exempt
+    ]
+    res_sort = calculate_redundancy_turnorder_and_exceptions(
+        redundancy_count=1,
+        employees_list=employees
+    )
+    sorted_list = res_sort["sorted_turordningslista"]
+    assert sorted_list[0]["name"] == "Alice"
+    assert sorted_list[1]["name"] == "Diana"
+    assert sorted_list[2]["name"] == "Charlie"  # Same seniority as Bob but older (35 > 28)
+    assert sorted_list[3]["name"] == "Bob"
+    assert "Risk för uppsägning" in sorted_list[3]["protection_status"]
+
+
 
 
 
