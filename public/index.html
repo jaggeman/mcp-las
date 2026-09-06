@@ -1,112 +1,594 @@
-﻿<!DOCTYPE html>
-<html lang="sv" class="dark">
+<!DOCTYPE html>
+<html lang="sv">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MCP LAS — Svensk Arbetsrätt & Kollektivavtal för AI-Agenter</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' },
-            slate: { 850: '#0f172a', 900: '#0b0f19', 950: '#05070e' }
-          }
-        }
-      }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --brand: #16a34a;
+      --brand-hover: #15803d;
+      --brand-light: #dcfce7;
+      --brand-text: #166534;
+      --nav-bg: rgba(255, 255, 255, 0.9);
+      --nav-border: #e2e8f0;
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --code-bg: #f1f5f9;
+      --hero-sub: #475569;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
     }
-  </script>
-</head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-brand-500 selection:text-slate-950">
 
-  <!-- Nav -->
-  <nav class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-brand-500/20">
-          ⚖️
-        </div>
+    html.dark {
+      --bg: #090d16;
+      --card-bg: #0f172a;
+      --card-border: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --brand: #22c55e;
+      --brand-hover: #16a34a;
+      --brand-light: rgba(34, 197, 94, 0.12);
+      --brand-text: #4ade80;
+      --nav-bg: rgba(15, 23, 42, 0.9);
+      --nav-border: #1e293b;
+      --input-bg: #090d16;
+      --input-border: #334155;
+      --code-bg: #05070e;
+      --hero-sub: #94a3b8;
+      --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    code, pre {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--nav-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--nav-border);
+    }
+    .nav-inner {
+      height: 4.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .logo-badge {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.75rem;
+      background: linear-gradient(135deg, #16a34a, #4ade80);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+    }
+    .brand-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .tech-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      background: var(--brand-light);
+      color: var(--brand-text);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      border-radius: 9999px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .nav-link {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: color 0.15s ease;
+    }
+    .nav-link:hover {
+      color: var(--brand);
+    }
+    .theme-toggle-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.15s ease;
+    }
+    .theme-toggle-btn:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+    }
+
+    .hero {
+      padding: 4.5rem 0 3rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #16a34a, #22c55e, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--hero-sub);
+      max-width: 680px;
+      margin: 0 auto 2rem;
+    }
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.75rem 1.4rem;
+      border-radius: 0.75rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+    }
+    .btn-primary {
+      background: var(--brand);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+    }
+    .btn-primary:hover {
+      background: var(--brand-hover);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--brand);
+    }
+
+    .connector-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      margin: 2rem auto 3.5rem;
+      max-width: 800px;
+      box-shadow: var(--shadow);
+    }
+    .connector-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .connector-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .code-box {
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 0.75rem;
+      padding: 0.85rem 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      gap: 1rem;
+    }
+    .copy-btn {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.45rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease;
+    }
+    .copy-btn:hover {
+      background: var(--brand-hover);
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    .section-sub {
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 2.5rem;
+      font-size: 0.95rem;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 4rem;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      box-shadow: var(--shadow);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+    .feature-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 0.75rem;
+      background: var(--brand-light);
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      margin-bottom: 1.25rem;
+    }
+    .feature-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .form-section {
+      max-width: 600px;
+      margin: 0 auto 5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.5rem;
+      padding: 2.25rem;
+      box-shadow: var(--shadow);
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .form-control:focus {
+      border-color: var(--brand);
+    }
+    .success-box {
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--card-border);
+      padding: 2rem 0;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 640px) {
+      .nav-links .nav-link { display: none; }
+      .hero { padding: 3rem 0 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="container nav-inner">
+      <a href="#" class="brand">
+        <div class="logo-badge">⚖️</div>
         <div>
-          <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">MCP LAS</span>
-          <span class="ml-2 text-xs bg-brand-500/10 text-brand-400 border border-brand-500/20 px-2 py-0.5 rounded-full font-medium">FastMCP + Firebase</span>
+          <span class="brand-title">MCP LAS</span>
+          <span class="tech-badge">FastMCP + Firebase</span>
         </div>
-      </div>
-      <div class="flex items-center space-x-4 text-sm font-medium">
-        <a href="#kallor" class="text-slate-400 hover:text-white transition">Källor & Data</a>
-        <a href="#verktyg" class="text-slate-400 hover:text-white transition">MCP-Verktyg</a>
-        <a href="#ansok" class="bg-brand-500 hover:bg-brand-600 text-slate-950 px-3.5 py-1.5 rounded-lg font-semibold transition">Ansök om nyckel</a>
+      </a>
+      <div class="nav-links">
+        <a href="#kallor" class="nav-link">Källor & Data</a>
+        <a href="#verktyg" class="nav-link">MCP-Verktyg</a>
+        <a href="#connector" class="nav-link">Claude Setup</a>
+        <button class="theme-toggle-btn" id="themeToggle" title="Växla ljust/mörkt läge" aria-label="Toggle theme">
+          <i class="fa-solid fa-moon" id="themeIcon"></i>
+        </button>
+        <a href="#ansok" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Ansök om nyckel</a>
       </div>
     </div>
   </nav>
 
   <!-- Hero -->
-  <header class="relative overflow-hidden pt-16 pb-14 text-center border-b border-slate-900">
-    <div class="max-w-4xl mx-auto px-4">
-      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-4">
+  <header class="hero">
+    <div class="container">
+      <h1>
         Svensk Arbetsrätt & Kollektivavtal <br/>
-        <span class="bg-gradient-to-r from-brand-400 to-emerald-300 bg-clip-text text-transparent">direkt till din AI-Agent</span>
+        <span class="gradient-text">direkt till din AI-Agent</span>
       </h1>
-      <p class="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto mb-8">
-        Sök i Riksdagens lagar (LAS, MBL m.fl.), 17 centrala kollektivavtal och Arbetsdomstolens prejudikat i realtid.
+      <p>
+        Fullständig tillgång till Riksdagens lagar (LAS, MBL, Semesterlagen), 17 centrala kollektivavtal och Arbetsdomstolens prejudikat via Model Context Protocol.
       </p>
-      <a href="#ansok" class="bg-brand-500 hover:bg-brand-600 text-slate-950 font-semibold px-6 py-3 rounded-xl shadow-lg shadow-brand-500/25 transition inline-flex items-center space-x-2">
-        <i class="fa-solid fa-key"></i>
-        <span>Ansök om API-nyckel</span>
-      </a>
+      <div class="hero-actions">
+        <a href="#ansok" class="btn btn-primary">
+          <i class="fa-solid fa-key"></i>
+          <span>Ansök om API-nyckel</span>
+        </a>
+        <a href="#connector" class="btn btn-secondary">
+          <i class="fa-solid fa-plug"></i>
+          <span>Anslut till Claude</span>
+        </a>
+      </div>
     </div>
   </header>
 
-  <!-- Ansökningsformulär Section -->
-  <section id="ansok" class="max-w-2xl mx-auto px-4 py-16">
-    <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-      <div class="text-center mb-6">
-        <div class="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-xl mx-auto mb-3 border border-brand-500/20">
-          🔑
+  <!-- Claude Connector Card -->
+  <section id="connector" class="container">
+    <div class="connector-card">
+      <div class="connector-header">
+        <div class="connector-title">
+          <i class="fa-solid fa-cloud-arrow-up" style="color: var(--brand);"></i>
+          <span>Cloud Connector URL (SSE Endpoint)</span>
         </div>
-        <h2 class="text-2xl font-bold text-white mb-1">Ansök om personlig API-nyckel</h2>
-        <p class="text-xs text-slate-400">Fyll i dina uppgifter så granskar administratören din förfrågan.</p>
+        <span class="tech-badge">Live på Google Cloud Run</span>
       </div>
-
-      <form id="keyForm" onsubmit="submitForm(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Ditt Namn *</label>
-          <input type="text" id="name" required placeholder="t.ex. Anna Svensson" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">E-postadress *</label>
-          <input type="email" id="email" required placeholder="anna@foretag.se" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Företag / Organisation</label>
-          <input type="text" id="company" placeholder="t.ex. Svensson Advokatbyrå" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Användningsområde</label>
-          <textarea id="reason" rows="2" placeholder="t.ex. Claude Desktop för HR-rådgivning" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition"></textarea>
-        </div>
-        <button type="submit" id="submitBtn" class="w-full bg-brand-500 hover:bg-brand-600 text-slate-950 font-semibold py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
-          <span>Skicka ansökan</span>
-          <i class="fa-solid fa-paper-plane text-xs"></i>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Använd denna SSE-URL när du lägger till en Remote MCP Server i Claude Desktop eller valfri MCP-klient:
+      </p>
+      <div class="code-box">
+        <code id="sseUrl">https://mcp-las-511579677488.europe-north1.run.app/sse</code>
+        <button class="copy-btn" id="copyBtn" onclick="copyUrl()">
+          <i class="fa-solid fa-copy"></i> Kopiera
         </button>
-      </form>
-
-      <div id="formSuccess" class="hidden text-center py-6">
-        <div class="text-4xl mb-3">🎉</div>
-        <h3 class="text-lg font-bold text-white mb-1">Tack för din ansökan!</h3>
-        <p class="text-xs text-slate-400">Vi granskar din ansökan och skickar din personliga MCP-nyckel till din e-post så fort den är godkänd.</p>
       </div>
     </div>
   </section>
 
+  <!-- Sources & Tools Section -->
+  <main class="container" style="margin-top: 1rem;">
+    <section id="kallor" style="padding-top: 2rem;">
+      <h2 class="section-title">Datakällor i Realtid</h2>
+      <p class="section-sub">Strukturerad juridisk kunskapsbas indexerad i Google Firestore</p>
+
+      <div class="grid-3">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+          <h3>Sveriges Riksdag</h3>
+          <p>Fulltext-indexerade lagar med paragrafindelat innehåll: LAS (1982:80), MBL (1976:580), Semesterlagen (1977:480), Arbetstidslagen m.fl.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-handshake"></i></div>
+          <h3>17 Kollektivavtal</h3>
+          <p>Kurerade avtalsregler för Teknikavtalet, Almega IT, Detaljhandeln, SKR AB, Statliga Villkorsavtal m.fl. som hanterar semidispositivitet.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-gavel"></i></div>
+          <h3>Arbetsdomstolen (AD)</h3>
+          <p>Vägledande domar och prejudikat inom saklig grund/sakliga skäl, personliga skäl, arbetsbrist, omplacering och turordning.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="verktyg" style="padding-top: 2rem;">
+      <h2 class="section-title">Tillgängliga MCP-Verktyg</h2>
+      <p class="section-sub">Dessa 5 verktyg blir omedelbart tillgängliga för din AI-agent</p>
+
+      <div class="grid-3">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+          <h3><code>lookup_statute</code></h3>
+          <p>Hämtar exakt lagtext för specifik lag och paragraf (t.ex. LAS 7 § eller MBL 11 §).</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-brain"></i></div>
+          <h3><code>search_labor_law</code></h3>
+          <p>Semantisk textsökning och nyckelordssökning över alla svenska arbetsrättsliga lagar.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-book-open"></i></div>
+          <h3><code>search_case_law</code></h3>
+          <p>Sök bland vägledande AD-domar baserat på frågeställning, lagrum eller årtal.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-code-compare"></i></div>
+          <h3><code>compare_statute_vs_cba</code></h3>
+          <p>Jämför lagens grundregel med kollektivavtalets avvikande regler (semidispositivitet).</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-file-contract"></i></div>
+          <h3><code>get_cba_exception</code></h3>
+          <p>Slår upp specifika kollektivavtalsundantag för uppsägningstider, övertid och semester.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Application Form -->
+    <section id="ansok" class="form-section" style="scroll-margin-top: 5rem;">
+      <div style="text-align: center; margin-bottom: 1.75rem;">
+        <div class="feature-icon" style="margin: 0 auto 1rem;"><i class="fa-solid fa-key"></i></div>
+        <h2 style="font-size: 1.4rem; font-weight: 800;">Ansök om API-nyckel</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Fyll i dina uppgifter så aktiveras din personliga MCP-nyckel.</p>
+      </div>
+
+      <form id="keyForm" onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label for="name">Ditt Namn *</label>
+          <input type="text" id="name" required placeholder="t.ex. Anna Svensson" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="email">E-postadress *</label>
+          <input type="email" id="email" required placeholder="anna@foretag.se" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="company">Företag / Organisation</label>
+          <input type="text" id="company" placeholder="t.ex. Svensson Advokatbyrå" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="reason">Användningsområde</label>
+          <textarea id="reason" rows="2" placeholder="t.ex. Claude Desktop för HR-rådgivning och avtalstolkning" class="form-control"></textarea>
+        </div>
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
+          <span>Skicka ansökan</span>
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+
+      <div id="formSuccess" class="success-box" style="display: none;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎉</div>
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem;">Tack för din ansökan!</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Vi granskar din ansökan och skickar din personliga MCP-nyckel till din e-post så fort den är godkänd.</p>
+      </div>
+    </section>
+  </main>
+
   <!-- Footer -->
-  <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-600">
-    <p>MCP LAS &copy; 2026 — Svensk Arbetsrätt för AI-Agenter.</p>
+  <footer>
+    <div class="container">
+      <p>MCP LAS &copy; 2026 — Svensk Arbetsrätt & Kollektivavtal för AI-Agenter. Byggd med FastMCP & Google Firestore.</p>
+    </div>
   </footer>
 
   <script>
+    // Theme Switcher Logic (Default Light, user can toggle & saves in localStorage)
+    const toggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const html = document.documentElement;
+
+    function setTheme(theme) {
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        html.classList.remove('dark');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+
+    toggleBtn.addEventListener('click', () => {
+      const isDark = html.classList.contains('dark');
+      setTheme(isDark ? 'light' : 'dark');
+    });
+
+    // Copy URL helper
+    function copyUrl() {
+      const url = document.getElementById('sseUrl').innerText.trim();
+      const btn = document.getElementById('copyBtn');
+      navigator.clipboard.writeText(url).then(() => {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Kopierad!';
+        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+      }).catch(err => {
+        alert('Kunde inte kopiera automatiskt: ' + url);
+      });
+    }
+
+    // Submit Application
     async function submitForm(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
@@ -128,8 +610,8 @@
         });
         const data = await res.json();
         if (data.success) {
-          document.getElementById('keyForm').classList.add('hidden');
-          document.getElementById('formSuccess').classList.remove('hidden');
+          document.getElementById('keyForm').style.display = 'none';
+          document.getElementById('formSuccess').style.display = 'block';
         } else {
           alert('Fel: ' + data.message);
           btn.disabled = false;
