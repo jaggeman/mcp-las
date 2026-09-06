@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -108,6 +108,6 @@ def compare_statute_vs_cba(topic: str, agreement_name: str, api_key: Optional[st
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     if "PORT" in os.environ:
-        mcp.run(transport="sse", host="0.0.0.0", port=port)
+        mcp.run(transport="http", host="0.0.0.0", port=port)
     else:
         mcp.run()

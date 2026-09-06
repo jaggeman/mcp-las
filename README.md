@@ -71,10 +71,10 @@ Detta hämtar och indexerar automatiskt:
 
 ## 🔌 Anslut till MCP-klienter (Claude Desktop / Cursor)
 
-### Alternativ A: Anslut via Molnet (Cloud SSE — Rekommenderas)
-Ingen lokal installation krävs. Använd den publika Cloud Run SSE-endpointen:
+### Alternativ A: Anslut via Molnet (Streamable HTTP — Ny modern standard)
+Ingen lokal installation krävs. Använd den publika Streamable HTTP-endpointen i Claude Connector / Claude Desktop:
 ```
-https://mcp-las-511579677488.europe-north1.run.app/sse
+https://mcp-las-511579677488.europe-north1.run.app/mcp
 ```
 
 ### Alternativ B: Lokal körning i `claude_desktop_config.json`
