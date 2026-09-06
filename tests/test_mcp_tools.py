@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from src.mcp_tools.tools import (
     lookup_statute,
     search_labor_law,
@@ -49,3 +49,10 @@ def test_compare_statute_vs_cba():
     res = compare_statute_vs_cba(topic="Uppsägningstid", agreement_name="Teknikavtalet")
     assert res["agreement_name"] == "Teknikavtalet"
     assert len(res["cba_rules"]) > 0
+
+def test_calculate_vacation_pay():
+    from src.mcp_tools.tools import calculate_vacation_pay
+    res = calculate_vacation_pay(monthly_salary=40000, variable_salary=50000, vacation_days=25)
+    assert res["with_collective_agreement"]["fixed_supplement_kr"] == 8000.0
+    assert res["without_collective_agreement_statute"]["fixed_supplement_kr"] == 4300.0
+    assert res["cba_advantage"]["extra_in_pocket_kr"] > 0

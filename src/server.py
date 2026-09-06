@@ -20,7 +20,8 @@ from src.mcp_tools.tools import (
     search_labor_law as _search_labor_law,
     search_case_law as _search_case_law,
     get_cba_exception as _get_cba_exception,
-    compare_statute_vs_cba as _compare_statute_vs_cba
+    compare_statute_vs_cba as _compare_statute_vs_cba,
+    calculate_vacation_pay as _calculate_vacation_pay
 )
 
 mcp = FastMCP(
@@ -128,6 +129,31 @@ def compare_statute_vs_cba(topic: str, agreement_name: str, api_key: Optional[st
     t0 = time.time()
     res = _compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
     auth_service.log_access(api_key or "anon", None, "compare_statute_vs_cba", {"topic": topic, "agreement": agreement_name}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def calculate_vacation_pay(
+    monthly_salary: float,
+    variable_salary: float = 0.0,
+    vacation_days: int = 25,
+    agreement_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Beräknar semesterlön och semestertillägg enligt svensk lag (Semesterlagen 16 a-b §§)
+    och jämför med Unionens och centrala kollektivavtalsregler (0.8% fast lön, 0.5% rörlig lön).
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _calculate_vacation_pay(
+        monthly_salary=monthly_salary,
+        variable_salary=variable_salary,
+        vacation_days=vacation_days,
+        agreement_name=agreement_name
+    )
+    auth_service.log_access(api_key or "anon", None, "calculate_vacation_pay", {"monthly_salary": monthly_salary, "days": vacation_days}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":

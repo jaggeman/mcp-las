@@ -24,6 +24,7 @@ Ett specialiserat **Model Context Protocol (MCP)**-system och server för svensk
 | `search_case_law` | Sökning i Arbetsdomstolens (AD) domar | `query="avskedande illojalitet", year_from=2020` |
 | `get_cba_exception` | Kontrollera avvikelse i kollektivavtal från lag | `statute="LAS", section="11", agreement_name="Teknikavtalet"` |
 | `compare_statute_vs_cba` | Jämför lagens grundregel mot kollektivavtal | `topic="Uppsägningstid", agreement_name="Teknikavtalet"` |
+| `calculate_vacation_pay` | Beräkna semestertillägg enligt lag vs kollektivavtal | `monthly_salary=40000, variable_salary=50000, vacation_days=25` |
 
 ---
 
