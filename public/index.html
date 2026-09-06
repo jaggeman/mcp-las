@@ -469,8 +469,15 @@
 
       <!-- Tab 2: ChatGPT -->
       <div id="tabContent-chatgpt" class="tab-pane" style="display: none;">
-        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. System Prompt för Custom GPT / ChatGPT</div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Klistra in denna prompt i "Instructions" under din Custom GPT:</p>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. MCP-koppling för ChatGPT Desktop / OpenAI Developer Mode</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Använd denna Streamable HTTP-adress direkt i ChatGPT Desktop:</p>
+        <div class="code-box" style="margin-bottom: 1.25rem;">
+          <code id="gptUrl">https://mcp-las-511579677488.europe-north1.run.app/mcp</code>
+          <button class="copy-btn" onclick="copyText('gptUrl', this)"><i class="fa-solid fa-copy"></i> Kopiera URL</button>
+        </div>
+
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">2. System Prompt för Custom GPTs</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Klistra in denna instruktion i din Custom GPT:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
           <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="gptPrompt">Du är en svensk arbetsrättsexpert driven av MCP LAS.
 När användaren ställer frågor om svensk arbetsrätt, anställningsskydd (LAS), medbestämmande (MBL), semester eller kollektivavtal:
