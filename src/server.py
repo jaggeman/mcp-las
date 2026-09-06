@@ -52,6 +52,8 @@ async def serve_landing_page(request):
             return HTMLResponse(content)
     return HTMLResponse("<h1>MCP LAS Server</h1><p><a href='/sse'>/sse</a></p>")
 
+from src.services.notification_service import notification_service
+
 @mcp.custom_route("/api/request-key", methods=["POST", "OPTIONS"])
 async def handle_key_request(request):
     if request.method == "OPTIONS":
@@ -63,22 +65,30 @@ async def handle_key_request(request):
         company = data.get("company", "").strip()
         reason = data.get("reason", "").strip()
         
-        if not name or not email:
-            return JSONResponse({"success": False, "message": "Namn och e-post krävs."}, status_code=400)
+        if not name or not email or "@" not in email or "." not in email:
+            return JSONResponse({"success": False, "message": "Giltigt namn och e-postadress krävs."}, status_code=400)
             
+        request_record = {
+            "name": name,
+            "email": email,
+            "company": company,
+            "reason": reason,
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        # Spara i databasen
         if db_client.db:
             doc_ref = db_client.db.collection("key_requests").document()
-            doc_ref.set({
-                "name": name,
-                "email": email,
-                "company": company,
-                "reason": reason,
-                "status": "pending",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
-            return JSONResponse({"success": True, "message": "Din ansökan har tagits emot! Vi återkommer via e-post."})
-        else:
-            return JSONResponse({"success": False, "message": "Databasfel."}, status_code=500)
+            doc_ref.set(request_record)
+        
+        # Skicka e-postavisering till administratören
+        try:
+            notification_service.send_key_request_notification(request_record)
+        except Exception as notify_err:
+            print(f"[NOTIFICATION ERROR] {notify_err}")
+
+        return JSONResponse({"success": True, "message": "Din ansökan har tagits emot! Vi återkommer via e-post."})
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
