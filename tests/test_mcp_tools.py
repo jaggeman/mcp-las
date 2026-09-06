@@ -152,6 +152,28 @@ def test_calculate_redundancy_turnorder_and_exceptions():
     assert sorted_list[3]["name"] == "Bob"
     assert "Risk för uppsägning" in sorted_list[3]["protection_status"]
 
+def test_generate_turordningslista_excel():
+    from src.mcp_tools.tools import generate_turordningslista_excel, GENERATED_EXCEL_FILES
+    
+    res = generate_turordningslista_excel(
+        company_name="Nordic Tech AB",
+        redundancy_count=2,
+        employees=[
+            {"name": "Karin", "title": "Lead Dev", "driftsenhet": "Sthlm", "start_date": "2018-01-01", "birth_date": "1985-02-10", "has_qualifications": True, "is_exempt": True},
+            {"name": "Olof", "title": "Dev", "driftsenhet": "Sthlm", "start_date": "2020-05-01", "birth_date": "1990-08-15", "has_qualifications": True, "is_exempt": False},
+            {"name": "Elin", "title": "Junior Dev", "driftsenhet": "Sthlm", "start_date": "2023-01-10", "birth_date": "1996-12-01", "has_qualifications": True, "is_exempt": False}
+        ]
+    )
+    
+    assert res["success"] is True
+    assert "download_url" in res
+    assert res["file_name"].startswith("Turordningslista_Nordic_Tech_AB")
+    assert len(res["file_base64"]) > 500
+    assert res["file_id"] in GENERATED_EXCEL_FILES
+    assert "EMP-001" in res["markdown_table"]
+    assert "Karin" in res["markdown_table"]
+
+
 
 
 

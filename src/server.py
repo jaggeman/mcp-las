@@ -28,7 +28,9 @@ from src.mcp_tools.tools import (
     get_rehabilitation_plan_info as _get_rehabilitation_plan_info,
     get_discrimination_act_guide as _get_discrimination_act_guide,
     check_bank_days_and_deadlines as _check_bank_days_and_deadlines,
-    calculate_redundancy_turnorder_and_exceptions as _calculate_redundancy_turnorder_and_exceptions
+    calculate_redundancy_turnorder_and_exceptions as _calculate_redundancy_turnorder_and_exceptions,
+    generate_turordningslista_excel as _generate_turordningslista_excel,
+    GENERATED_EXCEL_FILES
 )
 
 mcp = FastMCP(
@@ -36,7 +38,7 @@ mcp = FastMCP(
     instructions=(
         "Svensk Arbetsrätt & LAS MCP Server för AI-agenter och Claude. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
-        "turordningsregler och undantagsberäkningar vid arbetsbrist (Unionen & 22 § LAS), "
+        "turordningsregler, Excel-export av turordningslista vid arbetsbrist (Unionen & 22 § LAS), "
         "Arbetsdomstolens prejudikat, 17 kollektivavtal, semesterberäkningar, Försäkringskassans plan för återgång i arbete (FK 7459), "
         "arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF), DO:s vägledning samt Riksbankens bankdagar och helgdagar för löneutbetalning och lagstadgade frister."
     )
@@ -53,6 +55,22 @@ async def serve_landing_page(request):
             content = f.read()
             return HTMLResponse(content)
     return HTMLResponse("<h1>MCP LAS Server</h1><p><a href='/sse'>/sse</a></p>")
+
+@mcp.custom_route("/api/download-turordning", methods=["GET", "OPTIONS"])
+async def download_turordning_excel(request):
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
+    file_id = request.query_params.get("id", "")
+    if not file_id or file_id not in GENERATED_EXCEL_FILES:
+        return JSONResponse({"error": "Filen hittades inte eller har löpt ut. Generera en ny via MCP-verktyget."}, status_code=404)
+    
+    file_data = GENERATED_EXCEL_FILES[file_id]
+    headers = {
+        "Content-Disposition": f"attachment; filename=\"{file_data['file_name']}\"",
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Access-Control-Allow-Origin": "*"
+    }
+    return Response(content=file_data["bytes"], media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
 
 from src.services.notification_service import notification_service
 
@@ -323,6 +341,36 @@ def calculate_redundancy_turnorder_and_exceptions(
         employees_list=employees_list
     )
     auth_service.log_access(api_key or "anon", None, "calculate_redundancy_turnorder_and_exceptions", {"total": total_employees_in_unit, "redundant": redundancy_count}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def generate_turordningslista_excel(
+    company_name: str = "Företaget AB",
+    employees: Optional[List[Dict[str, Any]]] = None,
+    redundancy_count: Optional[int] = 0,
+    cba_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
+    single_operating_unit: bool = False,
+    as_of_date: Optional[str] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Skapar och genererar en nedladdningsbar Excel-fil (.xlsx) med formaterad turordningslista vid arbetsbrist.
+    Inkluderar ID-kolumn (EMP-001...), beräkning av anställningsdagar via Excel-formler (=DATEDIF),
+    sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § och kollektivavtal).
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _generate_turordningslista_excel(
+        company_name=company_name,
+        employees=employees,
+        redundancy_count=redundancy_count,
+        cba_name=cba_name,
+        single_operating_unit=single_operating_unit,
+        as_of_date=as_of_date
+    )
+    auth_service.log_access(api_key or "anon", None, "generate_turordningslista_excel", {"company": company_name, "count": len(employees) if employees else 0}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":

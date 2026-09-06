@@ -34,6 +34,7 @@ Dessa 11 intelligenta verktyg anropas automatiskt i bakgrunden av Claude, ChatGP
 | **Diskrimineringslagen & DO** | `get_discrimination_act_guide` | DO:s vägledning (do.se) om de 7 diskrimineringsgrunderna, aktiva åtgärder (årlig lönekartläggning), utredningsplikt och repressalieförbud. | *"Vilka krav ställer Diskrimineringslagen och DO på arbetsgivarens årliga lönekartläggning och aktiva åtgärder?"* |
 | **Bankdagar & Löneutbetalning** | `check_bank_days_and_deadlines` | Riksbankens officiella helgdagar 2026, löneutbetalning (föregående bankdag om 25:e är helg) och fristberäkning (Lag 1930:173). | *"Vilken dag betalas lönen ut i april och december 2026 om den 25:e infaller på en helgdag?"* |
 | **Turordning & Undantagsberäkning** | `calculate_redundancy_turnorder_and_exceptions` | Turordning vid arbetsbrist (LAS 22 § vs Unionens kollektivavtal), undantagsregler 1–4 inkl. procentregeln (15% / 10%), omplaceringsutredning (7 §) och sorterad turordningslista. | *"Hur många personer får arbetsgivaren undanta från turordningslistan enligt Unionens kollektivavtal vid en arbetsbrist där 20 av 100 anställda berörs?"* |
+| **Skapa Turordningslista (Excel .xlsx)** | `generate_turordningslista_excel` | Genererar och laddar ner en komplett formaterad Excel-fil (.xlsx) med ID-kolumn, DATEDIF-formel för anställningsdagar, sortering och färgkodad status. | *"Skapa en turordningslista i Excel för vårt företag med följande anställda och ladda ner den."* |
 
 ---
 
