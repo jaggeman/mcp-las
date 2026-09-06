@@ -1,4 +1,4 @@
-﻿# MCP LAS 🇸🇪⚖️
+# MCP LAS 🇸🇪⚖️
 
 Ett specialiserat **Model Context Protocol (MCP)**-system och server för svensk arbetsrätt, rättspraxis (Arbetsdomstolen) och kollektivavtal, byggt med **Python FastMCP** och **Google Firebase Firestore**.
 
@@ -71,22 +71,40 @@ Detta hämtar och indexerar automatiskt:
 
 ## 🔌 Anslut till MCP-klienter (Claude Desktop / Cursor)
 
-Lägg till servern i din MCP-konfiguration (t.ex. `claude_desktop_config.json`):
+### Alternativ A: Anslut via Molnet (Cloud SSE — Rekommenderas)
+Ingen lokal installation krävs. Använd den publika Cloud Run SSE-endpointen:
+```
+https://mcp-las-511579677488.europe-north1.run.app/sse
+```
 
+### Alternativ B: Lokal körning i `claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
     "mcp-las": {
       "command": "C:\\LAS\\.venv\\Scripts\\python.exe",
       "args": [
-        "-m",
-        "src.server"
+        "C:\\LAS\\src\\server.py"
       ],
-      "cwd": "C:\\LAS"
+      "env": {
+        "PYTHONPATH": "C:\\LAS"
+      }
     }
   }
 }
 ```
+
+---
+
+## ⚖️ Ansvarsfriskrivning (Legal Disclaimer)
+
+> **Viktigt:** Denna MCP-server är ett öppen källkodsprojekt (Open Source) utvecklat för informations- och AI-integrationsändamål. Svar och information som tillhandahålls utgör **inte juridisk rådgivning** och ersätter inte professionell juridisk expertis, advokat eller facklig rådgivare. Skaparen friskriver sig från allt ansvar för beslut eller tolkningar som fattas med stöd av tjänsten.
+
+---
+
+## 📄 Licens
+
+Öppen källkod licensierad under **[MIT License](LICENSE)**.
 
 ---
 
@@ -95,3 +113,4 @@ Lägg till servern i din MCP-konfiguration (t.ex. `claude_desktop_config.json`):
 ```powershell
 pytest -v
 ```
+
