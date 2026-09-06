@@ -569,7 +569,13 @@
           <label for="reason">Användningsområde</label>
           <textarea id="reason" rows="2" placeholder="t.ex. Claude Desktop för HR-rådgivning och avtalstolkning" class="form-control"></textarea>
         </div>
-        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        <div class="form-group" style="display: flex; align-items: flex-start; gap: 0.6rem; margin-top: 0.75rem;">
+          <input type="checkbox" id="consent" required style="margin-top: 0.25rem; accent-color: var(--brand); cursor: pointer;">
+          <label for="consent" style="font-size: 0.78rem; color: var(--text-muted); cursor: pointer; line-height: 1.4;">
+            Jag godkänner att namn och e-postadress sparas i Google Cloud Firestore inom EU för administration och utskick av min API-nyckel enligt <a href="#" onclick="openPrivacyModal(event)" style="color: var(--brand); text-decoration: underline; font-weight: 600;">integritetspolicyn (GDPR)</a>.
+          </label>
+        </div>
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
           <span>Skicka ansökan</span>
           <i class="fa-solid fa-paper-plane"></i>
         </button>
@@ -583,10 +589,39 @@
     </section>
   </main>
 
+  <!-- Privacy Policy Modal -->
+  <div id="privacyModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; max-width: 540px; width: 100%; padding: 2rem; box-shadow: var(--shadow); position: relative; max-height: 85vh; overflow-y: auto;">
+      <button onclick="closePrivacyModal()" style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
+        <div style="width: 2.25rem; height: 2.25rem; border-radius: 0.5rem; background: var(--brand-light); color: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h3 style="font-size: 1.25rem; font-weight: 800;">Integritetspolicy (GDPR)</h3>
+      </div>
+      <div style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; display: flex; flex-direction: column; gap: 0.75rem;">
+        <p><strong>1. Personuppgiftsansvarig:</strong> Denna MCP-tjänst drivs som ett öppen källkodsprojekt via Google Cloud Run.</p>
+        <p><strong>2. Ändamål med behandlingen:</strong> Vi samlar uteslutande in ditt namn, din e-postadress och eventuellt organisationsnamn för att kunna administrera, utfärda och tillhandahålla din personliga API-nyckel, samt förhindra överbelastning eller missbruk av MCP-servern.</p>
+        <p><strong>3. Lagring & Säkerhet:</strong> All data lagras krypterad i Google Cloud Firestore inom Europeiska Unionen (region <code>europe-north1</code>, Finland).</p>
+        <p><strong>4. Ingen delning:</strong> Uppgifterna säljs aldrig och överförs inte till obehöriga tredje parter eller marknadsföringssyften.</p>
+        <p><strong>5. Dina rättigheter:</strong> Du har enligt dataskyddsförordningen (GDPR) rätt att när som helst begära ett registerutdrag eller få dina personuppgifter och tillhörande API-nycklar raderade.</p>
+      </div>
+      <button onclick="closePrivacyModal()" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1.5rem; font-size: 0.9rem;">
+        Stäng
+      </button>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer>
-    <div class="container">
+    <div class="container" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
       <p>MCP LAS &copy; 2026 — Svensk Arbetsrätt & Kollektivavtal för AI-Agenter. Öppen källkod (MIT). Ej juridisk rådgivning.</p>
+      <p style="font-size: 0.8rem;">
+        <a href="#" onclick="openPrivacyModal(event)" style="color: var(--brand); text-decoration: underline;">Integritetspolicy & GDPR</a> &bull;
+        <a href="https://github.com/jaggeman/mcp-las" target="_blank" rel="noopener noreferrer" style="color: var(--text-muted); text-decoration: none;">GitHub</a>
+      </p>
     </div>
   </footer>
 
@@ -617,6 +652,15 @@
       const isDark = html.classList.contains('dark');
       setTheme(isDark ? 'light' : 'dark');
     });
+
+    // Privacy Modal Helpers
+    function openPrivacyModal(e) {
+      if (e) e.preventDefault();
+      document.getElementById('privacyModal').style.display = 'flex';
+    }
+    function closePrivacyModal() {
+      document.getElementById('privacyModal').style.display = 'none';
+    }
 
     // Copy URL helper
     function copyUrl() {
