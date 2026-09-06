@@ -21,7 +21,8 @@ from src.mcp_tools.tools import (
     search_case_law as _search_case_law,
     get_cba_exception as _get_cba_exception,
     compare_statute_vs_cba as _compare_statute_vs_cba,
-    calculate_vacation_pay as _calculate_vacation_pay
+    calculate_vacation_pay as _calculate_vacation_pay,
+    calculate_unpaid_vacation_deduction as _calculate_unpaid_vacation_deduction
 )
 
 mcp = FastMCP(
@@ -154,6 +155,31 @@ def calculate_vacation_pay(
         agreement_name=agreement_name
     )
     auth_service.log_access(api_key or "anon", None, "calculate_vacation_pay", {"monthly_salary": monthly_salary, "days": vacation_days}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def calculate_unpaid_vacation_deduction(
+    monthly_salary: float,
+    unpaid_days: int = 1,
+    is_advance_vacation_debt: bool = False,
+    agreement_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Beräknar löneavdrag vid uttag av obetalda semesterdagar eller skuldavräkning för förskottssemester
+    enligt Unionens kollektivavtalsregler (4,6 % av månadslönen per dag) samt Semesterlagen (1977:480) 29 a §.
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _calculate_unpaid_vacation_deduction(
+        monthly_salary=monthly_salary,
+        unpaid_days=unpaid_days,
+        is_advance_vacation_debt=is_advance_vacation_debt,
+        agreement_name=agreement_name
+    )
+    auth_service.log_access(api_key or "anon", None, "calculate_unpaid_vacation_deduction", {"monthly_salary": monthly_salary, "unpaid_days": unpaid_days}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":

@@ -56,3 +56,18 @@ def test_calculate_vacation_pay():
     assert res["with_collective_agreement"]["fixed_supplement_kr"] == 8000.0
     assert res["without_collective_agreement_statute"]["fixed_supplement_kr"] == 4300.0
     assert res["cba_advantage"]["extra_in_pocket_kr"] > 0
+
+def test_calculate_unpaid_vacation_deduction():
+    from src.mcp_tools.tools import calculate_unpaid_vacation_deduction
+    # 40000 * 4.6% * 5 = 9200
+    res = calculate_unpaid_vacation_deduction(monthly_salary=40000, unpaid_days=5)
+    assert res["calculation"]["daily_deduction_kr"] == 1840.0
+    assert res["calculation"]["total_deduction_kr"] == 9200.0
+    assert res["calculation"]["remaining_monthly_salary_kr"] == 30800.0
+
+    # Advance vacation debt
+    res_adv = calculate_unpaid_vacation_deduction(monthly_salary=30000, unpaid_days=10, is_advance_vacation_debt=True)
+    assert res_adv["calculation"]["total_deduction_kr"] == 13800.0
+    assert "advance_vacation_rules" in res_adv
+    assert res_adv["advance_vacation_rules"]["debt_amount_kr"] == 13800.0
+

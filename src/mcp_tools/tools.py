@@ -1,18 +1,84 @@
 from typing import Optional, Dict, Any, List
 from src.db.firebase_client import db_client
 
+def _determine_certainty(text: str, source_type: str = "statute") -> Dict[str, Any]:
+    """
+    Bedömer den juridiska säkerhetsnivån baserat på källtyp och förekomst av tolkningsrekvisit.
+    """
+    text_lower = text.lower() if text else ""
+    interpretive_keywords = ["sakliga skäl", "saklig grund", "skälig", "personliga skäl", "omplacering", "synnerliga skäl", "illojal", "väsentlig"]
+    is_interpretive = any(kw in text_lower for kw in interpretive_keywords)
+
+    if source_type == "calculation":
+        return {
+            "score_pct": 99,
+            "level": "EXACT_CALCULATION",
+            "badge": "🟢 Mycket hög (99%) — Exakt matematisk beräkning",
+            "type": "Formelbaserad lag- och avtalsberäkning",
+            "is_interpretive": False
+        }
+    elif source_type == "statute":
+        if is_interpretive:
+            return {
+                "score_pct": 80,
+                "level": "STATUTORY_WITH_INTERPRETATION",
+                "badge": "🟡 Medelhög (80%) — Lagstadgad ram med tolkningsutrymme",
+                "type": "Lagens grundregel (tillämpning kräver skälighetsbedömning/praxis)",
+                "is_interpretive": True
+            }
+        else:
+            return {
+                "score_pct": 95,
+                "level": "DIRECT_STATUTE",
+                "badge": "🟢 Hög (95%) — Direkt lagregel",
+                "type": "Tydlig lagregel med fastställda frister/krav",
+                "is_interpretive": False
+            }
+    elif source_type == "cba":
+        return {
+            "score_pct": 90,
+            "level": "CBA_RULE",
+            "badge": "🔵 Hög (90%) — Kollektivavtalsregel",
+            "type": "Gäller under förutsättning att arbetsgivaren är bunden av avtalet",
+            "is_interpretive": is_interpretive
+        }
+    elif source_type == "precedent":
+        return {
+            "score_pct": 75,
+            "level": "CASE_LAW_PRECEDENT",
+            "badge": "🟡 Medel (75%) — Rättspraxis (AD)",
+            "type": "Vägledande domstolspraxis från Arbetsdomstolen i enskilt rättsfall",
+            "is_interpretive": True
+        }
+    return {
+        "score_pct": 70,
+        "level": "GENERAL",
+        "badge": "⚪ Allmän juridisk information",
+        "type": "Allmän rättskälla",
+        "is_interpretive": False
+    }
+
 def lookup_statute(law: str, section: str, chapter: Optional[str] = None) -> Dict[str, Any]:
     """
     Exact retrieval of a specific Swedish legal paragraph (e.g. law='LAS', section='7').
-    Returns the active statutory text, metadata, and cross-references.
+    Returns the active statutory text, metadata, certainty score, and cross-references.
     """
     result = db_client.get_statute_section(law=law, section=section, chapter=chapter)
     if not result:
         return {
             "found": False,
             "message": f"Kunde inte hitta {law} {chapter + ' kap. ' if chapter else ''}{section} § i databasen.",
-            "data": None
+            "data": None,
+            "certainty": {
+                "score_pct": 0,
+                "badge": "🔴 Ej funnen i databasen",
+                "level": "NOT_FOUND"
+            }
         }
+    
+    content = result.get("content", "")
+    certainty = _determine_certainty(content, source_type="statute")
+    
     return {
         "found": True,
         "law": result.get("statute_short"),
@@ -20,21 +86,28 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None) -> Dic
         "chapter": result.get("chapter"),
         "section": result.get("section_number"),
         "title": result.get("section_title"),
-        "content": result.get("content"),
-        "keywords": result.get("keywords")
+        "content": content,
+        "keywords": result.get("keywords"),
+        "certainty": certainty
     }
 
 def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5) -> List[Dict[str, Any]]:
     """
-    Hybrid semantic + lexical search across Swedish labor law provisions with relevance scoring.
+    Hybrid semantic + lexical search across Swedish labor law provisions with relevance & certainty scoring.
     """
-    return db_client.search_statute_sections(query=query, filters=filters, limit=limit)
+    results = db_client.search_statute_sections(query=query, filters=filters, limit=limit)
+    for r in results:
+        r["certainty"] = _determine_certainty(r.get("content", ""), source_type="statute")
+    return results
 
 def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 5) -> List[Dict[str, Any]]:
     """
-    Searches Arbetsdomstolen (AD) case law precedents. Returns matching cases and citations.
+    Searches Arbetsdomstolen (AD) case law precedents. Returns matching cases, citations, and legal certainty score.
     """
-    return db_client.search_precedents(query=query, statute_ref=statute_ref, year_from=year_from, limit=limit)
+    results = db_client.search_precedents(query=query, statute_ref=statute_ref, year_from=year_from, limit=limit)
+    for r in results:
+        r["certainty"] = _determine_certainty(r.get("summary", ""), source_type="precedent")
+    return results
 
 def get_cba_exception(statute: str, section: str, agreement_name: str) -> Dict[str, Any]:
     """
@@ -45,7 +118,12 @@ def get_cba_exception(statute: str, section: str, agreement_name: str) -> Dict[s
         return {
             "has_exception": False,
             "message": f"Ingen specifik avvikelse hittades i {agreement_name} för {statute} {section} §.",
-            "data": None
+            "data": None,
+            "certainty": {
+                "score_pct": 85,
+                "badge": "🔵 Hög (85%) — Lagens grundregel gäller (inga kända avtalsundantag)",
+                "level": "STATUTE_DEFAULT"
+            }
         }
     return {
         "has_exception": True,
@@ -54,7 +132,8 @@ def get_cba_exception(statute: str, section: str, agreement_name: str) -> Dict[s
         "section": result.get("section"),
         "topic": result.get("topic"),
         "rule_content": result.get("rule_content"),
-        "statutory_deviation_ref": result.get("statutory_deviation_ref")
+        "statutory_deviation_ref": result.get("statutory_deviation_ref"),
+        "certainty": _determine_certainty(result.get("rule_content", ""), source_type="cba")
     }
 
 def compare_statute_vs_cba(topic: str, agreement_name: str) -> Dict[str, Any]:
@@ -124,5 +203,70 @@ def calculate_vacation_pay(
             "extra_in_pocket_kr": round(diff, 2),
             "fixed_rate_difference": "0.80% (kollektivavtal) vs 0.43% (lagen) per semesterdag",
             "summary": f"Kollektivavtalet ger cirka {round(diff):,} kr mer i semestertillägg före skatt jämfört med lagens miniminivå."
+        },
+        "certainty": {
+            "score_pct": 98,
+            "badge": "🟢 Mycket hög (98%) — Exakt matematisk beräkning enligt kollektivavtal & Semesterlagen",
+            "level": "EXACT_CALCULATION"
         }
     }
+
+def calculate_unpaid_vacation_deduction(
+    monthly_salary: float,
+    unpaid_days: int = 1,
+    is_advance_vacation_debt: bool = False,
+    agreement_name: Optional[str] = "Unionen / Tjänstemannaavtalet"
+) -> Dict[str, Any]:
+    """
+    Beräknar löneavdrag vid uttag av obetald semester eller skuldavräkning för förskottssemester
+    enligt Unionens kollektivavtal (4,6 % per dag) och allmän arbetsrättspraxis.
+    """
+    if monthly_salary <= 0:
+        return {"error": "Månadslön måste vara större än 0 kr."}
+    if unpaid_days <= 0:
+        return {"error": "Antal obetalda dagar måste vara minst 1."}
+
+    daily_deduction_rate = 0.046  # 4,6% per dag enligt Unionens tjänstemannaavtal
+    daily_deduction_kr = round(monthly_salary * daily_deduction_rate, 2)
+    total_deduction_kr = round(monthly_salary * daily_deduction_rate * unpaid_days, 2)
+    remaining_salary_kr = max(0.0, round(monthly_salary - total_deduction_kr, 2))
+
+    response = {
+        "input": {
+            "monthly_salary": monthly_salary,
+            "unpaid_days": unpaid_days,
+            "is_advance_vacation_debt": is_advance_vacation_debt,
+            "agreement_name": agreement_name or "Unionen / Tjänstemannaavtalet"
+        },
+        "calculation": {
+            "daily_deduction_rate_pct": 4.6,
+            "daily_deduction_kr": daily_deduction_kr,
+            "total_deduction_kr": total_deduction_kr,
+            "remaining_monthly_salary_kr": remaining_salary_kr,
+            "formula": f"{unpaid_days} dagar * 4.6% * {monthly_salary} kr = {total_deduction_kr} kr"
+        },
+        "summary": (
+            f"Löneavdraget för {unpaid_days} obetalda semesterdagar blir {total_deduction_kr:,.0f} kr före skatt "
+            f"(4,6 % av månadslönen per dag). Din kvarvarande månadslön blir {remaining_salary_kr:,.0f} kr."
+        ),
+        "certainty": {
+            "score_pct": 98,
+            "badge": "🟢 Mycket hög (98%) — Exakt avdragsberäkning enligt kollektivavtal & praxis",
+            "level": "EXACT_CALCULATION"
+        }
+    }
+
+    if is_advance_vacation_debt:
+        response["advance_vacation_rules"] = {
+            "legal_basis": "Semesterlagen (1977:480) 29 a § samt kollektivavtal",
+            "statutory_protection": (
+                "Skulden för förskottssemester avskrivs helt efter 5 års anställning. "
+                "Skulden kan INTE krävas tillbaka om anställningen upphör på grund av arbetsbrist, "
+                "sjukdom eller om arbetsgivaren i väsentlig grad åsidosatt sina åligganden."
+            ),
+            "debt_amount_kr": total_deduction_kr,
+            "note": "Beräkningen av skulden baseras på den månadslön arbetstagaren hade när förskottssemestern togs ut."
+        }
+
+    return response
+

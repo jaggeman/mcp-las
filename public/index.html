@@ -344,6 +344,124 @@
       line-height: 1.5;
     }
 
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tools-table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 4rem;
+    }
+    .tools-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+    .tools-table th {
+      background: var(--brand-light);
+      color: var(--text);
+      font-weight: 700;
+      padding: 1.1rem 1.25rem;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .tools-table td {
+      padding: 1.15rem 1.25rem;
+      border-bottom: 1px solid var(--card-border);
+      vertical-align: middle;
+    }
+    .tools-table tr:last-child td {
+      border-bottom: none;
+    }
+    .tools-table tr:hover {
+      background: rgba(34, 197, 94, 0.03);
+    }
+    .tool-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .tool-icon-box {
+      width: 2.6rem;
+      height: 2.6rem;
+      border-radius: 0.65rem;
+      background: var(--brand-light);
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+    .tool-title {
+      font-weight: 700;
+      color: var(--text);
+      font-size: 0.98rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .tool-badge {
+      font-family: monospace;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.1rem 0.4rem;
+      border-radius: 0.35rem;
+      display: inline-block;
+      width: fit-content;
+    }
+    .prompt-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 0.65rem;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.84rem;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .prompt-text {
+      font-style: italic;
+      color: var(--text);
+    }
+    .copy-prompt-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      border-radius: 0.45rem;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .copy-prompt-btn:hover {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+
     .form-section {
       max-width: 600px;
       margin: 0 auto 5rem;
@@ -609,39 +727,182 @@ Strukturera alltid svaren med:
     </section>
 
     <section id="verktyg" style="padding-top: 2rem;">
-      <h2 class="section-title">Tillgängliga MCP-Verktyg</h2>
-      <p class="section-sub">Dessa 6 verktyg blir omedelbart tillgängliga för din AI-agent</p>
+      <h2 class="section-title">Vad du kan fråga din AI</h2>
+      <p class="section-sub">Dessa 7 intelligenta MCP-verktyg anropas automatiskt i bakgrunden när du ställer frågor till Claude, ChatGPT, Gemini eller Cursor</p>
 
-      <div class="grid-3">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
-          <h3><code>lookup_statute</code></h3>
-          <p>Hämtar exakt lagtext för specifik lag och paragraf (t.ex. LAS 7 § eller MBL 11 §).</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-brain"></i></div>
-          <h3><code>search_labor_law</code></h3>
-          <p>Semantisk textsökning och nyckelordssökning över alla svenska arbetsrättsliga lagar.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-book-open"></i></div>
-          <h3><code>search_case_law</code></h3>
-          <p>Sök bland vägledande AD-domar baserat på frågeställning, lagrum eller årtal.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-code-compare"></i></div>
-          <h3><code>compare_statute_vs_cba</code></h3>
-          <p>Jämför lagens grundregel med kollektivavtalets avvikande regler (semidispositivitet).</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-file-contract"></i></div>
-          <h3><code>get_cba_exception</code></h3>
-          <p>Slår upp specifika kollektivavtalsundantag för uppsägningstider, övertid och semester.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-calculator"></i></div>
-          <h3><code>calculate_vacation_pay</code></h3>
-          <p>Beräknar semesterlön & semestertillägg enligt Semesterlagen vs Unionens/kollektivavtalets regler.</p>
+      <div class="tools-table-container">
+        <div class="table-responsive">
+          <table class="tools-table">
+            <thead>
+              <tr>
+                <th style="width: 28%;">Funktion & Verktyg</th>
+                <th style="width: 36%;">Vad verktyget gör</th>
+                <th style="width: 36%;">Exempel på prompt för din AI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <div class="tool-title">
+                      <span>Exakt Lagparagraf</span>
+                      <span class="tool-badge">lookup_statute</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Hämtar ordagrann gällande lagtext och förarbetesnoter för specifik lag och paragraf (t.ex. LAS, MBL, Semesterlagen).
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Vad säger LAS 7 § om sakliga skäl för uppsägning?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vad säger LAS 7 § om sakliga skäl för uppsägning?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-brain"></i></div>
+                    <div class="tool-title">
+                      <span>Lagtextsökning</span>
+                      <span class="tool-badge">search_labor_law</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Semantisk AI-sökning och nyckelordssökning över hela den svenska arbetsrättsliga lagstiftningen.
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Vilka regler gäller för dygnsvila och raster enligt Arbetstidslagen?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vilka regler gäller för dygnsvila och raster enligt Arbetstidslagen?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-gavel"></i></div>
+                    <div class="tool-title">
+                      <span>Domstolspraxis & Prejudikat</span>
+                      <span class="tool-badge">search_case_law</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Söker bland vägledande domar från Arbetsdomstolen (AD) vid tvister, saklig grund, personliga skäl eller arbetsbrist.
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Finns det några AD-domar om uppsägning p.g.a. personliga skäl och samarbetssvårigheter?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Finns det några AD-domar om uppsägning p.g.a. personliga skäl och samarbetssvårigheter?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-code-compare"></i></div>
+                    <div class="tool-title">
+                      <span>Jämför Lag vs Kollektivavtal</span>
+                      <span class="tool-badge">compare_statute_vs_cba</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Ställer lagens minimiregler (t.ex. LAS) sida vid sida mot tillämpligt kollektivavtals förmånligare regler.
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Jämför uppsägningstiderna i LAS med Teknikavtalet för tjänstemän."</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Jämför uppsägningstiderna i LAS med Teknikavtalet för tjänstemän.', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-file-contract"></i></div>
+                    <div class="tool-title">
+                      <span>Avtalsundantag & Särregler</span>
+                      <span class="tool-badge">get_cba_exception</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Kontrollerar specifika semidispositiva avtalsundantag för uppsägningstid, övertidskompensation och semester.
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Har Almega IT något undantag från LAS gällande uppsägningstid vid 5 års anställning?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Har Almega IT något undantag från LAS gällande uppsägningstid vid 5 års anställning?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-calculator"></i></div>
+                    <div class="tool-title">
+                      <span>Räkna ut Semesterlön</span>
+                      <span class="tool-badge">calculate_vacation_pay</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Beräknar semesterlön och semestertillägg enligt Semesterlagen (16 a–b §§) och jämför direkt med Unionens kollektivavtal (0,8 % fast / 0,5 % rörlig).
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Räkna ut mitt semestertillägg för 25 semesterdagar med 45 000 kr i månadslön och 20 000 kr i rörlig lön."</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Räkna ut mitt semestertillägg för 25 semesterdagar med 45 000 kr i månadslön och 20 000 kr i rörlig lön.', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="tool-meta">
+                    <div class="tool-icon-box"><i class="fa-solid fa-calendar-xmark"></i></div>
+                    <div class="tool-title">
+                      <span>Avdrag för Obetald Semester</span>
+                      <span class="tool-badge">calculate_unpaid_vacation_deduction</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  Beräknar löneavdrag vid obetalda semesterdagar (4,6 % per dag) eller skuldavräkning vid förskottssemester (Semesterlagen 29 a §).
+                </td>
+                <td>
+                  <div class="prompt-box">
+                    <span class="prompt-text">"Hur stort löneavdrag får jag om jag tar ut 5 obetalda semesterdagar med 40 000 kr i månadslön?"</span>
+                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Hur stort löneavdrag får jag om jag tar ut 5 obetalda semesterdagar med 40 000 kr i månadslön?', this)">
+                      <i class="fa-regular fa-copy"></i> Kopiera
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -823,6 +1084,17 @@ Strukturera alltid svaren med:
         setTimeout(() => { btn.innerHTML = original; }, 2000);
       }).catch(() => {
         alert('Kunde inte kopiera texten.');
+      });
+    }
+
+    // Direct String Copy Helper for Prompts
+    function copyPromptDirect(text, btn) {
+      navigator.clipboard.writeText(text.trim()).then(() => {
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check" style="color: var(--brand);"></i> Kopierat!';
+        setTimeout(() => { btn.innerHTML = original; }, 2000);
+      }).catch(() => {
+        alert('Kunde inte kopiera prompten.');
       });
     }
 

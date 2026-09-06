@@ -15,16 +15,19 @@ Ett specialiserat **Model Context Protocol (MCP)**-system och server för svensk
 
 ---
 
-## 🛠️ MCP-Verktyg (Tools)
+## 🛠️ MCP-Verktyg (Tools) & Promptexempel
 
-| Verktyg | Beskrivning | Exempelanrop |
-| :--- | :--- | :--- |
-| `lookup_statute` | Exakt hämtning av specifik paragraf och rubrik | `law="LAS", section="7"` |
-| `search_labor_law` | Hybrid semantisk sökning i svensk arbetsrätt | `query="sakliga skäl uppsägning personliga skäl"` |
-| `search_case_law` | Sökning i Arbetsdomstolens (AD) domar | `query="avskedande illojalitet", year_from=2020` |
-| `get_cba_exception` | Kontrollera avvikelse i kollektivavtal från lag | `statute="LAS", section="11", agreement_name="Teknikavtalet"` |
-| `compare_statute_vs_cba` | Jämför lagens grundregel mot kollektivavtal | `topic="Uppsägningstid", agreement_name="Teknikavtalet"` |
-| `calculate_vacation_pay` | Beräkna semestertillägg enligt lag vs kollektivavtal | `monthly_salary=40000, variable_salary=50000, vacation_days=25` |
+Dessa 7 intelligenta verktyg anropas automatiskt i bakgrunden av Claude, ChatGPT, Gemini eller Cursor:
+
+| Funktion (Icke-tekniskt namn) | MCP Identifier | Vad verktyget gör | Exempel på prompt för din AI |
+| :--- | :--- | :--- | :--- |
+| **Exakt Lagparagraf** | `lookup_statute` | Hämtar ordagrann gällande lagtext och förarbetesnoter för specifik lag och paragraf. | *"Vad säger LAS 7 § om sakliga skäl för uppsägning?"* |
+| **Lagtextsökning** | `search_labor_law` | Semantisk AI-sökning och nyckelordssökning över hela den svenska arbetsrättslagstiftningen. | *"Vilka regler gäller för dygnsvila och raster enligt Arbetstidslagen?"* |
+| **Domstolspraxis & Prejudikat** | `search_case_law` | Söker bland vägledande domar från Arbetsdomstolen (AD) vid tvister, personliga skäl eller arbetsbrist. | *"Finns det några AD-domar om uppsägning p.g.a. personliga skäl och samarbetssvårigheter?"* |
+| **Jämför Lag vs Avtal** | `compare_statute_vs_cba` | Ställer lagens grundregel (t.ex. LAS) sida vid sida mot tillämpligt kollektivavtals förmånligare regler. | *"Jämför uppsägningstiderna i LAS med Teknikavtalet för tjänstemän."* |
+| **Avtalsundantag & Särregler** | `get_cba_exception` | Kontrollerar specifika semidispositiva avtalsundantag för uppsägningstid, övertid och semester. | *"Har Almega IT något undantag från LAS gällande uppsägningstid vid 5 års anställning?"* |
+| **Räkna ut Semesterlön** | `calculate_vacation_pay` | Beräknar semesterlön & tillägg enligt Semesterlagen (16 a–b §§) vs Unionens kollektivavtal (0,8% fast / 0,5% rörlig). | *"Räkna ut mitt semestertillägg för 25 dagar med 45 000 kr i månadslön och 20 000 kr i bonus."* |
+| **Avdrag för Obetald Semester** | `calculate_unpaid_vacation_deduction` | Beräknar löneavdrag vid obetalda semesterdagar (4,6% per dag) samt skuldavräkning vid förskottssemester (29 a §). | *"Hur stort löneavdrag får jag om jag tar ut 5 obetalda semesterdagar med 40 000 kr i månadslön?"* |
 
 ---
 
