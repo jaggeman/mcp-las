@@ -421,25 +421,90 @@
     </div>
   </header>
 
-  <!-- Claude Connector Card -->
+  <!-- AI Setup & Connectors Section -->
   <section id="connector" class="container">
     <div class="connector-card">
       <div class="connector-header">
         <div class="connector-title">
-          <i class="fa-solid fa-cloud-arrow-up" style="color: var(--brand);"></i>
-          <span>Cloud Connector URL (Streamable HTTP Endpoint)</span>
+          <i class="fa-solid fa-plug" style="color: var(--brand);"></i>
+          <span>Anslut till din AI (Claude, ChatGPT, Gemini, Cursor)</span>
         </div>
-        <span class="tech-badge">Modern MCP Standard &bull; Live på Cloud Run</span>
+        <span class="tech-badge">Modern Streamable HTTP &bull; Live på Cloud Run</span>
       </div>
-      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Använd denna moderna <strong>Streamable HTTP</strong>-adress när du lägger till en Remote MCP Server i Claude Desktop, Claude Connectors eller valfri MCP-klient:
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Välj din AI-plattform nedan för att få färdig URL, konfigurationskod och installationsprompt:
       </p>
-      <div class="code-box">
-        <code id="sseUrl">https://mcp-las-511579677488.europe-north1.run.app/mcp</code>
-        <button class="copy-btn" id="copyBtn" onclick="copyUrl()">
-          <i class="fa-solid fa-copy"></i> Kopiera URL
+
+      <!-- Platform Tabs -->
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+        <button class="btn btn-secondary tab-btn active" id="tabBtn-claude" onclick="switchTab('claude')">
+          <i class="fa-solid fa-brain"></i> Claude
+        </button>
+        <button class="btn btn-secondary tab-btn" id="tabBtn-chatgpt" onclick="switchTab('chatgpt')">
+          <i class="fa-solid fa-robot"></i> ChatGPT / GPTs
+        </button>
+        <button class="btn btn-secondary tab-btn" id="tabBtn-gemini" onclick="switchTab('gemini')">
+          <i class="fa-solid fa-sparkles"></i> Gemini / Agenter
+        </button>
+        <button class="btn btn-secondary tab-btn" id="tabBtn-cursor" onclick="switchTab('cursor')">
+          <i class="fa-solid fa-code"></i> Cursor / IDEs
         </button>
       </div>
+
+      <!-- Tab 1: Claude -->
+      <div id="tabContent-claude" class="tab-pane">
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. Streamable HTTP URL (för Custom Connector)</div>
+        <div class="code-box" style="margin-bottom: 1.25rem;">
+          <code id="claudeUrl">https://mcp-las-511579677488.europe-north1.run.app/mcp</code>
+          <button class="copy-btn" onclick="copyText('claudeUrl', this)"><i class="fa-solid fa-copy"></i> Kopiera URL</button>
+        </div>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">2. Konfiguration för Claude Desktop (<code>claude_desktop_config.json</code>)</div>
+        <div class="code-box" style="margin-bottom: 1.25rem;">
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="claudeConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://mcp-las-511579677488.europe-north1.run.app/mcp"\n    }\n  }\n}</pre>
+          <button class="copy-btn" onclick="copyText('claudeConfig', this)"><i class="fa-solid fa-copy"></i> Kopiera JSON</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: ChatGPT -->
+      <div id="tabContent-chatgpt" class="tab-pane" style="display: none;">
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. System Prompt för Custom GPT / ChatGPT</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Klistra in denna prompt i "Instructions" under din Custom GPT:</p>
+        <div class="code-box" style="margin-bottom: 1.25rem;">
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="gptPrompt">Du är en svensk arbetsrättsexpert driven av MCP LAS.
+När användaren ställer frågor om svensk arbetsrätt, anställningsskydd (LAS), medbestämmande (MBL), semester eller kollektivavtal:
+1. Slå alltid upp gällande lagtext och exakt paragraf via MCP LAS.
+2. Kontrollera alltid om tillämpligt kollektivavtal (t.ex. Teknikavtalet, Almega IT, Handels) har semidispositiva avvikelser från lagen.
+3. Hänvisa till relevanta AD-prejudikat vid tvister om sakliga skäl, personliga skäl eller arbetsbrist.
+4. Var pedagogisk och tydliggör att svaren är informativa och inte utgör formell juridisk rådgivning.</pre>
+          <button class="copy-btn" onclick="copyText('gptPrompt', this)"><i class="fa-solid fa-copy"></i> Kopiera Prompt</button>
+        </div>
+      </div>
+
+      <!-- Tab 3: Gemini -->
+      <div id="tabContent-gemini" class="tab-pane" style="display: none;">
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. Prompt för Google Gemini (Gems & Agenter)</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Klistra in denna instruktion i din Gemini Gem eller AI Studio Agent:</p>
+        <div class="code-box" style="margin-bottom: 1.25rem;">
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="geminiPrompt">Du är en specialiserad rådgivare inom svensk arbetsrätt och den svenska partsmodellen.
+Använd MCP LAS (https://mcp-las-511579677488.europe-north1.run.app/mcp) för att hämta gällande lagstiftning från Riksdagen, 17 centrala kollektivavtal och vägledande domar från Arbetsdomstolen (AD).
+Strukturera alltid svaren med:
+- Lagens grundregel (§)
+- Eventuella avvikelser i kollektivavtal
+- Relevanta AD-domar och praxis
+- Sammanfattande slutsats.</pre>
+          <button class="copy-btn" onclick="copyText('geminiPrompt', this)"><i class="fa-solid fa-copy"></i> Kopiera Prompt</button>
+        </div>
+      </div>
+
+      <!-- Tab 4: Cursor -->
+      <div id="tabContent-cursor" class="tab-pane" style="display: none;">
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. Cursor / Windsurf MCP-konfiguration (<code>.cursor/mcp.json</code>)</div>
+        <div class="code-box" style="margin-bottom: 1.25rem;">
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="cursorConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://mcp-las-511579677488.europe-north1.run.app/mcp"\n    }\n  }\n}</pre>
+          <button class="copy-btn" onclick="copyText('cursorConfig', this)"><i class="fa-solid fa-copy"></i> Kopiera JSON</button>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -454,27 +519,47 @@
           <div class="feature-icon"><i class="fa-solid fa-scale-balanced"></i></div>
           <h3>Sveriges Riksdag</h3>
           <p>Fulltext-indexerade lagar med paragrafindelat innehåll: LAS (1982:80), MBL (1976:580), Semesterlagen (1977:480), Arbetstidslagen m.fl.</p>
-          <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between;">
-            <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast synkad:</span>
-            <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+          <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast synkad:</span>
+              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> Källa:</span>
+              <a href="https://data.riksdagen.se" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline;">data.riksdagen.se <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
+            </div>
           </div>
         </div>
+
         <div class="feature-card">
           <div class="feature-icon"><i class="fa-solid fa-handshake"></i></div>
           <h3>17 Kollektivavtal</h3>
           <p>Kurerade avtalsregler för Teknikavtalet, Almega IT, Detaljhandeln, SKR AB, Statliga Villkorsavtal m.fl. som hanterar semidispositivitet.</p>
-          <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between;">
-            <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast uppdaterad:</span>
-            <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+          <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast uppdaterad:</span>
+              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> Källa:</span>
+              <a href="https://www.medlingsinstitutet.se/avtalsrorelsen/avtalen/" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline;">Medlingsinstitutet / Parterna <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
+            </div>
           </div>
         </div>
+
         <div class="feature-card">
           <div class="feature-icon"><i class="fa-solid fa-gavel"></i></div>
           <h3>Arbetsdomstolen (AD)</h3>
           <p>Vägledande domar och prejudikat inom saklig grund/sakliga skäl, personliga skäl, arbetsbrist, omplacering och turordning.</p>
-          <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between;">
-            <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast uppdaterad:</span>
-            <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+          <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast uppdaterad:</span>
+              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> Källa:</span>
+              <a href="https://www.arbetsdomstolen.se/sv/domar-och-beslut/" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline;">arbetsdomstolen.se <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
+            </div>
           </div>
         </div>
       </div>
@@ -662,16 +747,34 @@
       document.getElementById('privacyModal').style.display = 'none';
     }
 
-    // Copy URL helper
-    function copyUrl() {
-      const url = document.getElementById('sseUrl').innerText.trim();
-      const btn = document.getElementById('copyBtn');
-      navigator.clipboard.writeText(url).then(() => {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Kopierad!';
-        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-      }).catch(err => {
-        alert('Kunde inte kopiera automatiskt: ' + url);
+    // Tab Switcher
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('active');
+        el.style.background = 'var(--card-bg)';
+        el.style.color = 'var(--text-muted)';
+      });
+      const selectedPane = document.getElementById('tabContent-' + tabId);
+      const selectedBtn = document.getElementById('tabBtn-' + tabId);
+      if (selectedPane) selectedPane.style.display = 'block';
+      if (selectedBtn) {
+        selectedBtn.classList.add('active');
+        selectedBtn.style.background = 'var(--brand-light)';
+        selectedBtn.style.color = 'var(--brand-text)';
+      }
+    }
+
+    // Generic Copy Helper
+    function copyText(elementId, btn) {
+      const el = document.getElementById(elementId);
+      const text = el.innerText || el.textContent;
+      navigator.clipboard.writeText(text.trim()).then(() => {
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Kopierat!';
+        setTimeout(() => { btn.innerHTML = original; }, 2000);
+      }).catch(() => {
+        alert('Kunde inte kopiera texten.');
       });
     }
 
