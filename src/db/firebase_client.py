@@ -1,3 +1,4 @@
+import math
 import os
 import re
 from typing import List, Dict, Any, Optional
@@ -87,42 +88,167 @@ class FirebaseLaborLawDB:
                     return s
         return None
 
+    @staticmethod
+    def _stem_sv(w: str) -> str:
+        w = w.lower()
+        for suffix in ('ingarna', 'ingens', 'ingen', 'ingar', 'arnas', 'ernas', 'ornas', 'arna', 'erna', 'orna', 'andet', 'anden', 'andes', 'ande', 'ades', 'ade', 'ats', 'tas', 'ets', 'ens', 'het', 'iga', 'igt', 'are', 'ast', 'ern', 'en', 'et', 'na', 'ar', 'er', 'or', 'at', 'ad', 'as', 'es', 'is', 'an', 'a', 'e'):
+            if len(w) > len(suffix) + 3 and w.endswith(suffix):
+                return w[:-len(suffix)]
+        return w
+
     def search_statute_sections(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5) -> List[Dict[str, Any]]:
         q_lower = query.lower()
-        q_emb = Embedder.get_embedding(query)
-        
+        raw_tokens = re.findall(r'[a-zåäö0-9]+', q_lower)
+        from src.embeddings.embedder import SWEDISH_STOPWORDS
+        meaningful_q = [w for w in raw_tokens if w not in SWEDISH_STOPWORDS and len(w) >= 2]
+        if not meaningful_q:
+            meaningful_q = raw_tokens
+
+        SYNONYMS = {
+            'avskeda': ['avskedande', 'avskedas', 'avsked'],
+            'avsked': ['avskedande', 'avskeda'],
+            'avskedande': ['avskeda', 'avskedas'],
+            'anställd': ['arbetstagare', 'anställning', 'anställda'],
+            'varsel': ['varsla', 'underrättelse', 'underrätta'],
+            'varsla': ['varsel', 'underrätta', 'underrättelse'],
+            'semesterdagar': ['semesterdag', 'semester', 'semesterledighet', 'tjugofem'],
+            'dygnsvilan': ['dygnsvila'],
+            'dygnsvila': ['elva timmars', 'sammanhängande ledighet', 'arbetstidslag'],
+            'veckovilan': ['veckovila'],
+            'veckovila': ['trettiosex timmars', 'arbetstidslag'],
+            'övertid': ['allmän övertid', 'övertidstimmar', '200 timmar'],
+            'uppsägningstid': ['uppsägningstider', 'minsta uppsägningstid'],
+            'sakliga': ['sakliga skäl', 'saklig grund'],
+            'visstidsanställning': ['särskild visstidsanställning', 'visstid', 'tidsbegränsad'],
+            'lön': ['anställningsförmåner', 'förmåner', 'löneförmåner'],
+            'förmåner': ['anställningsförmåner', 'lön'],
+            'beräknas': ['beräkning', 'beräkna', 'procentregeln', 'tolv procent'],
+            'diskriminering': ['aktiva åtgärder', 'likabehandling'],
+            'åtgärder': ['aktiva åtgärder', 'riktlinjer'],
+            'skriftlig': ['skriftlig information', 'skriftligt besked'],
+            'anställningsvillkor': ['skriftlig information', 'villkor', 'skriftligt'],
+            'återanställning': ['företrädesrätt', 'företrädesrätt till återanställning'],
+            'förhandlingsskyldighet': ['primär förhandlingsskyldighet', 'förhandla', 'viktigare förändring'],
+            'motivera': ['sakliga skäl', 'grovt åsidosatt', 'grundas'],
+            'skäl': ['sakliga skäl', 'saklig grund', 'arbetsbrist', 'personliga skäl']
+        }
+
+        # Check explicit section number or statute in query
+        sec_match = re.search(r'(\d+\s*[a-z]?)\s*(?:§|paragraf)', q_lower)
+        target_sec = sec_match.group(1).replace(' ', '') if sec_match else None
+
+        statute_hints = {
+            'las': 'LAS', 'semesterlag': 'Semesterlagen', 'semesterlagen': 'Semesterlagen',
+            'mbl': 'MBL', 'arbetstidslag': 'Arbetstidslagen', 'arbetstidslagen': 'Arbetstidslagen',
+            'diskrimineringslag': 'Diskrimineringslagen', 'diskrimineringslagen': 'Diskrimineringslagen',
+            'arbetsmiljölag': 'Arbetsmiljölagen', 'arbetsmiljölagen': 'Arbetsmiljölagen',
+            'sjuklön': 'Sjuklönelagen', 'sjuklönelagen': 'Sjuklönelagen',
+            'föräldraledighet': 'Föräldraledighetslagen', 'föräldraledighetslagen': 'Föräldraledighetslagen'
+        }
+        target_statute = next((statute_hints[k] for k in statute_hints if k in q_lower), None)
+
+        expanded_query_terms = list(meaningful_q)
+        for w in meaningful_q:
+            if w in SYNONYMS:
+                expanded_query_terms.extend(SYNONYMS[w])
+
+        q_emb = Embedder.get_embedding(query + " " + " ".join(expanded_query_terms))
+
         items = []
         if self.db:
             try:
-                docs = self.db.collection("statute_sections").limit(500).stream()
+                docs = self.db.collection("statute_sections").limit(1000).stream()
                 items = [d.to_dict() for d in docs]
             except Exception:
                 pass
         if not items:
             items = list(self._local_sections.values())
 
+        if not items:
+            return []
+
+        # Corpus stem frequencies for IDF
+        N = len(items)
+        doc_stem_freqs: Dict[str, int] = {}
+        for s in items:
+            all_text = (s.get('content', '') + ' ' + (s.get('section_title') or '') + ' ' + ' '.join(s.get('keywords', []))).lower()
+            stems = set(self._stem_sv(w) for w in re.findall(r'[a-zåäö0-9]+', all_text))
+            for st in stems:
+                doc_stem_freqs[st] = doc_stem_freqs.get(st, 0) + 1
+
         scored_sections = []
         for s in items:
+            content = s.get("content", "")
+            title = s.get("section_title") or ""
+            keywords = s.get("keywords", [])
+            sec_num = str(s.get("section_number", "")).lower().replace(" ", "")
+            statute_short = s.get("statute_short", "")
+
+            doc_tokens = re.findall(r'[a-zåäö0-9]+', content.lower())
+            doc_stems = [self._stem_sv(w) for w in doc_tokens]
+            title_tokens = re.findall(r'[a-zåäö0-9]+', title.lower())
+            title_stems = [self._stem_sv(w) for w in title_tokens]
+            kw_tokens = re.findall(r'[a-zåäö0-9]+', ' '.join(keywords).lower())
+            first_tokens = doc_tokens[:25]
+            first_stems = doc_stems[:25]
+
             lex_score = 0.0
-            content = s.get("content", "").lower()
-            title = (s.get("section_title") or "").lower()
-            keywords = [k.lower() for k in s.get("keywords", [])]
-            
-            for word in q_lower.split():
-                if len(word) < 2:
-                    continue
-                if word in content:
-                    lex_score += 1.0
-                if word in title:
-                    lex_score += 2.0
-                if any(word in kw for kw in keywords):
-                    lex_score += 2.5
-                    
+            title_matches_count = 0
+            for w in meaningful_q:
+                w_stem = self._stem_sv(w)
+                df = doc_stem_freqs.get(w_stem, 1)
+                idf = max(0.5, math.log(1.0 + (N - df + 0.5) / (df + 0.5)))
+
+                c_count = doc_tokens.count(w) + 0.6 * doc_stems.count(w_stem)
+                t_m = (title_tokens.count(w) + 1.2 * title_stems.count(w_stem))
+                if t_m > 0:
+                    title_matches_count += 1
+                t_count = t_m * 10.0
+                k_count = (kw_tokens.count(w) + 1.0 * kw_tokens.count(w)) * 5.0
+                f_count = (first_tokens.count(w) + 1.0 * first_stems.count(w_stem)) * 5.0
+
+                match_val = c_count + t_count + k_count + f_count
+                if match_val > 0:
+                    lex_score += math.log(1.0 + match_val) * idf
+
+            if title_matches_count >= 2:
+                lex_score += 20.0
+            elif title_matches_count >= 1 and len(title_tokens) <= 2:
+                lex_score += 15.0
+
+            for i in range(len(meaningful_q) - 1):
+                phrase = f'{meaningful_q[i]} {meaningful_q[i+1]}'
+                if phrase in title.lower():
+                    lex_score += 25.0
+                elif phrase in ' '.join(keywords).lower():
+                    lex_score += 12.0
+                elif phrase in content.lower():
+                    lex_score += 6.0
+
             sem_score = 0.0
             if s.get("embedding"):
                 sem_score = Embedder.cosine_similarity(q_emb, s["embedding"])
-                
-            total_score = (0.4 * lex_score) + (0.6 * sem_score)
+
+            # Exception & citation de-weighting
+            if '69 år' in content.lower() and '69' not in q_lower:
+                lex_score *= 0.1
+                sem_score *= 0.1
+            if ('skadestånd enligt' in content.lower() or 'ogiltigförklarats och ersättning' in content.lower() or 'har ogiltigförklarats' in content.lower()):
+                if 'skadestånd' not in q_lower and 'ogiltig' not in q_lower and 'domstol' not in q_lower:
+                    lex_score *= 0.3
+                    sem_score *= 0.3
+            if any(content.lower().strip().startswith(p) for p in ['om flera arbetstagare har företrädesrätt enligt', 'har besked om företrädesrätt till återanställning lämnats enligt', 'ett yrkande om beslut enligt']):
+                lex_score *= 0.3
+                sem_score *= 0.3
+
+            boost = 0.0
+            if target_sec and target_sec == sec_num:
+                boost += 30.0
+            if target_statute and target_statute.lower() in statute_short.lower():
+                boost += 6.0
+
+            total_score = (0.4 * lex_score) + (0.6 * (sem_score * 30.0)) + boost
+
             if total_score > 0.05 or lex_score > 0:
                 scored_sections.append({
                     "score": round(total_score, 3),
@@ -134,9 +260,10 @@ class FirebaseLaborLawDB:
                     "content": s.get("content"),
                     "keywords": s.get("keywords")
                 })
-                
+
         scored_sections.sort(key=lambda x: x["score"], reverse=True)
         return scored_sections[:limit]
+
 
     # --- Precedents ---
     def save_precedent(self, precedent: Dict[str, Any]):

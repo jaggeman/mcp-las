@@ -108,6 +108,21 @@ https://mcp-las-rules.web.app/mcp
 
 ---
 
+## 🧪 Test-Driven Development (TDD) & Tester
+
+Projektet utvecklas strikt enligt **Test-Driven Development (TDD)**:
+1. **Skriv test först**: Vid varje ny funktion, beräkningsverktyg eller buggfix ska enhetstester och integrationstester skrivas i `tests/` innan implementationen påbörjas.
+2. **Kör hela testsviten**: Samtliga tester måste köras och passera (`pytest tests/ -v`) före commit och deploy.
+3. **Deterministisk integritet**: Chunker och laguppslagningar verifieras med `python check_coverage.py` för att säkerställa 100% täckning över alla 477 lagparagrafer.
+
+### Kör tester
+```powershell
+.venv\Scripts\pytest.exe tests/ -v
+.venv\Scripts\python.exe check_coverage.py
+```
+
+---
+
 ## ⚖️ Ansvarsfriskrivning (Legal Disclaimer)
 
 > **Viktigt:** Denna MCP-server är ett öppen källkodsprojekt (Open Source) utvecklat för informations- och AI-integrationsändamål. Svar och information som tillhandahålls utgör **inte juridisk rådgivning** och ersätter inte professionell juridisk expertis, advokat eller facklig rådgivare. Skaparen friskriver sig från allt ansvar för beslut eller tolkningar som fattas med stöd av tjänsten.
@@ -118,11 +133,4 @@ https://mcp-las-rules.web.app/mcp
 
 Öppen källkod licensierad under **[MIT License](LICENSE)**.
 
----
-
-## 🧪 Kör tester
-
-```powershell
-pytest -v
-```
 

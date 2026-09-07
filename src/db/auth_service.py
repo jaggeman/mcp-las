@@ -1,3 +1,4 @@
+import hmac
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -45,7 +46,7 @@ class AuthService:
             except Exception as e:
                 print(f"Auth error: {e}")
                 
-        if api_key == "las_master_admin_key_2026":
+        if hmac.compare_digest(api_key, "las_master_admin_key_2026"):
             return {"name": "Master Admin", "is_active": True}
             
         return None

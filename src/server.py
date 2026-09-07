@@ -138,22 +138,36 @@ DIRECT_TOOLS_MAP = {
 
 @mcp.custom_route("/api/tools/list", methods=["GET", "OPTIONS"])
 async def list_available_tools_rest(request):
-    """Returnerar lista över alla tillgängliga verktyg för direkt anrop av AI-agenter."""
+    """Returnerar lista över tillgängliga verktyg för behöriga klienter med giltig API-nyckel."""
     if request.method == "OPTIONS":
         return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
+    
+    api_key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+    if not api_key:
+        return JSONResponse({
+            "success": False,
+            "error": "API-nyckel krävs. Ansök om en API-nyckel på https://mcp-las-rules.web.app/#key-request."
+        }, status_code=401, headers={"Access-Control-Allow-Origin": "*"})
+        
+    key_info = auth_service.validate_key(api_key)
+    if not key_info:
+        return JSONResponse({
+            "success": False,
+            "error": "Ogiltig eller inaktiv API-nyckel."
+        }, status_code=403, headers={"Access-Control-Allow-Origin": "*"})
+
     return JSONResponse({
         "success": True,
         "tools_count": len(DIRECT_TOOLS_MAP),
         "tools": list(DIRECT_TOOLS_MAP.keys()),
-        "endpoint_pattern": "/api/tools/{tool_name}",
-        "instructions": "Skicka HTTP POST med JSON-body innehållande parametrar för att köra direkt utan MCP/SSE-timeout."
+        "authorized_user": key_info.get("name", "Authorized Client")
     }, headers={"Access-Control-Allow-Origin": "*"})
 
 @mcp.custom_route("/api/tools/{tool_name}", methods=["POST", "OPTIONS"])
 async def execute_tool_direct_rest(request):
     """
-    Direkt REST-endpoint för att köra vilket verktyg som helst som ren JSON via HTTP POST.
-    Perfekt för sekundära AI-granskningssystem, automatiserade pipelines och externa script utan MCP-timeouts.
+    Kräver giltig API-nyckel (via X-API-Key header eller api_key i body).
+    Användare utan nyckel nekas med 401 Unauthorized och uppmanas ansöka om nyckel.
     """
     if request.method == "OPTIONS":
         return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
@@ -173,6 +187,19 @@ async def execute_tool_direct_rest(request):
             pass
             
         api_key = request.headers.get("X-API-Key") or body.pop("api_key", None)
+        if not api_key:
+            return JSONResponse({
+                "success": False,
+                "error": "API-nyckel krävs för att anropa verktyg. Ansök om en personlig nyckel på https://mcp-las-rules.web.app/#key-request eller skicka med 'X-API-Key' i HTTP-headern."
+            }, status_code=401, headers={"Access-Control-Allow-Origin": "*"})
+
+        key_info = auth_service.validate_key(api_key)
+        if not key_info:
+            return JSONResponse({
+                "success": False,
+                "error": "Ogiltig eller inaktiv API-nyckel. Kontakta support eller ansök om ny nyckel."
+            }, status_code=403, headers={"Access-Control-Allow-Origin": "*"})
+
         rl_err = _check_rate_limit(api_key)
         if rl_err:
             return JSONResponse(rl_err, status_code=429, headers={"Access-Control-Allow-Origin": "*"})
@@ -182,7 +209,7 @@ async def execute_tool_direct_rest(request):
         result = func(**body)
         duration_ms = (time.time() - t0) * 1000
         
-        auth_service.log_access(api_key or "anon_rest", None, tool_name, body, duration_ms)
+        auth_service.log_access(api_key, key_info, tool_name, body, duration_ms)
         
         return JSONResponse({
             "success": True,
