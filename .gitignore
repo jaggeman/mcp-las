@@ -1,4 +1,4 @@
-﻿.venv/
+.venv/
 __pycache__/
 *.pyc
 .env
@@ -10,3 +10,8 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+.firebase/
+scratch_*
+scraped_*
+unionen_*
+js_*
