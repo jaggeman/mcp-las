@@ -143,23 +143,39 @@ class FirebaseLaborLawDB:
             'veckovilan': ['veckovila'],
             'veckovila': ['trettiosex timmars', 'arbetstidslag'],
             'övertid': ['allmän övertid', 'övertidstimmar', '200 timmar'],
-            'uppsägningstid': ['uppsägningstider', 'minsta uppsägningstid'],
+            'uppsägningstid': ['uppsägningstider', 'minsta uppsägningstid', 'anställningstid', '11 §'],
             'sakliga': ['sakliga skäl', 'saklig grund'],
-            'visstidsanställning': ['särskild visstidsanställning', 'visstid', 'tidsbegränsad'],
-            'lön': ['anställningsförmåner', 'förmåner', 'löneförmåner'],
+            'visstidsanställning': ['särskild visstidsanställning', 'visstid', 'tidsbegränsad', '5 a §', '12 månader', 'inlasning'],
+            'inlasning': ['särskild visstidsanställning', '5 a §', '12 månader', 'tillsvidareanställning'],
+            'hyvling': ['7 b §', 'omreglering', 'sysselsättningsgrad', 'turordning vid omreglering'],
+            'driftsenhet': ['22 §', 'turordningskrets', 'arbetsställe', 'samma ort'],
+            'lön': ['anställningsförmåner', 'förmåner', 'löneförmåner', 'ersättning'],
             'förmåner': ['anställningsförmåner', 'lön'],
             'beräknas': ['beräkning', 'beräkna', 'procentregeln', 'tolv procent'],
-            'diskriminering': ['aktiva åtgärder', 'likabehandling'],
+            'diskriminering': ['aktiva åtgärder', 'likabehandling', 'bristande tillgänglighet', 'missgynnande'],
             'åtgärder': ['aktiva åtgärder', 'riktlinjer'],
-            'skriftlig': ['skriftlig information', 'skriftligt besked'],
-            'anställningsvillkor': ['skriftlig information', 'villkor', 'skriftligt'],
-            'återanställning': ['företrädesrätt', 'företrädesrätt till återanställning'],
-            'förhandlingsskyldighet': ['primär förhandlingsskyldighet', 'förhandla', 'viktigare förändring'],
+            'skriftlig': ['skriftlig information', 'skriftligt besked', '6 c §', 'anställningsvillkor'],
+            'anställningsvillkor': ['skriftlig information', 'villkor', 'skriftligt', '6 c §'],
+            'återanställning': ['företrädesrätt', 'företrädesrätt till återanställning', '25 §', 'nio månader'],
+            'förhandlingsskyldighet': ['primär förhandlingsskyldighet', 'förhandla', 'viktigare förändring', '11 §'],
             'motivera': ['sakliga skäl', 'grovt åsidosatt', 'grundas'],
-            'skäl': ['sakliga skäl', 'saklig grund', 'arbetsbrist', 'personliga skäl']
+            'skäl': ['sakliga skäl', 'saklig grund', 'arbetsbrist', 'personliga skäl'],
+            'lojalitetsplikt': ['bisyssla', 'konkurrerande verksamhet', 'förtroendeskada', 'illojal'],
+            'bisyssla': ['lojalitetsplikt', 'konkurrerande verksamhet', 'förtroende'],
+            'karensavdrag': ['sjuklön', '20 procent', 'sjuklönelagen 6 §', 'karensdag', '80 procent'],
+            'skyddsombudsstopp': ['6 kap. 7 §', 'arbetsmiljölagen', 'skyddsombud', 'omedelbar och allvarlig fara'],
+            'studieledighet': ['studieledighetslagen', '1974:981', 'rätt till ledighet för utbildning', 'uppskjuta'],
+            'kvittning': ['kvittningslagen', '1970:215', 'otillåten kvittning', 'motfordran'],
+            'verksamhetsövergång': ['6 b §', 'övergång av verksamhet', '28 § mbl', 'oförändrade villkor'],
+            'föräldraledighet': ['föräldraledig', '11 §', '16 § föräldraledighetslagen', 'börjar löpa'],
+            'drogtestning': ['drogtest', 'alkoholtest', 'kroppslig integritet', 'intresseavvägning', 'säkerhetskänslig']
         }
 
-        # Check explicit section number or statute in query
+        # Check explicit chapter and section number or statute in query
+        chap_sec_match = re.search(r'(\d+)\s*kap\.?\s*(\d+\s*[a-z]?)\s*(?:§|paragraf)', q_lower)
+        target_chap = chap_sec_match.group(1) if chap_sec_match else None
+        target_chap_sec = chap_sec_match.group(2).replace(' ', '') if chap_sec_match else None
+
         sec_match = re.search(r'(\d+\s*[a-z]?)\s*(?:§|paragraf)', q_lower)
         target_sec = sec_match.group(1).replace(' ', '') if sec_match else None
 
@@ -167,9 +183,11 @@ class FirebaseLaborLawDB:
             'las': 'LAS', 'semesterlag': 'Semesterlagen', 'semesterlagen': 'Semesterlagen',
             'mbl': 'MBL', 'arbetstidslag': 'Arbetstidslagen', 'arbetstidslagen': 'Arbetstidslagen',
             'diskrimineringslag': 'Diskrimineringslagen', 'diskrimineringslagen': 'Diskrimineringslagen',
-            'arbetsmiljölag': 'Arbetsmiljölagen', 'arbetsmiljölagen': 'Arbetsmiljölagen',
+            'arbetsmiljölag': 'Arbetsmiljölagen', 'arbetsmiljölagen': 'Arbetsmiljölagen', 'aml': 'Arbetsmiljölagen',
             'sjuklön': 'Sjuklönelagen', 'sjuklönelagen': 'Sjuklönelagen',
-            'föräldraledighet': 'Föräldraledighetslagen', 'föräldraledighetslagen': 'Föräldraledighetslagen'
+            'föräldraledighet': 'Föräldraledighetslagen', 'föräldraledighetslagen': 'Föräldraledighetslagen',
+            'kvittning': '1970:215', 'kvittningslagen': '1970:215',
+            'studieledighet': '1974:981', 'studieledighetslagen': '1974:981'
         }
         target_statute = next((statute_hints[k] for k in statute_hints if k in q_lower), None)
 
@@ -200,6 +218,7 @@ class FirebaseLaborLawDB:
             title = s.get("section_title") or ""
             keywords = s.get("keywords", [])
             sec_num = str(s.get("section_number", "")).lower().replace(" ", "")
+            sec_chap = str(s.get("chapter", "")).lower().replace(" ", "") if s.get("chapter") else None
             statute_short = s.get("statute_short", "")
 
             doc_tokens = re.findall(r'[a-zåäö0-9]+', content.lower())
@@ -260,10 +279,13 @@ class FirebaseLaborLawDB:
                 sem_score *= 0.3
 
             boost = 0.0
-            if target_sec and target_sec == sec_num:
+            if target_chap and target_chap_sec and target_chap == sec_chap and target_chap_sec == sec_num:
+                boost += 45.0
+            elif target_sec and target_sec == sec_num:
                 boost += 30.0
-            if target_statute and target_statute.lower() in statute_short.lower():
-                boost += 6.0
+                
+            if target_statute and (target_statute.lower() in statute_short.lower() or target_statute in s.get("statute_id", "")):
+                boost += 10.0
 
             total_score = (0.4 * lex_score) + (0.6 * (sem_score * 30.0)) + boost
 
@@ -339,6 +361,13 @@ class FirebaseLaborLawDB:
                     lex_score += 2.5
                 elif t in domskal_text:
                     lex_score += 1.5
+
+            # Statute reference match boost
+            q_secs = re.findall(r'(\d+\s*[a-z]?)\s*(?:§|paragraf)', q_lower)
+            for qs in q_secs:
+                clean_qs = qs.replace(' ', '')
+                if clean_qs in prov_text:
+                    lex_score += 6.0
             
             total_score = (0.3 * sem_score) + (0.7 * lex_score)
             
