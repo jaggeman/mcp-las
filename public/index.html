@@ -147,7 +147,7 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 1.25rem;
+      gap: 1.1rem;
     }
     .nav-link {
       text-decoration: none;
@@ -159,6 +159,37 @@
     .nav-link:hover {
       color: var(--brand);
     }
+
+    /* Language Switcher */
+    .lang-switcher {
+      display: flex;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 0.6rem;
+      padding: 2px;
+      gap: 2px;
+    }
+    .lang-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.35rem 0.55rem;
+      border-radius: 0.45rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .lang-btn.active {
+      background: var(--brand);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+    }
+    .lang-btn:hover:not(.active) {
+      color: var(--text);
+    }
+
     .theme-toggle-btn {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -298,27 +329,31 @@
       text-align: center;
     }
     .section-sub {
-      color: var(--text-muted);
       text-align: center;
+      color: var(--text-muted);
       margin-bottom: 2.5rem;
       font-size: 0.95rem;
     }
+
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.5rem;
       margin-bottom: 4rem;
     }
+
     .feature-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 1.25rem;
       padding: 1.75rem;
       box-shadow: var(--shadow);
-      transition: transform 0.15s ease, border-color 0.15s ease;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+      display: flex;
+      flex-direction: column;
     }
     .feature-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px);
       border-color: rgba(34, 197, 94, 0.4);
     }
     .feature-icon {
@@ -326,7 +361,7 @@
       height: 3rem;
       border-radius: 0.75rem;
       background: var(--brand-light);
-      color: var(--brand);
+      color: var(--brand-text);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -337,155 +372,146 @@
       font-size: 1.15rem;
       font-weight: 700;
       margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
     }
     .feature-card p {
       color: var(--text-muted);
       font-size: 0.9rem;
-      line-height: 1.5;
+      flex-grow: 1;
     }
 
-    .table-responsive {
-      width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
     .tools-table-container {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 1.25rem;
-      overflow: hidden;
-      box-shadow: var(--shadow);
+      padding: 1.5rem;
       margin-bottom: 4rem;
+      box-shadow: var(--shadow);
+    }
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .tools-table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
     }
     .tools-table th {
-      background: var(--brand-light);
-      color: var(--text);
+      padding: 0.85rem 1rem;
       font-weight: 700;
-      padding: 1.1rem 1.25rem;
-      border-bottom: 1px solid var(--card-border);
-      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-bottom: 2px solid var(--card-border);
+      font-size: 0.8rem;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
+      letter-spacing: 0.05em;
     }
     .tools-table td {
-      padding: 1.15rem 1.25rem;
+      padding: 1.1rem 1rem;
       border-bottom: 1px solid var(--card-border);
-      vertical-align: middle;
+      vertical-align: top;
     }
     .tools-table tr:last-child td {
       border-bottom: none;
     }
-    .tools-table tr:hover {
-      background: rgba(34, 197, 94, 0.03);
-    }
     .tool-meta {
       display: flex;
-      align-items: center;
-      gap: 0.85rem;
+      align-items: flex-start;
+      gap: 0.75rem;
     }
     .tool-icon-box {
-      width: 2.6rem;
-      height: 2.6rem;
-      border-radius: 0.65rem;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.5rem;
       background: var(--brand-light);
-      color: var(--brand);
+      color: var(--brand-text);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.15rem;
+      font-size: 1rem;
       flex-shrink: 0;
+      margin-top: 0.15rem;
     }
     .tool-title {
       font-weight: 700;
       color: var(--text);
-      font-size: 0.98rem;
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
     }
     .tool-badge {
-      font-family: monospace;
-      font-size: 0.76rem;
-      color: var(--text-muted);
-      font-weight: 500;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--brand);
       background: var(--code-bg);
-      border: 1px solid var(--card-border);
-      padding: 0.1rem 0.4rem;
+      padding: 0.15rem 0.45rem;
       border-radius: 0.35rem;
       display: inline-block;
       width: fit-content;
+      border: 1px solid var(--card-border);
+      word-break: break-all;
     }
     .prompt-box {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.6rem;
       background: var(--code-bg);
       border: 1px solid var(--card-border);
-      border-radius: 0.65rem;
-      padding: 0.6rem 0.85rem;
-      font-size: 0.84rem;
+      border-radius: 0.6rem;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.82rem;
       color: var(--text);
-      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
     .prompt-text {
       font-style: italic;
       color: var(--text);
+      line-height: 1.45;
     }
     .copy-prompt-btn {
+      align-self: flex-start;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      color: var(--text-muted);
-      border-radius: 0.45rem;
-      padding: 0.3rem 0.6rem;
+      border-radius: 0.4rem;
+      padding: 0.25rem 0.6rem;
       font-size: 0.75rem;
       font-weight: 600;
+      color: var(--text-muted);
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.35rem;
       transition: all 0.15s ease;
-      flex-shrink: 0;
-      white-space: nowrap;
     }
     .copy-prompt-btn:hover {
-      background: var(--brand);
-      color: #fff;
       border-color: var(--brand);
+      color: var(--brand);
     }
 
-
     .form-section {
-      max-width: 600px;
-      margin: 0 auto 5rem;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 1.5rem;
-      padding: 2.25rem;
+      padding: 3rem 2rem;
+      max-width: 680px;
+      margin: 0 auto 4rem;
       box-shadow: var(--shadow);
     }
     .form-group {
       margin-bottom: 1.25rem;
     }
-    .form-group label {
+    .form-label {
       display: block;
-      font-size: 0.85rem;
       font-weight: 600;
+      font-size: 0.88rem;
       margin-bottom: 0.4rem;
     }
     .form-control {
       width: 100%;
       padding: 0.75rem 1rem;
-      border-radius: 0.75rem;
-      background: var(--input-bg);
+      border-radius: 0.6rem;
       border: 1px solid var(--input-border);
+      background: var(--input-bg);
       color: var(--text);
       font-family: inherit;
       font-size: 0.95rem;
@@ -495,58 +521,65 @@
     .form-control:focus {
       border-color: var(--brand);
     }
-    .success-box {
-      text-align: center;
-      padding: 2rem 1rem;
+    textarea.form-control {
+      resize: vertical;
+      min-height: 100px;
     }
 
     footer {
       margin-top: auto;
-      border-top: 1px solid var(--card-border);
-      padding: 2rem 0;
+      border-top: 1px solid var(--nav-border);
+      padding: 2.5rem 0;
       text-align: center;
       font-size: 0.85rem;
       color: var(--text-muted);
     }
 
+    .tech-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.2rem 0.55rem;
+      border-radius: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Mobile Responsive Optimizations */
     @media (max-width: 868px) {
-      .container { padding: 0 1rem; }
       .nav-links .nav-link { display: none; }
       .hero { padding: 3rem 0 2rem; }
-      .hero h1 { font-size: clamp(1.75rem, 6vw, 2.5rem); }
-      .hero p { font-size: 1rem; }
-      .hero-actions { flex-direction: column; width: 100%; max-width: 380px; margin: 0 auto; }
+      .hero-actions { flex-direction: column; width: 100%; }
       .hero-actions .btn { width: 100%; justify-content: center; }
 
-      .grid-3 { grid-template-columns: 1fr; gap: 1rem; }
-      .connector-card { padding: 1.25rem; margin: 1.5rem auto 2.5rem; border-radius: 1rem; }
-      
-      /* Mobile Tools Card View */
       .tools-table thead { display: none; }
-      .tools-table, .tools-table tbody { display: block; width: 100%; }
-      .tools-table tr.tool-row {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
+      .tools-table, .tools-table tbody, .tools-table tr, .tools-table td {
+        display: block;
+        width: 100%;
+      }
+      .tools-table tr {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
         border-radius: 1rem;
+        margin-bottom: 1.25rem;
         padding: 1.15rem;
-        margin-bottom: 1rem;
-        box-shadow: var(--shadow);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
       }
-      .tools-table tr.tool-row:hover { background: var(--card-bg); }
       .tools-table td {
-        display: block;
-        padding: 0;
+        padding: 0.45rem 0;
         border: none;
-        width: 100% !important;
       }
-      .tool-title { font-size: 1.05rem; }
-      .prompt-box {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.65rem;
+      .tools-table td:first-child { padding-top: 0; margin-bottom: 0.4rem; }
+      .tools-table td:nth-child(2) {
+        color: var(--text-muted);
+        font-size: 0.88rem;
+        line-height: 1.5;
+        margin-bottom: 0.75rem;
+      }
+      .tools-table td:last-child {
         background: var(--code-bg);
         padding: 0.75rem;
         border-radius: 0.6rem;
@@ -558,7 +591,6 @@
         font-size: 0.82rem;
       }
 
-      /* Horizontal scroll for category buttons on mobile */
       #categoryFilterContainer {
         overflow-x: auto;
         flex-wrap: nowrap;
@@ -573,12 +605,6 @@
         align-items: center;
         text-align: center;
         gap: 0.75rem;
-      }
-
-      .form-section {
-        padding: 1.5rem 1.15rem;
-        margin-bottom: 3rem;
-        border-radius: 1.15rem;
       }
     }
 
@@ -614,19 +640,29 @@
           <span class="brand-title">MCP <span class="brand-accent">LAS</span></span>
           <span class="status-pill">
             <span class="pulse-dot"></span>
-            <span>FastMCP &bull; Live</span>
+            <span data-i18n="status_live">FastMCP &bull; Live</span>
           </span>
         </div>
       </a>
       <div class="nav-links">
-        <a href="#connector" class="nav-link">Anslut AI</a>
-        <a href="#kallor" class="nav-link">Källor & Data</a>
-        <a href="#verktyg" class="nav-link">MCP-Verktyg</a>
+        <a href="#connector" class="nav-link" data-i18n="nav_connect">Anslut AI</a>
+        <a href="#kallor" class="nav-link" data-i18n="nav_sources">Källor & Data</a>
+        <a href="#verktyg" class="nav-link" data-i18n="nav_tools">Verktyg</a>
+        <a href="#ai-reviewer-api" class="nav-link" data-i18n="nav_api">REST API</a>
+        
+        <!-- Language Switcher -->
+        <div class="lang-switcher" title="Välj språk / Select language">
+          <button class="lang-btn active" id="langBtnSv" onclick="setLanguage('sv')">🇸🇪 SV</button>
+          <button class="lang-btn" id="langBtnEn" onclick="setLanguage('en')">🇬🇧 EN</button>
+        </div>
+
+        <!-- Dark/Light Theme Toggle -->
         <button class="theme-toggle-btn" id="themeToggle" title="Växla ljust/mörkt läge" aria-label="Toggle theme">
           <i class="fa-solid fa-moon" id="themeIcon"></i>
         </button>
+
         <a href="#connector" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-          <i class="fa-solid fa-plug"></i> Anslut direkt
+          <i class="fa-solid fa-plug"></i> <span data-i18n="nav_connect_btn">Anslut direkt</span>
         </a>
       </div>
     </div>
@@ -635,21 +671,25 @@
   <!-- Hero -->
   <header class="hero">
     <div class="container">
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--brand-light); color: var(--brand-text); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 700; margin-bottom: 1.25rem; border: 1px solid rgba(34, 197, 94, 0.3);">
+        <i class="fa-solid fa-scale-balanced"></i>
+        <span data-i18n="hero_badge">Officiell Svensk Arbetsrätt & Kollektivavtal för AI</span>
+      </div>
       <h1>
-        Svensk Arbetsrätt & Kollektivavtal <br/>
-        <span class="gradient-text">direkt till din AI-Agent</span>
+        <span data-i18n="hero_title_1">Svensk Arbetsrätt & Kollektivavtal</span> <br/>
+        <span class="gradient-text" data-i18n="hero_title_2">direkt till din AI-Agent</span>
       </h1>
-      <p>
-        Fullständig tillgång till Riksdagens lagar (LAS, MBL, Semesterlagen), 17 centrala kollektivavtal och Arbetsdomstolens prejudikat via Model Context Protocol.
+      <p data-i18n="hero_sub">
+        Fullständig tillgång till Riksdagens lagar (LAS, MBL, Semesterlagen), 17 centrala kollektivavtal, 30 AD-prejudikat, semesterberäkningar, reseavdrag och HR-mallar via Model Context Protocol eller direkt REST API.
       </p>
       <div class="hero-actions">
         <a href="#connector" class="btn btn-primary">
           <i class="fa-solid fa-plug"></i>
-          <span>Anslut direkt till din AI</span>
+          <span data-i18n="hero_btn_connect">Anslut direkt till din AI</span>
         </a>
         <a href="#ansok" class="btn btn-secondary">
           <i class="fa-solid fa-key"></i>
-          <span>Begär dedikerad åtkomst</span>
+          <span data-i18n="hero_btn_request">Begär dedikerad åtkomst</span>
         </a>
       </div>
     </div>
@@ -661,11 +701,11 @@
       <div class="connector-header">
         <div class="connector-title">
           <i class="fa-solid fa-plug" style="color: var(--brand);"></i>
-          <span>Anslut till din AI (Claude, ChatGPT, Gemini, Cursor)</span>
+          <span data-i18n="conn_title">Anslut till din AI (Claude, ChatGPT, Gemini, Cursor)</span>
         </div>
-        <span class="tech-badge">Modern Streamable HTTP &bull; Live på Cloud Run</span>
+        <span class="tech-badge" data-i18n="conn_badge">Modern Streamable HTTP &bull; Live på Cloud Run</span>
       </div>
-      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;" data-i18n="conn_sub">
         Välj din AI-plattform nedan för att få färdig URL, konfigurationskod och installationsprompt:
       </p>
 
@@ -687,65 +727,65 @@
 
       <!-- Tab 1: Claude -->
       <div id="tabContent-claude" class="tab-pane">
-        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. Streamable HTTP URL (för Custom Connector)</div>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="claude_url_title">1. Streamable HTTP URL (för Custom Connector)</div>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <code id="claudeUrl">https://mcp-las-rules.web.app/mcp</code>
-          <button class="copy-btn" onclick="copyText('claudeUrl', this)"><i class="fa-solid fa-copy"></i> Kopiera URL</button>
+          <code id="claudeUrl">https://mcp-las-639268366595.europe-north1.run.app/mcp</code>
+          <button class="copy-btn" onclick="copyText('claudeUrl', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_url">Kopiera URL</span></button>
         </div>
-        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">2. Konfiguration för Claude Desktop (<code>claude_desktop_config.json</code>)</div>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="claude_config_title">2. Konfiguration för Claude Desktop (<code>claude_desktop_config.json</code>)</div>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="claudeConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://mcp-las-rules.web.app/mcp"\n    }\n  }\n}</pre>
-          <button class="copy-btn" onclick="copyText('claudeConfig', this)"><i class="fa-solid fa-copy"></i> Kopiera JSON</button>
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="claudeConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://mcp-las-639268366595.europe-north1.run.app/mcp"\n    }\n  }\n}</pre>
+          <button class="copy-btn" onclick="copyText('claudeConfig', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_json">Kopiera JSON</span></button>
         </div>
       </div>
 
       <!-- Tab 2: ChatGPT -->
       <div id="tabContent-chatgpt" class="tab-pane" style="display: none;">
-        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. MCP-koppling för ChatGPT Desktop / OpenAI Developer Mode</div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Använd denna Streamable HTTP-adress direkt i ChatGPT Desktop:</p>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="gpt_url_title">1. MCP-koppling för ChatGPT Desktop / OpenAI Developer Mode</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;" data-i18n="gpt_url_desc">Använd denna Streamable HTTP-adress direkt i ChatGPT Desktop:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <code id="gptUrl">https://mcp-las-rules.web.app/mcp</code>
-          <button class="copy-btn" onclick="copyText('gptUrl', this)"><i class="fa-solid fa-copy"></i> Kopiera URL</button>
+          <code id="gptUrl">https://mcp-las-639268366595.europe-north1.run.app/mcp</code>
+          <button class="copy-btn" onclick="copyText('gptUrl', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_url">Kopiera URL</span></button>
         </div>
 
-        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">2. System Prompt för Custom GPTs</div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Klistra in denna instruktion i din Custom GPT:</p>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="gpt_prompt_title">2. System Prompt för Custom GPTs</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;" data-i18n="gpt_prompt_desc">Klistra in denna instruktion i din Custom GPT:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="gptPrompt">Du är en svensk arbetsrättsexpert driven av MCP LAS (https://mcp-las-rules.web.app/mcp).
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="gptPrompt">Du är en svensk arbetsrättsexpert driven av MCP LAS (https://mcp-las-639268366595.europe-north1.run.app/mcp).
 När användaren ställer frågor om svensk arbetsrätt, anställningsskydd (LAS), medbestämmande (MBL), semester eller kollektivavtal:
 1. Slå alltid upp gällande lagtext och exakt paragraf via MCP LAS.
 2. Kontrollera alltid om tillämpligt kollektivavtal (t.ex. Teknikavtalet, Almega IT, Handels, Unionen) har semidispositiva avvikelser från lagen.
 3. Vid semesterfrågor: använd MCP-verktygen för att beräkna semesterlön/tillägg, avdrag för obetald semester och intjänade semesterdagar.
-4. Vid frågor om arbetsgivarintyg för a-kassa: förklara arbetsgivarens lagstadgade skyldighet enligt 47 § lag om arbetslöshetsförsäkring (ALF) och hänvisa alltid till Sveriges a-kassors officiella e-tjänst: https://www.arbetsgivarintyg.nu.
+4. Vid reseavdrag & basbelopp: beräkna Skatteverkets milersättning (25 kr/mil) och hämta aktuella basbelopp (PBB/IBB 2026).
 5. Hänvisa till relevanta AD-prejudikat vid tvister om sakliga skäl, personliga skäl eller arbetsbrist.
 6. Tydliggör att svaren är informativa och inte utgör formell juridisk rådgivning.</pre>
-          <button class="copy-btn" onclick="copyText('gptPrompt', this)"><i class="fa-solid fa-copy"></i> Kopiera Prompt</button>
+          <button class="copy-btn" onclick="copyText('gptPrompt', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_prompt">Kopiera Prompt</span></button>
         </div>
       </div>
 
       <!-- Tab 3: Gemini -->
       <div id="tabContent-gemini" class="tab-pane" style="display: none;">
-        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. Prompt för Google Gemini (Gems & Agenter)</div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Klistra in denna instruktion i din Gemini Gem eller AI Studio Agent:</p>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="gemini_prompt_title">1. Prompt för Google Gemini (Gems & Agenter)</div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;" data-i18n="gemini_prompt_desc">Klistra in denna instruktion i din Gemini Gem eller AI Studio Agent:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
           <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="geminiPrompt">Du är en specialiserad rådgivare inom svensk arbetsrätt och den svenska partsmodellen.
-Använd MCP LAS (https://mcp-las-rules.web.app/mcp) för att hämta gällande lagstiftning från Riksdagen, 17 centrala kollektivavtal, vägledande domar från Arbetsdomstolen (AD) samt beräkna semester och avdrag.
+Använd MCP LAS (https://mcp-las-639268366595.europe-north1.run.app/mcp) för att hämta gällande lagstiftning från Riksdagen, 17 centrala kollektivavtal, vägledande domar från Arbetsdomstolen (AD) samt beräkna semester och avdrag.
 Strukturera alltid svaren med:
 - Lagens grundregel (§)
 - Eventuella avvikelser i kollektivavtal
 - Relevanta AD-domar och praxis
 - Vid arbetsgivarintyg för a-kassa: hänvisa till arbetsgivarens lagplikt (47 § ALF) och https://www.arbetsgivarintyg.nu
 - Sammanfattande slutsats.</pre>
-          <button class="copy-btn" onclick="copyText('geminiPrompt', this)"><i class="fa-solid fa-copy"></i> Kopiera Prompt</button>
+          <button class="copy-btn" onclick="copyText('geminiPrompt', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_prompt">Kopiera Prompt</span></button>
         </div>
       </div>
 
       <!-- Tab 4: Cursor -->
       <div id="tabContent-cursor" class="tab-pane" style="display: none;">
-        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">1. Cursor / Windsurf MCP-konfiguration (<code>.cursor/mcp.json</code>)</div>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="cursor_config_title">1. Cursor / Windsurf MCP-konfiguration (<code>.cursor/mcp.json</code>)</div>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="cursorConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://mcp-las-rules.web.app/mcp"\n    }\n  }\n}</pre>
-          <button class="copy-btn" onclick="copyText('cursorConfig', this)"><i class="fa-solid fa-copy"></i> Kopiera JSON</button>
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="cursorConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://mcp-las-639268366595.europe-north1.run.app/mcp"\n    }\n  }\n}</pre>
+          <button class="copy-btn" onclick="copyText('cursorConfig', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_json">Kopiera JSON</span></button>
         </div>
       </div>
 
@@ -755,21 +795,21 @@ Strukturera alltid svaren med:
   <!-- Sources & Tools Section -->
   <main class="container" style="margin-top: 1rem;">
     <section id="kallor" style="padding-top: 2rem;">
-      <h2 class="section-title">Datakällor i Realtid</h2>
-      <p class="section-sub">Strukturerad juridisk kunskapsbas indexerad i Google Firestore</p>
+      <h2 class="section-title" data-i18n="sources_title">Datakällor i Realtid</h2>
+      <p class="section-sub" data-i18n="sources_sub">Strukturerad juridisk kunskapsbas indexerad i Google Firestore</p>
 
       <div class="grid-3">
         <div class="feature-card">
           <div class="feature-icon"><i class="fa-solid fa-scale-balanced"></i></div>
-          <h3>Sveriges Riksdag</h3>
-          <p>Fulltext-indexerade lagar med paragrafindelat innehåll: LAS (1982:80), MBL (1976:580), Semesterlagen (1977:480), Arbetstidslagen m.fl.</p>
+          <h3 data-i18n="src_card1_title">Sveriges Riksdag</h3>
+          <p data-i18n="src_card1_desc">Fulltext-indexerade lagar med paragrafindelat innehåll: LAS (1982:80), MBL (1976:580), Semesterlagen (1977:480), Arbetstidslagen m.fl.</p>
           <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast synkad:</span>
-              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_synced">Senast synkad:</span></span>
+              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-07</span>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> Källa:</span>
+              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_source">Källa:</span></span>
               <a href="https://data.riksdagen.se" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline;">data.riksdagen.se <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
             </div>
           </div>
@@ -777,15 +817,15 @@ Strukturera alltid svaren med:
 
         <div class="feature-card">
           <div class="feature-icon"><i class="fa-solid fa-handshake"></i></div>
-          <h3>17 Kollektivavtal</h3>
-          <p>Kurerade avtalsregler för Teknikavtalet, Almega IT, Detaljhandeln, SKR AB, Statliga Villkorsavtal m.fl. som hanterar semidispositivitet.</p>
+          <h3 data-i18n="src_card2_title">17 Kollektivavtal</h3>
+          <p data-i18n="src_card2_desc">Kurerade avtalsregler för Teknikavtalet, Almega IT, Detaljhandeln, SKR AB, Statliga Villkorsavtal m.fl. som hanterar semidispositivitet.</p>
           <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast uppdaterad:</span>
-              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_updated">Senast uppdaterad:</span></span>
+              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-07</span>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> Källa:</span>
+              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_source">Källa:</span></span>
               <a href="https://www.mi.se/forhandling-avtal/" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline;">mi.se (Medlingsinstitutet) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
             </div>
           </div>
@@ -793,15 +833,15 @@ Strukturera alltid svaren med:
 
         <div class="feature-card">
           <div class="feature-icon"><i class="fa-solid fa-gavel"></i></div>
-          <h3>Arbetsdomstolen (AD)</h3>
-          <p>Vägledande domar och prejudikat inom saklig grund/sakliga skäl, personliga skäl, arbetsbrist, omplacering och turordning.</p>
+          <h3 data-i18n="src_card3_title">Arbetsdomstolen (30 AD-Domar)</h3>
+          <p data-i18n="src_card3_desc">Vägledande domar och prejudikat inom saklig grund/sakliga skäl, personliga skäl, arbetsbrist, 29/29-principen, omplacering och turordning.</p>
           <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Senast uppdaterad:</span>
-              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-06</span>
+              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_updated">Senast uppdaterad:</span></span>
+              <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">2026-09-07</span>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> Källa:</span>
+              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_source">Källa:</span></span>
               <a href="https://www.arbetsdomstolen.se/sv/meddelade-domar/" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline;">arbetsdomstolen.se <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
             </div>
           </div>
@@ -809,15 +849,15 @@ Strukturera alltid svaren med:
 
         <div class="feature-card">
           <div class="feature-icon"><i class="fa-solid fa-landmark"></i></div>
-          <h3>Sveriges Riksbank</h3>
-          <p>Officiell kalender för bankdagar och helgdagar 2026 för beräkning av löneutbetalningar och lagstadgade frister (Lag 1930:173).</p>
+          <h3 data-i18n="src_card4_title">Sveriges Riksbank</h3>
+          <p data-i18n="src_card4_desc">Officiell kalender för bankdagar och helgdagar 2026 för beräkning av löneutbetalningar och lagstadgade frister (Lag 1930:173).</p>
           <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> Officiell kalender:</span>
+              <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_calendar">Officiell kalender:</span></span>
               <span style="font-weight: 700; color: var(--text); background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--card-border);">Helgdagar 2026</span>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> Källa:</span>
+              <span><i class="fa-solid fa-link" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_source">Källa:</span></span>
               <a href="https://www.riksbank.se/sv/press-och-publicerat/kalender/helgdagar-2026/" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline;">riksbank.se <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
             </div>
           </div>
@@ -825,9 +865,10 @@ Strukturera alltid svaren med:
       </div>
     </section>
 
+    <!-- Tools Section -->
     <section id="verktyg" style="padding-top: 2rem;">
-      <h2 class="section-title">Vad du kan fråga din AI</h2>
-      <p class="section-sub">Dessa 17 intelligenta verktyg anropas automatiskt i bakgrunden via MCP eller direkt via snabbt REST API för AI-granskning</p>
+      <h2 class="section-title" data-i18n="tools_title">Vad du kan fråga din AI</h2>
+      <p class="section-sub" data-i18n="tools_sub">Dessa 17 intelligenta verktyg anropas automatiskt i bakgrunden via MCP eller direkt via snabbt REST API för AI-granskning</p>
 
       <!-- AI Tip Banner -->
       <div style="background: var(--brand-light); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 1rem; padding: 1.1rem 1.4rem; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow);">
@@ -835,9 +876,9 @@ Strukturera alltid svaren med:
           <i class="fa-solid fa-lightbulb"></i>
         </div>
         <div style="font-size: 0.92rem; color: var(--text); line-height: 1.5;">
-          <strong>💡 AI-Tips:</strong> Du behöver inte memorera verktygen! När du är ansluten i Claude, ChatGPT eller Cursor kan du bara fråga din AI: <br/>
-          <code style="background: var(--card-bg); padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; font-weight: 700; color: var(--brand-text); display: inline-block; margin-top: 0.25rem;">"Vilka verktyg har du tillgång till via MCP LAS?"</code>
-          <span> eller be den lista alla tillgängliga funktioner direkt i chatten.</span>
+          <strong data-i18n="tip_heading">💡 AI-Tips:</strong> <span data-i18n="tip_text1">Du behöver inte memorera verktygen! När du är ansluten i Claude, ChatGPT eller Cursor kan du bara fråga din AI:</span> <br/>
+          <code style="background: var(--card-bg); padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; font-weight: 700; color: var(--brand-text); display: inline-block; margin-top: 0.25rem;" data-i18n="tip_code">"Vilka verktyg har du tillgång till via MCP LAS?"</code>
+          <span data-i18n="tip_text2"> eller be den lista alla tillgängliga funktioner direkt i chatten.</span>
         </div>
       </div>
 
@@ -849,430 +890,42 @@ Strukturera alltid svaren med:
             <input type="text" id="toolSearchInput" oninput="handleToolSearch()" placeholder="Sök verktyg (t.ex. semester, turordning, excel, LAS 7 §, varsel, basbelopp, reseavdrag)..." class="form-control" style="padding-left: 2.5rem; border-radius: 0.75rem; height: 2.75rem; font-size: 0.9rem;">
           </div>
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="categoryFilterContainer">
-            <button class="btn btn-secondary category-btn active" onclick="setCategoryFilter('all', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">Alla (<span id="totalToolBadge">17</span>)</button>
-            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('lag', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-scale-balanced"></i> Lagar & Paragrafer</button>
-            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('semester', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-calculator"></i> Semester & Lön</button>
-            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('turordning', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-file-excel"></i> Turordning & Excel</button>
-            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('mallar', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-file-lines"></i> HR-Mallar</button>
+            <button class="btn btn-secondary category-btn active" onclick="setCategoryFilter('all', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><span data-i18n="cat_all">Alla</span> (<span id="totalToolBadge">17</span>)</button>
+            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('lag', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-scale-balanced"></i> <span data-i18n="cat_laws">Lagar & Paragrafer</span></button>
+            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('semester', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-calculator"></i> <span data-i18n="cat_salary">Semester & Lön</span></button>
+            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('turordning', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-file-excel"></i> <span data-i18n="cat_turnorder">Turordning & Excel</span></button>
+            <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('mallar', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-file-lines"></i> <span data-i18n="cat_templates">HR-Mallar</span></button>
           </div>
         </div>
       </div>
 
+      <!-- Tools Table -->
       <div class="tools-table-container">
         <div class="table-responsive">
           <table class="tools-table">
             <thead>
               <tr>
-                <th style="width: 28%;">Funktion & Verktyg</th>
-                <th style="width: 36%;">Vad verktyget gör</th>
-                <th style="width: 36%;">Exempel på prompt för din AI</th>
+                <th style="width: 28%;" data-i18n="th_tool">Funktion & Verktyg</th>
+                <th style="width: 36%;" data-i18n="th_desc">Vad verktyget gör</th>
+                <th style="width: 36%;" data-i18n="th_prompt">Exempel på prompt för din AI</th>
               </tr>
             </thead>
             <tbody id="toolsTbody">
-              <tr class="tool-row" data-category="lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-magnifying-glass"></i></div>
-                    <div class="tool-title">
-                      <span>Exakt Lagparagraf</span>
-                      <span class="tool-badge">lookup_statute</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Hämtar ordagrann gällande lagtext och förarbetesnoter för specifik lag och paragraf (t.ex. LAS, MBL, Semesterlagen).
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Vad säger LAS 7 § om sakliga skäl för uppsägning?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vad säger LAS 7 § om sakliga skäl för uppsägning?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-brain"></i></div>
-                    <div class="tool-title">
-                      <span>Lagtextsökning</span>
-                      <span class="tool-badge">search_labor_law</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Semantisk AI-sökning och nyckelordssökning över hela den svenska arbetsrättsliga lagstiftningen.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Vilka regler gäller för dygnsvila och raster enligt Arbetstidslagen?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vilka regler gäller för dygnsvila och raster enligt Arbetstidslagen?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-gavel"></i></div>
-                    <div class="tool-title">
-                      <span>Domstolspraxis & Prejudikat</span>
-                      <span class="tool-badge">search_case_law</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Söker bland vägledande domar från Arbetsdomstolen (AD) vid tvister, saklig grund, personliga skäl eller arbetsbrist.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Finns det några AD-domar om uppsägning p.g.a. personliga skäl och samarbetssvårigheter?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Finns det några AD-domar om uppsägning p.g.a. personliga skäl och samarbetssvårigheter?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="lag avtal">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-code-compare"></i></div>
-                    <div class="tool-title">
-                      <span>Jämför Lag vs Kollektivavtal</span>
-                      <span class="tool-badge">compare_statute_vs_cba</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Ställer lagens minimiregler (t.ex. LAS) sida vid sida mot tillämpligt kollektivavtals förmånligare regler.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Jämför uppsägningstiderna i LAS med Teknikavtalet för tjänstemän."</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Jämför uppsägningstiderna i LAS med Teknikavtalet för tjänstemän.', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="lag avtal">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-file-contract"></i></div>
-                    <div class="tool-title">
-                      <span>Avtalsundantag & Särregler</span>
-                      <span class="tool-badge">get_cba_exception</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Kontrollerar specifika semidispositiva avtalsundantag för uppsägningstid, övertidskompensation och semester.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Har Almega IT något undantag från LAS gällande uppsägningstid vid 5 års anställning?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Har Almega IT något undantag från LAS gällande uppsägningstid vid 5 års anställning?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="semester">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-calculator"></i></div>
-                    <div class="tool-title">
-                      <span>Räkna ut Semesterlön</span>
-                      <span class="tool-badge">calculate_vacation_pay</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Beräknar semesterlön och semestertillägg enligt Semesterlagen (16 a–b §§) och jämför direkt med Unionens kollektivavtal (0,8 % fast / 0,5 % rörlig).
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Räkna ut mitt semestertillägg för 25 semesterdagar med 45 000 kr i månadslön och 20 000 kr i rörlig lön."</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Räkna ut mitt semestertillägg för 25 semesterdagar med 45 000 kr i månadslön och 20 000 kr i rörlig lön.', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="semester">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-calendar-xmark"></i></div>
-                    <div class="tool-title">
-                      <span>Avdrag för Obetald Semester</span>
-                      <span class="tool-badge">calculate_unpaid_vacation_deduction</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Beräknar löneavdrag vid obetalda semesterdagar (4,6 % per dag) eller skuldavräkning vid förskottssemester (Semesterlagen 29 a §).
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Hur stort löneavdrag får jag om jag tar ut 5 obetalda semesterdagar med 40 000 kr i månadslön?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Hur stort löneavdrag får jag om jag tar ut 5 obetalda semesterdagar med 40 000 kr i månadslön?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="semester">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-calendar-check"></i></div>
-                    <div class="tool-title">
-                      <span>Betalda & Obetalda Dagar</span>
-                      <span class="tool-badge">calculate_earned_vacation_days</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Beräknar intjänade betalda vs obetalda semesterdagar baserat på anställningstid och frånvaro under intjänandeåret (Semesterlagen 7 § med uppåtavrundning).
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Jag började min anställning 1 november. Hur många betalda semesterdagar har jag tjänat in till 1 april?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Jag började min anställning 1 november. Hur många betalda semesterdagar har jag tjänat in till 1 april?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="mallar lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-file-invoice"></i></div>
-                    <div class="tool-title">
-                      <span>Arbetsgivarintyg & A-kassa</span>
-                      <span class="tool-badge">get_employer_certificate_info</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Visar lagkrav enligt 47 § lag om arbetslöshetsförsäkring (ALF) samt guidar till Sveriges a-kassors officiella digitala tjänst www.arbetsgivarintyg.nu.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Hur fungerar arbetsgivarintyg för a-kassa och är min arbetsgivare skyldig att ge mig det?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Hur fungerar arbetsgivarintyg för a-kassa och är min arbetsgivare skyldig att ge mig det?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="mallar lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-heart-pulse"></i></div>
-                    <div class="tool-title">
-                      <span>Plan för återgång i arbete</span>
-                      <span class="tool-badge">get_rehabilitation_plan_info</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Rehabiliteringsplan enligt 30 kap. 6 § SFB (senast dag 30 vid &ge; 60 dgr sjukdom) med direktlänk till Försäkringskassans blankett FK 7459 (PDF).
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"När måste en arbetsgivare upprätta en plan för återgång i arbete och var hittar jag blanketten (FK 7459)?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('När måste en arbetsgivare upprätta en plan för återgång i arbete och var hittar jag blanketten (FK 7459)?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-scale-unbalanced"></i></div>
-                    <div class="tool-title">
-                      <span>Diskrimineringslagen & DO</span>
-                      <span class="tool-badge">get_discrimination_act_guide</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  DO:s vägledning (do.se) om de 7 diskrimineringsgrunderna, aktiva åtgärder (årlig lönekartläggning), utredningsplikt vid trakasserier och repressalieförbud.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Vilka krav ställer Diskrimineringslagen och DO på arbetsgivarens årliga lönekartläggning och aktiva åtgärder?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vilka krav ställer Diskrimineringslagen och DO på arbetsgivarens årliga lönekartläggning och aktiva åtgärder?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="semester lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-landmark"></i></div>
-                    <div class="tool-title">
-                      <span>Bankdagar & Löneutbetalning</span>
-                      <span class="tool-badge">check_bank_days_and_deadlines</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Riksbankens officiella helgdagar (helgdagar 2026), löneutbetalningsdagar (föregående bankdag om 25:e är helg) samt fristberäkning enligt lag (1930:173).
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Vilken dag betalas lönen ut i april och december 2026 om den 25:e infaller på en helgdag/bankfridag?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vilken dag betalas lönen ut i april och december 2026 om den 25:e infaller på en helgdag/bankfridag?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="turordning lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-users-gear"></i></div>
-                    <div class="tool-title">
-                      <span>Turordning & Undantagsberäkning</span>
-                      <span class="tool-badge">calculate_redundancy_turnorder_and_exceptions</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Beräknar turordning vid arbetsbrist (LAS 22 § vs Unionens kollektivavtal), undantagsregler 1–4 inkl. procentregeln (15 % / 10 %), omplaceringsutredning (7 § LAS), anställningstid (3 §) samt sorterar anställda i lagturlista.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Hur många personer får arbetsgivaren undanta från turordningslistan enligt Unionens kollektivavtal vid en arbetsbrist där 20 av 100 anställda berörs?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Hur många personer får arbetsgivaren undanta från turordningslistan enligt Unionens kollektivavtal vid en arbetsbrist där 20 av 100 anställda berörs?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="turordning">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box" style="background: rgba(34, 197, 94, 0.15); color: var(--brand);"><i class="fa-solid fa-file-excel"></i></div>
-                    <div class="tool-title">
-                      <span>Skapa Turordningslista (Excel .xlsx)</span>
-                      <span class="tool-badge">generate_turordningslista_excel</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Genererar och laddar ner en komplett formaterad Excel-arbetsbok (.xlsx) med ID-kolumner, beräkning av anställningsdagar via Excel-formler (<code>=DATEDIF</code>), sortering (sist in först ut, äldre före yngre) och automatisk färgkodning.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Skapa en turordningslista i Excel för vårt företag med följande anställda och ladda ner den."</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Skapa en turordningslista i Excel för vårt företag med följande anställda och ladda ner den.', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="mallar">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box"><i class="fa-solid fa-file-lines"></i></div>
-                    <div class="tool-title">
-                      <span>HR-Dokumentmallar & Blanketter</span>
-                      <span class="tool-badge">get_hr_document_template</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Hämtar och fyller i officiella svenska arbetsrättsmallar enligt SKR / Arbetsgivarverket / LAS-standard: omplaceringsutredning (7 §), varsel om avskedande (30 §), besked om avskedande (18–19 §§), 69-årsregeln (32 a §), URA utlandsstationering, anställningsbevis (6 c §) och uppsägningsbesked.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Ge mig en färdig mall för omplaceringsutredning enligt 7 § LAS som jag kan ladda ner och fylla i."</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Ge mig en färdig mall för omplaceringsutredning enligt 7 § LAS som jag kan ladda ner och fylla i.', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="semester lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box" style="background: rgba(14, 165, 233, 0.15); color: #0284c7;"><i class="fa-solid fa-car-side"></i></div>
-                    <div class="tool-title">
-                      <span>Reseavdrag & Milersättning</span>
-                      <span class="tool-badge">calculate_travel_deduction_and_mileage</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Beräknar Skatteverkets reseavdrag för resor till och från arbetet: egen bil (25 kr/mil), förmånsbil el (9,50 kr/mil) vs bensin/diesel (12 kr/mil), cykel (350 kr/år), självrisk (15 000 kr för 2026 / 11 000 kr för 2025) samt tidsvinstkrav (2 timmar/dag).
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Hur mycket får jag göra i reseavdrag för deklarationen 2026 om jag pendlar 35 km enkel väg med egen bil 210 dagar och sparar 2,5 timmar per dag jämfört med bussen?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Hur mycket får jag göra i reseavdrag för deklarationen 2026 om jag pendlar 35 km enkel väg med egen bil 210 dagar och sparar 2,5 timmar per dag jämfört med bussen?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr class="tool-row" data-category="semester lag">
-                <td>
-                  <div class="tool-meta">
-                    <div class="tool-icon-box" style="background: rgba(234, 179, 8, 0.15); color: #ca8a04;"><i class="fa-solid fa-chart-line"></i></div>
-                    <div class="tool-title">
-                      <span>Prisbasbelopp & Inkomstbasbelopp</span>
-                      <span class="tool-badge">get_base_amounts_and_indices</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  Officiella basbelopp från SCB och Regeringen/Pensionsmyndigheten för 2026 (PBB 59 200 kr, IBB 83 400 kr, index 228,08, SGI-tak 592 000 kr, max PGI 56 050 kr/mån) med automatisk årlig synkronisering den 1 januari.
-                </td>
-                <td>
-                  <div class="prompt-box">
-                    <span class="prompt-text">"Vad är prisbasbeloppet och inkomstbasbeloppet för 2026 och hur påverkar det max SGI och pensionsgrundande inkomst?"</span>
-                    <button class="copy-prompt-btn" onclick="copyPromptDirect('Vad är prisbasbeloppet och inkomstbasbeloppet för 2026 och hur påverkar det max SGI och pensionsgrundande inkomst?', this)">
-                      <i class="fa-regular fa-copy"></i> Kopiera
-                    </button>
-                  </div>
-                </td>
-              </tr>
+              <!-- Dynamiskt renderade rader -->
             </tbody>
           </table>
         </div>
 
         <!-- Pagination Controls -->
         <div class="pagination-wrapper" style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.25rem; flex-wrap: wrap; gap: 1rem; padding: 0.5rem 0.25rem;">
-          <span id="pageInfoText" style="font-size: 0.88rem; color: var(--text-muted); font-weight: 600;">Visar 1–5 av 15 verktyg</span>
+          <span id="pageInfoText" style="font-size: 0.88rem; color: var(--text-muted); font-weight: 600;">Visar 1–5 av 17 verktyg</span>
           <div style="display: flex; gap: 0.35rem; align-items: center;">
             <button class="btn btn-secondary" id="prevPageBtn" onclick="changePage(-1)" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;" disabled>
-              <i class="fa-solid fa-chevron-left"></i> Föregående
+              <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_prev">Föregående</span>
             </button>
             <div id="paginationNumbers" style="display: flex; gap: 0.3rem;"></div>
             <button class="btn btn-secondary" id="nextPageBtn" onclick="changePage(1)" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;">
-              Nästa <i class="fa-solid fa-chevron-right"></i>
+              <span data-i18n="btn_next">Nästa</span> <i class="fa-solid fa-chevron-right"></i>
             </button>
           </div>
         </div>
@@ -1287,24 +940,24 @@ Strukturera alltid svaren med:
             <i class="fa-solid fa-microchip"></i>
           </div>
           <div>
-            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.2rem;">Koppla på en granskande AI utan MCP-timeouts (Direkt REST API)</h3>
-            <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.45;">Kör blixtsnabba direkta JSON-anrop via HTTP POST från andra AI-modeller, gransknings-pipelines eller Python/Node-script utan SSE-handshakes eller timeout-risker.</p>
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.2rem;" data-i18n="api_sec_title">Koppla på en granskande AI utan MCP-timeouts (Direkt REST API)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.45;" data-i18n="api_sec_sub">Kör blixtsnabba direkta JSON-anrop via HTTP POST från andra AI-modeller, gransknings-pipelines eller Python/Node-script utan SSE-handshakes eller timeout-risker.</p>
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 1.25rem;">
           <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.85rem; padding: 1.25rem;">
-            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--brand-text);"><i class="fa-solid fa-terminal" style="margin-right: 0.4rem;"></i> Direkt REST Endpoint</div>
-            <code style="display: block; background: var(--code-bg); padding: 0.6rem 0.8rem; border-radius: 0.5rem; font-size: 0.82rem; font-weight: 600; overflow-x: auto; color: var(--text);">POST https://mcp-las-511579677488.europe-north1.run.app/api/tools/{tool_name}</code>
-            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem;">Svara med 100% ren JSON på under 15 ms. Stödjer alla 17 verktyg!</p>
+            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--brand-text);"><i class="fa-solid fa-terminal" style="margin-right: 0.4rem;"></i> <span data-i18n="api_card1_title">Direkt REST Endpoint</span></div>
+            <code style="display: block; background: var(--code-bg); padding: 0.6rem 0.8rem; border-radius: 0.5rem; font-size: 0.82rem; font-weight: 600; overflow-x: auto; color: var(--text);">POST https://mcp-las-639268366595.europe-north1.run.app/api/tools/{tool_name}</code>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem;" data-i18n="api_card1_desc">Svara med 100% ren JSON på under 15 ms. Stödjer alla 17 verktyg!</p>
           </div>
 
           <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.85rem; padding: 1.25rem;">
-            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--brand-text);"><i class="fa-brands fa-python" style="margin-right: 0.4rem;"></i> Exempel (Python / AI Reviewer)</div>
+            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--brand-text);"><i class="fa-brands fa-python" style="margin-right: 0.4rem;"></i> <span data-i18n="api_card2_title">Exempel (Python / AI Reviewer)</span></div>
             <code style="display: block; background: var(--code-bg); padding: 0.6rem 0.8rem; border-radius: 0.5rem; font-size: 0.78rem; line-height: 1.4; color: var(--text); overflow-x: auto;">
 import requests<br/>
 res = requests.post(<br/>
-&nbsp;&nbsp;"https://mcp-las-511579677488.europe-north1.run.app/api/tools/search_case_law",<br/>
+&nbsp;&nbsp;"https://mcp-las-639268366595.europe-north1.run.app/api/tools/search_case_law",<br/>
 &nbsp;&nbsp;json={"query": "avskedande illojalitet", "limit": 3}<br/>
 )<br/>
 verified_data = res.json()["result"]
@@ -1322,131 +975,554 @@ verified_data = res.json()["result"]
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
           <div>
-            <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 0.25rem;">Ansvarsfriskrivning (Legal Disclaimer)</h3>
-            <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.55;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 0.25rem;" data-i18n="disc_title">Ansvarsfriskrivning (Legal Disclaimer)</h3>
+            <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.55;" data-i18n="disc_text1">
               Detta är en <strong>öppen källkodslösning (Open Source)</strong> framtagen i informations- och experimentellt syfte för Model Context Protocol (MCP) och AI-agenter.
               Informationen som tillhandahålls eller tolkas av AI-modeller via detta verktyg <strong>utgör inte juridisk rådgivning</strong> och ska under inga omständigheter ersätta rådgivning från behörig jurist, arbetsgivarorganisation eller facklig representant.
             </p>
-            <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.55;">
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.55;" data-i18n="disc_text2">
               Skaparen/utvecklaren tar <strong>inget juridiskt eller ekonomiskt ansvar</strong> för korrektheten i svaren, tolkningar, eventuella ändringar i lagstiftning/avtal eller beslut som fattas baserat på information från denna tjänst.
             </p>
           </div>
         </div>
-
-        <div style="border-top: 1px solid var(--card-border); padding-top: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">
-            <i class="fa-brands fa-github text-base"></i>
-            <span>Öppen källkod under MIT-licens</span>
-          </div>
-          <a href="https://github.com/jaggeman/mcp-las" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
-            <i class="fa-brands fa-github"></i> Visa källkod på GitHub
-          </a>
-        </div>
       </div>
     </section>
 
-    <!-- Application Form -->
-    <section id="ansok" class="form-section" style="scroll-margin-top: 5rem;">
-      <div style="text-align: center; margin-bottom: 1.75rem;">
-        <div class="feature-icon" style="margin: 0 auto 1rem;"><i class="fa-solid fa-key"></i></div>
-        <h2 style="font-size: 1.4rem; font-weight: 800;">Begär dedikerad API-nyckel</h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">För organisationer och utvecklare som önskar egen nyckel med högre kapacitetsgränser och audit-loggning.</p>
+    <!-- Request Access Section -->
+    <section id="ansok" class="form-section">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem;" data-i18n="form_title">Begär Dedikerad API-nyckel</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;" data-i18n="form_sub">För företag, HR-team och organisationer som vill integrera svensk arbetsrätt i sina interna AI-system.</p>
       </div>
 
       <form id="keyForm" onsubmit="submitForm(event)">
         <div class="form-group">
-          <label for="name">Ditt Namn *</label>
-          <input type="text" id="name" required placeholder="t.ex. Anna Svensson" class="form-control">
+          <label class="form-label" for="name" data-i18n="lbl_name">Namn</label>
+          <input type="text" id="name" required class="form-control" placeholder="Anna Andersson" data-i18n-placeholder="ph_name">
         </div>
         <div class="form-group">
-          <label for="email">E-postadress *</label>
-          <input type="email" id="email" required placeholder="anna@foretag.se" class="form-control">
+          <label class="form-label" for="email" data-i18n="lbl_email">E-postadress</label>
+          <input type="email" id="email" required class="form-control" placeholder="anna@foretag.se" data-i18n-placeholder="ph_email">
         </div>
         <div class="form-group">
-          <label for="company">Företag / Organisation</label>
-          <input type="text" id="company" placeholder="t.ex. Svensson Advokatbyrå" class="form-control">
+          <label class="form-label" for="company" data-i18n="lbl_company">Företag / Organisation</label>
+          <input type="text" id="company" class="form-control" placeholder="Företag AB" data-i18n-placeholder="ph_company">
         </div>
         <div class="form-group">
-          <label for="reason">Användningsområde</label>
-          <textarea id="reason" rows="2" placeholder="t.ex. Claude Desktop för HR-rådgivning och avtalstolkning" class="form-control"></textarea>
+          <label class="form-label" for="reason" data-i18n="lbl_reason">Användningsområde</label>
+          <textarea id="reason" class="form-control" placeholder="Beskriv kort vad du planerar att använda MCP-servern till..." data-i18n-placeholder="ph_reason"></textarea>
         </div>
-        <div class="form-group" style="display: flex; align-items: flex-start; gap: 0.6rem; margin-top: 0.75rem;">
-          <input type="checkbox" id="consent" required style="margin-top: 0.25rem; accent-color: var(--brand); cursor: pointer;">
-          <label for="consent" style="font-size: 0.78rem; color: var(--text-muted); cursor: pointer; line-height: 1.4;">
-            Jag godkänner att namn och e-postadress sparas i Google Cloud Firestore inom EU för administration och utskick av min API-nyckel enligt <a href="#" onclick="openPrivacyModal(event)" style="color: var(--brand); text-decoration: underline; font-weight: 600;">integritetspolicyn (GDPR)</a>.
-          </label>
-        </div>
-        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
-          <span>Skicka ansökan</span>
-          <i class="fa-solid fa-paper-plane"></i>
+        <button type="submit" class="btn btn-primary" id="submitBtn" style="width: 100%; justify-content: center;">
+          <i class="fa-regular fa-paper-plane"></i> <span data-i18n="btn_submit">Skicka ansökan</span>
         </button>
       </form>
-
-      <div id="formSuccess" class="success-box" style="display: none;">
-        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎉</div>
-        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem;">Tack för din ansökan!</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">Vi granskar din ansökan och skickar din personliga MCP-nyckel till din e-post så fort den är godkänd.</p>
+      <div id="formSuccess" style="display: none; text-align: center; padding: 2rem 0;">
+        <div style="width: 3.5rem; height: 3.5rem; background: var(--brand-light); color: var(--brand); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem;">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;" data-i18n="succ_title">Tack för din ansökan!</h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem;" data-i18n="succ_desc">Vi har tagit emot dina uppgifter och återkommer via e-post så snart din dedikerade nyckel har godkänts.</p>
       </div>
     </section>
   </main>
 
-  <!-- Privacy Policy Modal -->
-  <div id="privacyModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 1rem;">
-    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; max-width: 540px; width: 100%; padding: 2rem; box-shadow: var(--shadow); position: relative; max-height: 85vh; overflow-y: auto;">
-      <button onclick="closePrivacyModal()" style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
-        <div style="width: 2.25rem; height: 2.25rem; border-radius: 0.5rem; background: var(--brand-light); color: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-          <i class="fa-solid fa-shield-halved"></i>
-        </div>
-        <h3 style="font-size: 1.25rem; font-weight: 800;">Integritetspolicy (GDPR)</h3>
-      </div>
-      <div style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; display: flex; flex-direction: column; gap: 0.75rem;">
-        <p><strong>1. Personuppgiftsansvarig:</strong> Denna MCP-tjänst drivs som ett öppen källkodsprojekt via Google Cloud Run.</p>
-        <p><strong>2. Ändamål med behandlingen:</strong> Vi samlar uteslutande in ditt namn, din e-postadress och eventuellt organisationsnamn för att kunna administrera, utfärda och tillhandahålla din personliga API-nyckel, samt förhindra överbelastning eller missbruk av MCP-servern.</p>
-        <p><strong>3. Lagring & Säkerhet:</strong> All data lagras krypterad i Google Cloud Firestore inom Europeiska Unionen (region <code>europe-north1</code>, Finland).</p>
-        <p><strong>4. Ingen delning:</strong> Uppgifterna säljs aldrig och överförs inte till obehöriga tredje parter eller marknadsföringssyften.</p>
-        <p><strong>5. Dina rättigheter:</strong> Du har enligt dataskyddsförordningen (GDPR) rätt att när som helst begära ett registerutdrag eller få dina personuppgifter och tillhörande API-nycklar raderade.</p>
-      </div>
-      <button onclick="closePrivacyModal()" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1.5rem; font-size: 0.9rem;">
-        Stäng
-      </button>
-    </div>
-  </div>
-
   <!-- Footer -->
   <footer>
-    <div class="container" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
-      <p>MCP LAS &copy; 2026 — Svensk Arbetsrätt & Kollektivavtal för AI-Agenter. Öppen källkod (MIT). Ej juridisk rådgivning.</p>
-      <p style="font-size: 0.8rem;">
-        <a href="#" onclick="openPrivacyModal(event)" style="color: var(--brand); text-decoration: underline;">Integritetspolicy & GDPR</a> &bull;
-        <a href="https://github.com/jaggeman/mcp-las" target="_blank" rel="noopener noreferrer" style="color: var(--text-muted); text-decoration: none;">GitHub</a>
-      </p>
+    <div class="container">
+      <p style="margin-bottom: 0.5rem;" data-i18n="footer_copy">&copy; 2026 MCP LAS — Svensk Arbetsrätt & Kollektivavtal för AI-Agenter. Öppen källkodslösning.</p>
+      <p style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="footer_disclaimer">Byggd med Model Context Protocol (FastMCP) på Google Cloud Run & Firebase Firestore.</p>
     </div>
   </footer>
 
   <script>
-    // Theme Switcher Logic (Default Light, user can toggle & saves in localStorage)
+    // ---------------------------------------------------------
+    // Multilingual Translations Dictionary (SV / EN)
+    // ---------------------------------------------------------
+    const TRANSLATIONS = {
+      sv: {
+        status_live: "FastMCP • Live",
+        nav_connect: "Anslut AI",
+        nav_sources: "Källor & Data",
+        nav_tools: "Verktyg",
+        nav_api: "REST API",
+        nav_connect_btn: "Anslut direkt",
+        hero_badge: "Officiell Svensk Arbetsrätt & Kollektivavtal för AI",
+        hero_title_1: "Svensk Arbetsrätt & Kollektivavtal",
+        hero_title_2: "direkt till din AI-Agent",
+        hero_sub: "Fullständig tillgång till Riksdagens lagar (LAS, MBL, Semesterlagen), 17 centrala kollektivavtal, 30 AD-prejudikat, semesterberäkningar, reseavdrag och HR-mallar via Model Context Protocol eller direkt REST API.",
+        hero_btn_connect: "Anslut direkt till din AI",
+        hero_btn_request: "Begär dedikerad åtkomst",
+        conn_title: "Anslut till din AI (Claude, ChatGPT, Gemini, Cursor)",
+        conn_badge: "Modern Streamable HTTP • Live på Cloud Run",
+        conn_sub: "Välj din AI-plattform nedan för att få färdig URL, konfigurationskod och installationsprompt:",
+        claude_url_title: "1. Streamable HTTP URL (för Custom Connector)",
+        claude_config_title: "2. Konfiguration för Claude Desktop (claude_desktop_config.json)",
+        gpt_url_title: "1. MCP-koppling för ChatGPT Desktop / OpenAI Developer Mode",
+        gpt_url_desc: "Använd denna Streamable HTTP-adress direkt i ChatGPT Desktop:",
+        gpt_prompt_title: "2. System Prompt för Custom GPTs",
+        gpt_prompt_desc: "Klistra in denna instruktion i din Custom GPT:",
+        gemini_prompt_title: "1. Prompt för Google Gemini (Gems & Agenter)",
+        gemini_prompt_desc: "Klistra in denna instruktion i din Gemini Gem eller AI Studio Agent:",
+        cursor_config_title: "1. Cursor / Windsurf MCP-konfiguration (.cursor/mcp.json)",
+        btn_copy_url: "Kopiera URL",
+        btn_copy_json: "Kopiera JSON",
+        btn_copy_prompt: "Kopiera Prompt",
+        sources_title: "Datakällor i Realtid",
+        sources_sub: "Strukturerad juridisk kunskapsbas indexerad i Google Firestore",
+        src_card1_title: "Sveriges Riksdag",
+        src_card1_desc: "Fulltext-indexerade lagar med paragrafindelat innehåll: LAS (1982:80), MBL (1976:580), Semesterlagen (1977:480), Arbetstidslagen m.fl.",
+        src_card2_title: "17 Kollektivavtal",
+        src_card2_desc: "Kurerade avtalsregler för Teknikavtalet, Almega IT, Detaljhandeln, SKR AB, Statliga Villkorsavtal m.fl. som hanterar semidispositivitet.",
+        src_card3_title: "Arbetsdomstolen (30 AD-Domar)",
+        src_card3_desc: "Vägledande domar och prejudikat inom saklig grund/sakliga skäl, personliga skäl, arbetsbrist, 29/29-principen, omplacering och turordning.",
+        src_card4_title: "Sveriges Riksbank",
+        src_card4_desc: "Officiell kalender för bankdagar och helgdagar 2026 för beräkning av löneutbetalningar och lagstadgade frister (Lag 1930:173).",
+        badge_synced: "Senast synkad:",
+        badge_updated: "Senast uppdaterad:",
+        badge_source: "Källa:",
+        badge_calendar: "Officiell kalender:",
+        tools_title: "Vad du kan fråga din AI",
+        tools_sub: "Dessa 17 intelligenta verktyg anropas automatiskt i bakgrunden via MCP eller direkt via snabbt REST API för AI-granskning",
+        tip_heading: "💡 AI-Tips:",
+        tip_text1: "Du behöver inte memorera verktygen! När du är ansluten i Claude, ChatGPT eller Cursor kan du bara fråga din AI:",
+        tip_code: '"Vilka verktyg har du tillgång till via MCP LAS?"',
+        tip_text2: " eller be den lista alla tillgängliga funktioner direkt i chatten.",
+        search_placeholder: "Sök verktyg (t.ex. semester, turordning, excel, LAS 7 §, varsel, basbelopp, reseavdrag)...",
+        cat_all: "Alla",
+        cat_laws: "Lagar & Paragrafer",
+        cat_salary: "Semester & Lön",
+        cat_turnorder: "Turordning & Excel",
+        cat_templates: "HR-Mallar",
+        th_tool: "Funktion & Verktyg",
+        th_desc: "Vad verktyget gör",
+        th_prompt: "Exempel på prompt för din AI",
+        btn_copy: "Kopiera",
+        btn_copied: "Kopierat!",
+        btn_prev: "Föregående",
+        btn_next: "Nästa",
+        showing_text: (s, e, t) => `Visar ${s}–${e} av ${t} verktyg`,
+        no_tools_found: "Inga verktyg matchade din sökning.",
+        api_sec_title: "Koppla på en granskande AI utan MCP-timeouts (Direkt REST API)",
+        api_sec_sub: "Kör blixtsnabba direkta JSON-anrop via HTTP POST från andra AI-modeller, gransknings-pipelines eller Python/Node-script utan SSE-handshakes eller timeout-risker.",
+        api_card1_title: "Direkt REST Endpoint",
+        api_card1_desc: "Svara med 100% ren JSON på under 15 ms. Stödjer alla 17 verktyg!",
+        api_card2_title: "Exempel (Python / AI Reviewer)",
+        disc_title: "Ansvarsfriskrivning (Legal Disclaimer)",
+        disc_text1: "Detta är en öppen källkodslösning (Open Source) framtagen i informations- och experimentellt syfte för Model Context Protocol (MCP) och AI-agenter. Informationen som tillhandahålls eller tolkas av AI-modeller via detta verktyg utgör inte juridisk rådgivning och ska under inga omständigheter ersätta rådgivning från behörig jurist, arbetsgivarorganisation eller facklig representant.",
+        disc_text2: "Skaparen/utvecklaren tar inget juridiskt eller ekonomiskt ansvar för korrektheten i svaren, tolkningar, eventuella ändringar i lagstiftning/avtal eller beslut som fattas baserat på information från denna tjänst.",
+        form_title: "Begär Dedikerad API-nyckel",
+        form_sub: "För företag, HR-team och organisationer som vill integrera svensk arbetsrätt i sina interna AI-system.",
+        lbl_name: "Namn",
+        lbl_email: "E-postadress",
+        lbl_company: "Företag / Organisation",
+        lbl_reason: "Användningsområde",
+        ph_name: "Anna Andersson",
+        ph_email: "anna@foretag.se",
+        ph_company: "Företag AB",
+        ph_reason: "Beskriv kort vad du planerar att använda MCP-servern till...",
+        btn_submit: "Skicka ansökan",
+        btn_submitting: "Skickar...",
+        succ_title: "Tack för din ansökan!",
+        succ_desc: "Vi har tagit emot dina uppgifter och återkommer via e-post så snart din dedikerade nyckel har godkänts.",
+        footer_copy: "© 2026 MCP LAS — Svensk Arbetsrätt & Kollektivavtal för AI-Agenter. Öppen källkodslösning.",
+        footer_disclaimer: "Byggd med Model Context Protocol (FastMCP) på Google Cloud Run & Firebase Firestore."
+      },
+      en: {
+        status_live: "FastMCP • Live",
+        nav_connect: "Connect AI",
+        nav_sources: "Sources & Data",
+        nav_tools: "Tools",
+        nav_api: "REST API",
+        nav_connect_btn: "Connect Now",
+        hero_badge: "Official Swedish Labor Law & Collective Agreements for AI",
+        hero_title_1: "Swedish Labor Law & Collective Agreements",
+        hero_title_2: "directly in your AI Agent",
+        hero_sub: "Complete real-time access to Swedish statutory law (LAS, MBL, Annual Leave Act), 17 collective agreements, 30 Labour Court precedents, vacation calculators, travel deductions, and HR templates via MCP or Direct REST API.",
+        hero_btn_connect: "Connect to your AI",
+        hero_btn_request: "Request Dedicated Access",
+        conn_title: "Connect to your AI (Claude, ChatGPT, Gemini, Cursor)",
+        conn_badge: "Modern Streamable HTTP • Live on Cloud Run",
+        conn_sub: "Choose your AI platform below for the ready-to-use URL, configuration code, and system prompt:",
+        claude_url_title: "1. Streamable HTTP URL (for Custom Connector)",
+        claude_config_title: "2. Configuration for Claude Desktop (claude_desktop_config.json)",
+        gpt_url_title: "1. MCP Connection for ChatGPT Desktop / OpenAI Developer Mode",
+        gpt_url_desc: "Use this Streamable HTTP URL directly in ChatGPT Desktop:",
+        gpt_prompt_title: "2. System Prompt for Custom GPTs",
+        gpt_prompt_desc: "Paste this instruction into your Custom GPT:",
+        gemini_prompt_title: "1. Prompt for Google Gemini (Gems & Agents)",
+        gemini_prompt_desc: "Paste this instruction into your Gemini Gem or AI Studio Agent:",
+        cursor_config_title: "1. Cursor / Windsurf MCP Configuration (.cursor/mcp.json)",
+        btn_copy_url: "Copy URL",
+        btn_copy_json: "Copy JSON",
+        btn_copy_prompt: "Copy Prompt",
+        sources_title: "Real-Time Legal Knowledge Base",
+        sources_sub: "Structured Swedish employment law dataset indexed in Google Firestore",
+        src_card1_title: "Swedish Parliament (Riksdagen)",
+        src_card1_desc: "Full-text indexed statutes partitioned by section: Employment Protection Act (LAS 1982:80), Co-Determination Act (MBL 1976:580), Annual Leave Act (1977:480), etc.",
+        src_card2_title: "17 Collective Agreements",
+        src_card2_desc: "Curated CBA rules for Teknikavtalet, Almega IT, Retail, Municipalities (SKR), State agreements handling semi-dispositive deviations.",
+        src_card3_title: "Labour Court (30 AD Precedents)",
+        src_card3_desc: "Authoritative rulings and precedents on objective grounds, personal misconduct, redundancy, 29/29-principle, redeployment, and turnorder.",
+        src_card4_title: "Sveriges Riksbank",
+        src_card4_desc: "Official calendar for Swedish bank days and public holidays 2026 for salary payout dates and statutory deadlines (Act 1930:173).",
+        badge_synced: "Last synced:",
+        badge_updated: "Last updated:",
+        badge_source: "Source:",
+        badge_calendar: "Official calendar:",
+        tools_title: "What you can ask your AI",
+        tools_sub: "These 17 intelligent tools are automatically invoked in the background via MCP or directly via high-speed REST API for AI review",
+        tip_heading: "💡 AI Tip:",
+        tip_text1: "You don't need to memorize the tools! Once connected in Claude, ChatGPT, or Cursor, simply ask your AI:",
+        tip_code: '"What tools do you have access to via MCP LAS?"',
+        tip_text2: " or ask it to list all available legal capabilities directly in the chat.",
+        search_placeholder: "Search tools (e.g. vacation, redundancy, excel, LAS Section 7, notice, travel deduction, base amount)...",
+        cat_all: "All",
+        cat_laws: "Laws & Statutes",
+        cat_salary: "Vacation & Salary",
+        cat_turnorder: "Turnorder & Excel",
+        cat_templates: "HR Templates",
+        th_tool: "Feature & Tool",
+        th_desc: "What the tool does",
+        th_prompt: "Example Prompt for your AI",
+        btn_copy: "Copy",
+        btn_copied: "Copied!",
+        btn_prev: "Previous",
+        btn_next: "Next",
+        showing_text: (s, e, t) => `Showing ${s}–${e} of ${t} tools`,
+        no_tools_found: "No tools matched your search.",
+        api_sec_title: "Connect a Reviewer AI without MCP Timeouts (Direct REST API)",
+        api_sec_sub: "Execute lightning-fast direct JSON calls via HTTP POST from secondary AI models, verification pipelines, or Python/Node scripts without SSE handshakes or timeout risks.",
+        api_card1_title: "Direct REST Endpoint",
+        api_card1_desc: "Responds with 100% pure JSON in under 15 ms. Supports all 17 tools!",
+        api_card2_title: "Example (Python / AI Reviewer)",
+        disc_title: "Legal Disclaimer",
+        disc_text1: "This is an open-source project created for informational and experimental purposes for Model Context Protocol (MCP) and AI agents. Information provided or interpreted by AI models via this tool does not constitute legal advice and must not replace professional advice from a qualified attorney, employers' association, or trade union representative.",
+        disc_text2: "The creators/developers accept no legal or financial liability for the accuracy of responses, interpretations, amendments to legislation/agreements, or decisions made based on information from this service.",
+        form_title: "Request Dedicated API Key",
+        form_sub: "For enterprises, HR teams, and organizations integrating Swedish labor law into internal AI pipelines.",
+        lbl_name: "Full Name",
+        lbl_email: "Email Address",
+        lbl_company: "Company / Organization",
+        lbl_reason: "Intended Use Case",
+        ph_name: "Anna Smith",
+        ph_email: "anna@company.com",
+        ph_company: "Acme Corp",
+        ph_reason: "Briefly describe how you plan to use the MCP server...",
+        btn_submit: "Submit Request",
+        btn_submitting: "Submitting...",
+        succ_title: "Thank you for your application!",
+        succ_desc: "We have received your details and will contact you via email as soon as your dedicated key is approved.",
+        footer_copy: "© 2026 MCP LAS — Swedish Labor Law & Collective Agreements for AI Agents. Open source solution.",
+        footer_disclaimer: "Built with Model Context Protocol (FastMCP) on Google Cloud Run & Firebase Firestore."
+      }
+    };
+
+    // ---------------------------------------------------------
+    // Tools Database Definition (Bilingual)
+    // ---------------------------------------------------------
+    const TOOLS_DATA = [
+      {
+        id: "lookup_statute",
+        icon: "fa-solid fa-magnifying-glass",
+        categories: ["lag"],
+        title: { sv: "Exakt Lagparagraf", en: "Exact Statute Section" },
+        desc: {
+          sv: "Hämtar ordagrann gällande lagtext och förarbetesnoter för specifik lag och paragraf (t.ex. LAS, MBL, Semesterlagen).",
+          en: "Retrieves verbatim current statutory wording and legislative notes for any specific Swedish law and section (e.g. LAS, MBL, Annual Leave Act)."
+        },
+        prompt: {
+          sv: "Vad säger LAS 7 § om sakliga skäl för uppsägning?",
+          en: "What does LAS Section 7 say regarding objective grounds for dismissal?"
+        }
+      },
+      {
+        id: "search_labor_law",
+        icon: "fa-solid fa-brain",
+        categories: ["lag"],
+        title: { sv: "Lagtextsökning", en: "Labor Law Search" },
+        desc: {
+          sv: "Semantisk AI-sökning och nyckelordssökning över hela den svenska arbetsrättsliga lagstiftningen.",
+          en: "Semantic hybrid AI and keyword search across all Swedish employment and labor legislation."
+        },
+        prompt: {
+          sv: "Vilka regler gäller för dygnsvila och raster enligt Arbetstidslagen?",
+          en: "What are the rules for daily rest and breaks according to the Working Hours Act?"
+        }
+      },
+      {
+        id: "search_case_law",
+        icon: "fa-solid fa-gavel",
+        categories: ["lag"],
+        title: { sv: "Domstolspraxis & Prejudikat", en: "Labour Court Case Law" },
+        desc: {
+          sv: "Söker bland 30 vägledande domar från Arbetsdomstolen (AD) vid tvister, sakliga skäl, personliga skäl, 29/29-principen eller arbetsbrist.",
+          en: "Searches among 30 authoritative Labour Court (AD) precedents regarding objective grounds, personal misconduct, 29/29 principle, or redundancy."
+        },
+        prompt: {
+          sv: "Finns det några AD-domar om uppsägning p.g.a. personliga skäl och samarbetssvårigheter?",
+          en: "Are there any Labour Court rulings on dismissal due to personal reasons and workplace cooperation issues?"
+        }
+      },
+      {
+        id: "compare_statute_vs_cba",
+        icon: "fa-solid fa-code-compare",
+        categories: ["lag", "avtal"],
+        title: { sv: "Jämför Lag vs Kollektivavtal", en: "Compare Statute vs CBA" },
+        desc: {
+          sv: "Ställer lagens minimiregler (t.ex. LAS) sida vid sida mot tillämpligt kollektivavtals förmånligare regler.",
+          en: "Compares statutory baseline rules (e.g. LAS) side-by-side with more favorable collective agreement terms."
+        },
+        prompt: {
+          sv: "Jämför uppsägningstiderna i LAS med Teknikavtalet för tjänstemän.",
+          en: "Compare statutory notice periods in LAS with the Teknikföretagen collective agreement for white-collar staff."
+        }
+      },
+      {
+        id: "get_cba_exception",
+        icon: "fa-solid fa-file-contract",
+        categories: ["lag", "avtal"],
+        title: { sv: "Avtalsundantag & Särregler", en: "CBA Deviations & Exceptions" },
+        desc: {
+          sv: "Kontrollerar specifika semidispositiva avtalsundantag för uppsägningstid, övertidskompensation och semester.",
+          en: "Checks specific semi-dispositive CBA exceptions regarding notice periods, overtime pay, and vacation terms."
+        },
+        prompt: {
+          sv: "Har Almega IT något undantag från LAS gällande uppsägningstid vid 5 års anställning?",
+          en: "Does Almega IT have any deviation from statutory LAS notice periods after 5 years of employment?"
+        }
+      },
+      {
+        id: "calculate_vacation_pay",
+        icon: "fa-solid fa-calculator",
+        categories: ["semester"],
+        title: { sv: "Semesterlön & Semestertillägg", en: "Vacation Pay & Supplement" },
+        desc: {
+          sv: "Beräknar semesterlön, semesterersättning och tillägg enligt Semesterlagen (sammalöneregeln 12 % / procentregeln) och Unionens avtalsregler (0,8 % fast lön, 0,5 % rörlig lön).",
+          en: "Calculates vacation pay, compensation, and supplement under the Annual Leave Act (12% rule) and Unionen CBA rates (0.8% base salary, 0.5% variable salary)."
+        },
+        prompt: {
+          sv: "Beräkna semesterlön för en anställd med 45 000 kr i månadslön, 25 semesterdagar och Unionens kollektivavtal.",
+          en: "Calculate vacation pay for an employee earning 45,000 SEK/month with 25 vacation days under Unionen CBA."
+        }
+      },
+      {
+        id: "calculate_unpaid_vacation_deduction",
+        icon: "fa-solid fa-money-bill-transfer",
+        categories: ["semester"],
+        title: { sv: "Semesterlöneavdrag (Obetald semester)", en: "Unpaid Vacation Salary Deduction" },
+        desc: {
+          sv: "Beräknar löneavdrag per obetald semesterdag (4,6 % enligt lag / kollektivavtal) vid nyanställning eller sparade dagar.",
+          en: "Calculates monthly salary deductions per unpaid vacation day (4.6% standard) for new hires or unearned leave."
+        },
+        prompt: {
+          sv: "Hur mycket dras från månadslönen om en anställd med 42 000 kr i månadslön tar 5 obetalda semesterdagar?",
+          en: "How much salary is deducted if an employee earning 42,000 SEK/month takes 5 unpaid vacation days?"
+        }
+      },
+      {
+        id: "calculate_earned_vacation_days",
+        icon: "fa-solid fa-calendar-day",
+        categories: ["semester"],
+        title: { sv: "Intjänade betalda semesterdagar", en: "Earned Paid Vacation Days" },
+        desc: {
+          sv: "Beräknar exakt antal intjänade betalda semesterdagar vid anställning under pågående intjänandeår (1 apr–31 mar el. kalenderår).",
+          en: "Calculates exact earned paid vacation days when hired mid-year based on standard qualifying year (Apr 1–Mar 31 or calendar year)."
+        },
+        prompt: {
+          sv: "Jag började min anställning 1 september och har 30 semesterdagar per år. Hur många betalda semesterdagar hinner jag tjäna in fram till 31 mars?",
+          en: "I started employment on Sept 1st with 30 vacation days/year. How many paid vacation days will I earn by March 31st?"
+        }
+      },
+      {
+        id: "get_employer_certificate_info",
+        icon: "fa-solid fa-file-invoice",
+        categories: ["mallar", "lag"],
+        title: { sv: "Arbetsgivarintyg & A-kassa", en: "Employer Certificate & Unemployment" },
+        desc: {
+          sv: "Visar lagkrav enligt 47 § lag om arbetslöshetsförsäkring (ALF) samt guidar till Sveriges a-kassors officiella digitala tjänst www.arbetsgivarintyg.nu.",
+          en: "Details statutory requirements under Section 47 ALF and guides to the official Swedish portal www.arbetsgivarintyg.nu."
+        },
+        prompt: {
+          sv: "Hur fungerar arbetsgivarintyg för a-kassa och är min arbetsgivare skyldig att ge mig det?",
+          en: "How does the Swedish employer certificate for unemployment funds work and is the employer legally obliged to issue it?"
+        }
+      },
+      {
+        id: "get_rehabilitation_plan_info",
+        icon: "fa-solid fa-heart-pulse",
+        categories: ["mallar", "lag"],
+        title: { sv: "Plan för återgång i arbete", en: "Return-to-Work Rehabilitation Plan" },
+        desc: {
+          sv: "Rehabiliteringsplan enligt 30 kap. 6 § SFB (senast dag 30 vid ≥ 60 dgr sjukdom) med direktlänk till Försäkringskassans blankett FK 7459 (PDF).",
+          en: "Statutory rehabilitation plan under SFB Ch. 30 Sec. 6 (by day 30 for ≥ 60 days sick leave) with link to Social Insurance Agency form FK 7459."
+        },
+        prompt: {
+          sv: "När måste en arbetsgivare upprätta en plan för återgång i arbete och var hittar jag blanketten (FK 7459)?",
+          en: "When is an employer legally required to establish a return-to-work plan (FK 7459)?"
+        }
+      },
+      {
+        id: "get_discrimination_act_guide",
+        icon: "fa-solid fa-shield-halved",
+        categories: ["lag"],
+        title: { sv: "Diskrimineringslagen & DO-Guide", en: "Discrimination Act & Equality Ombudsman" },
+        desc: {
+          sv: "Komplett guide till Diskrimineringslagens 7 diskrimineringsgrunder, 6 former av diskriminering samt aktiva åtgärder (3 kap.) och lönekartläggning.",
+          en: "Comprehensive guide to the Discrimination Act's 7 protected grounds, 6 forms of discrimination, active measures, and mandatory pay equity audits."
+        },
+        prompt: {
+          sv: "Vilka krav ställer Diskrimineringslagen på lönekartläggning och aktiva åtgärder för arbetsgivare med fler än 25 anställda?",
+          en: "What requirements does the Discrimination Act place on pay equity audits and active measures for employers with 25+ staff?"
+        }
+      },
+      {
+        id: "check_bank_days_and_deadlines",
+        icon: "fa-solid fa-calendar-check",
+        categories: ["lag", "semester"],
+        title: { sv: "Bankdagar & Helgdagar 2026", en: "Bank Days & Public Holidays 2026" },
+        desc: {
+          sv: "Kontrollerar bankdagar och helgdagar enligt Riksbankens officiella kalender 2026 för löneutbetalningar och lagstadgade tidsfrister.",
+          en: "Checks official Swedish bank days and public holidays 2026 (Riksbank calendar) for pay day shifts and legal deadlines."
+        },
+        prompt: {
+          sv: "Vilket datum ska lönen betalas ut i maj 2026 om den 25:e infaller på Pingstdagen?",
+          en: "On which date should salary be paid in May 2026 if the 25th falls on a public holiday?"
+        }
+      },
+      {
+        id: "calculate_redundancy_turnorder_and_exceptions",
+        icon: "fa-solid fa-users-gear",
+        categories: ["turordning"],
+        title: { sv: "Turordning & Undantagsberäkning", en: "Redundancy Turnorder & Exceptions" },
+        desc: {
+          sv: "Beräknar turordning vid arbetsbrist (LAS 22 § vs Unionens kollektivavtal), undantagsregler 1–4 inkl. procentregeln (15 % / 10 %), omplaceringsutredning (7 §) samt sorterar anställda i lagturlista.",
+          en: "Calculates redundancy turnorder (LAS Sec. 22 vs Unionen CBA), exception rules 1–4 (15% / 10% rules), redeployment requirements (Sec. 7), and sorts seniority lists."
+        },
+        prompt: {
+          sv: "Hur många personer får arbetsgivaren undanta från turordningslistan enligt Unionens kollektivavtal vid en arbetsbrist där 20 av 100 anställda berörs?",
+          en: "How many employees may the employer exempt from the seniority list under Unionen CBA when 20 of 100 employees are affected by redundancy?"
+        }
+      },
+      {
+        id: "generate_turordningslista_excel",
+        icon: "fa-solid fa-file-excel",
+        categories: ["turordning"],
+        title: { sv: "Skapa Turordningslista (Excel .xlsx)", en: "Generate Redundancy List (Excel .xlsx)" },
+        desc: {
+          sv: "Genererar och laddar ner en komplett formaterad Excel-arbetsbok (.xlsx) med ID-kolumner, beräkning av anställningsdagar via Excel-formler (=DATEDIF), sortering (sist in först ut, äldre före yngre) och automatisk färgkodning.",
+          en: "Generates and downloads a fully formatted Excel workbook (.xlsx) with ID columns, automated tenure day formulas (=DATEDIF), sorting (LIFO, age tie-break), and status color-coding."
+        },
+        prompt: {
+          sv: "Skapa en turordningslista i Excel för vårt företag med följande anställda och ladda ner den.",
+          en: "Create a redundancy turnorder list in Excel for our company with the following employees and provide the download link."
+        }
+      },
+      {
+        id: "get_hr_document_template",
+        icon: "fa-solid fa-file-lines",
+        categories: ["mallar"],
+        title: { sv: "HR-Dokumentmallar & Blanketter", en: "HR Document Templates & Forms" },
+        desc: {
+          sv: "Hämtar och fyller i officiella svenska arbetsrättsmallar enligt SKR / Arbetsgivarverket / LAS-standard: omplaceringsutredning (7 §), varsel om avskedande (30 §), besked om avskedande (18–19 §§), 69-årsregeln (32 a §), URA utlandsstationering, anställningsbevis (6 c §) och uppsägningsbesked.",
+          en: "Generates official Swedish employment law forms under SKR / Arbetsgivarverket / LAS: redeployment audit (Sec. 7), dismissal notice (Sec. 30), summary dismissal (Sec. 18–19), age 69 termination (Sec. 32 a), employment contract (Sec. 6 c)."
+        },
+        prompt: {
+          sv: "Ge mig en färdig mall för omplaceringsutredning enligt 7 § LAS som jag kan ladda ner och fylla i.",
+          en: "Provide a complete official template for a redeployment investigation under Section 7 LAS that I can fill out."
+        }
+      },
+      {
+        id: "calculate_travel_deduction_and_mileage",
+        icon: "fa-solid fa-car-side",
+        categories: ["semester", "lag"],
+        title: { sv: "Reseavdrag & Milersättning", en: "Travel Deduction & Mileage" },
+        desc: {
+          sv: "Beräknar Skatteverkets reseavdrag för resor till och från arbetet: egen bil (25 kr/mil), förmånsbil el (9,50 kr/mil) vs bensin/diesel (12 kr/mil), cykel (350 kr/år), självrisk (15 000 kr för 2026 / 11 000 kr för 2025) samt tidsvinstkrav (2 timmar/dag).",
+          en: "Calculates Swedish Tax Agency (Skatteverket) commute deductions: private car (25 SEK/10 km), EV company car (9.50 SEK) vs fossil (12 SEK), bicycle, threshold (15,000 SEK 2026), and 2-hour daily time saving requirement."
+        },
+        prompt: {
+          sv: "Hur mycket får jag göra i reseavdrag för deklarationen 2026 om jag pendlar 35 km enkel väg med egen bil 210 dagar och sparar 2,5 timmar per dag jämfört med bussen?",
+          en: "How much travel deduction can I claim for the 2026 tax year if I commute 35 km one-way with my own car over 210 days and save 2.5 hours daily vs transit?"
+        }
+      },
+      {
+        id: "get_base_amounts_and_indices",
+        icon: "fa-solid fa-chart-line",
+        categories: ["semester", "lag"],
+        title: { sv: "Prisbasbelopp & Inkomstbasbelopp", en: "Price Base Amount & Income Index" },
+        desc: {
+          sv: "Officiella basbelopp från SCB och Regeringen/Pensionsmyndigheten för 2026 (PBB 59 200 kr, IBB 83 400 kr, index 228,08, SGI-tak 592 000 kr, max PGI 56 050 kr/mån) med automatisk årlig synkronisering den 1 januari.",
+          en: "Official Swedish statutory base amounts from Statistics Sweden (SCB) and Government for 2026 (PBB 59,200 SEK, IBB 83,400 SEK, index 228.08, sickness cap 592k, max pension salary 56,050/mo) with automated annual sync on Jan 1st."
+        },
+        prompt: {
+          sv: "Vad är prisbasbeloppet och inkomstbasbeloppet för 2026 och hur påverkar det max SGI och pensionsgrundande inkomst?",
+          en: "What are the price base amount and income base amount for 2026 and how do they determine the maximum SGI and pension qualifying income?"
+        }
+      }
+    ];
+
+    // ---------------------------------------------------------
+    // Language State & Switcher
+    // ---------------------------------------------------------
+    let currentLang = localStorage.getItem('mcp_lang') || 'sv';
+
+    function setLanguage(lang) {
+      if (lang !== 'sv' && lang !== 'en') lang = 'sv';
+      currentLang = lang;
+      localStorage.setItem('mcp_lang', lang);
+      document.documentElement.lang = lang;
+
+      // Update switcher buttons
+      const btnSv = document.getElementById('langBtnSv');
+      const btnEn = document.getElementById('langBtnEn');
+      if (btnSv) btnSv.classList.toggle('active', lang === 'sv');
+      if (btnEn) btnEn.classList.toggle('active', lang === 'en');
+
+      // Update static text elements with data-i18n
+      const dict = TRANSLATIONS[lang];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) {
+          el.innerHTML = dict[key];
+        }
+      });
+
+      // Update placeholders
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (dict[key]) {
+          el.placeholder = dict[key];
+        }
+      });
+
+      const searchInput = document.getElementById('toolSearchInput');
+      if (searchInput && dict.search_placeholder) {
+        searchInput.placeholder = dict.search_placeholder;
+      }
+
+      // Re-render table in active language
+      renderToolsTable();
+    }
+
+    // ---------------------------------------------------------
+    // Dark / Light Mode Theme Toggle
+    // ---------------------------------------------------------
+    const html = document.documentElement;
     const toggleBtn = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
-    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('mcp_theme') || 'light';
 
     function setTheme(theme) {
       if (theme === 'dark') {
         html.classList.add('dark');
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-        localStorage.setItem('theme', 'dark');
+        themeIcon.className = 'fa-solid fa-sun';
+        localStorage.setItem('mcp_theme', 'dark');
       } else {
         html.classList.remove('dark');
-        themeIcon.classList.remove('fa-sun');
-        themeIcon.classList.add('fa-moon');
-        localStorage.setItem('theme', 'light');
+        themeIcon.className = 'fa-solid fa-moon';
+        localStorage.setItem('mcp_theme', 'light');
       }
     }
-
-    const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
 
     toggleBtn.addEventListener('click', () => {
@@ -1454,16 +1530,9 @@ verified_data = res.json()["result"]
       setTheme(isDark ? 'light' : 'dark');
     });
 
-    // Privacy Modal Helpers
-    function openPrivacyModal(e) {
-      if (e) e.preventDefault();
-      document.getElementById('privacyModal').style.display = 'flex';
-    }
-    function closePrivacyModal() {
-      document.getElementById('privacyModal').style.display = 'none';
-    }
-
-    // Tab Switcher
+    // ---------------------------------------------------------
+    // Tab Switcher for Connectors
+    // ---------------------------------------------------------
     function switchTab(tabId) {
       document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
       document.querySelectorAll('.tab-btn').forEach(el => {
@@ -1481,36 +1550,41 @@ verified_data = res.json()["result"]
       }
     }
 
-    // Generic Copy Helper
+    // ---------------------------------------------------------
+    // Copy Helpers
+    // ---------------------------------------------------------
     function copyText(elementId, btn) {
       const el = document.getElementById(elementId);
       const text = el.innerText || el.textContent;
       navigator.clipboard.writeText(text.trim()).then(() => {
         const original = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Kopierat!';
+        const msg = currentLang === 'en' ? '<i class="fa-solid fa-check"></i> Copied!' : '<i class="fa-solid fa-check"></i> Kopierat!';
+        btn.innerHTML = msg;
         setTimeout(() => { btn.innerHTML = original; }, 2000);
       }).catch(() => {
-        alert('Kunde inte kopiera texten.');
+        alert(currentLang === 'en' ? 'Could not copy text.' : 'Kunde inte kopiera texten.');
       });
     }
 
-    // Direct String Copy Helper for Prompts
     function copyPromptDirect(text, btn) {
       navigator.clipboard.writeText(text.trim()).then(() => {
         const original = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check" style="color: var(--brand);"></i> Kopierat!';
+        const msg = currentLang === 'en' ? '<i class="fa-solid fa-check" style="color: var(--brand);"></i> Copied!' : '<i class="fa-solid fa-check" style="color: var(--brand);"></i> Kopierat!';
+        btn.innerHTML = msg;
         setTimeout(() => { btn.innerHTML = original; }, 2000);
       }).catch(() => {
-        alert('Kunde inte kopiera prompten.');
+        alert(currentLang === 'en' ? 'Could not copy prompt.' : 'Kunde inte kopiera prompten.');
       });
     }
 
+    // ---------------------------------------------------------
     // Submit Application
+    // ---------------------------------------------------------
     async function submitForm(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
-      btn.innerText = 'Skickar...';
+      btn.innerText = currentLang === 'en' ? 'Submitting...' : 'Skickar...';
 
       const payload = {
         name: document.getElementById('name').value,
@@ -1530,14 +1604,14 @@ verified_data = res.json()["result"]
           document.getElementById('keyForm').style.display = 'none';
           document.getElementById('formSuccess').style.display = 'block';
         } else {
-          alert('Fel: ' + data.message);
+          alert((currentLang === 'en' ? 'Error: ' : 'Fel: ') + data.message);
           btn.disabled = false;
-          btn.innerText = 'Skicka ansökan';
+          btn.innerText = currentLang === 'en' ? 'Submit Request' : 'Skicka ansökan';
         }
       } catch (err) {
-        alert('Ett fel uppstod vid skickandet.');
+        alert(currentLang === 'en' ? 'An error occurred during submission.' : 'Ett fel uppstod vid skickandet.');
         btn.disabled = false;
-        btn.innerText = 'Skicka ansökan';
+        btn.innerText = currentLang === 'en' ? 'Submit Request' : 'Skicka ansökan';
       }
     }
 
@@ -1549,23 +1623,29 @@ verified_data = res.json()["result"]
     let currentCategory = 'all';
     let currentSearchTerm = '';
 
-    function getMatchingToolRows() {
-      const rows = Array.from(document.querySelectorAll('.tool-row'));
-      return rows.filter(row => {
-        const categories = (row.getAttribute('data-category') || '').split(' ');
-        const matchesCat = currentCategory === 'all' || categories.includes(currentCategory);
+    function getMatchingTools() {
+      return TOOLS_DATA.filter(tool => {
+        const matchesCat = currentCategory === 'all' || tool.categories.includes(currentCategory);
         
-        const text = row.innerText.toLowerCase();
-        const matchesSearch = !currentSearchTerm || text.includes(currentSearchTerm.toLowerCase());
+        if (!currentSearchTerm) return matchesCat;
         
+        const term = currentSearchTerm.toLowerCase();
+        const titleText = (tool.title[currentLang] || tool.title.sv).toLowerCase();
+        const descText = (tool.desc[currentLang] || tool.desc.sv).toLowerCase();
+        const promptText = (tool.prompt[currentLang] || tool.prompt.sv).toLowerCase();
+        const idText = tool.id.toLowerCase();
+        
+        const matchesSearch = titleText.includes(term) || descText.includes(term) || promptText.includes(term) || idText.includes(term);
         return matchesCat && matchesSearch;
       });
     }
 
     function renderToolsTable() {
-      const allRows = Array.from(document.querySelectorAll('.tool-row'));
-      const matchingRows = getMatchingToolRows();
-      const totalMatching = matchingRows.length;
+      const tbody = document.getElementById('toolsTbody');
+      if (!tbody) return;
+
+      const matchingTools = getMatchingTools();
+      const totalMatching = matchingTools.length;
       const totalPages = Math.ceil(totalMatching / toolsPerPage) || 1;
 
       if (currentToolPage > totalPages) currentToolPage = totalPages;
@@ -1573,30 +1653,65 @@ verified_data = res.json()["result"]
 
       const startIndex = (currentToolPage - 1) * toolsPerPage;
       const endIndex = startIndex + toolsPerPage;
+      const pageTools = matchingTools.slice(startIndex, endIndex);
 
-      // Dölj alla rader först
-      allRows.forEach(row => row.style.display = 'none');
+      const dict = TRANSLATIONS[currentLang];
 
-      // Visa matchande rader för aktuell sida
-      matchingRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
-
-      // Uppdatera info-text
-      const pageInfo = document.getElementById('pageInfoText');
-      if (totalMatching === 0) {
-        pageInfo.innerText = 'Inga verktyg matchade din sökning.';
+      // Render table rows
+      if (pageTools.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">${dict.no_tools_found}</td></tr>`;
       } else {
-        const startDisp = startIndex + 1;
-        const endDisp = Math.min(endIndex, totalMatching);
-        pageInfo.innerText = `Visar ${startDisp}–${endDisp} av ${totalMatching} verktyg`;
+        tbody.innerHTML = pageTools.map(tool => {
+          const title = tool.title[currentLang] || tool.title.sv;
+          const desc = tool.desc[currentLang] || tool.desc.sv;
+          const prompt = tool.prompt[currentLang] || tool.prompt.sv;
+          const safePrompt = prompt.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+          const copyLabel = dict.btn_copy;
+
+          return `
+            <tr class="tool-row">
+              <td>
+                <div class="tool-meta">
+                  <div class="tool-icon-box"><i class="${tool.icon}"></i></div>
+                  <div class="tool-title">
+                    <span>${title}</span>
+                    <span class="tool-badge">${tool.id}</span>
+                  </div>
+                </div>
+              </td>
+              <td>${desc}</td>
+              <td>
+                <div class="prompt-box">
+                  <span class="prompt-text">"${prompt}"</span>
+                  <button class="copy-prompt-btn" onclick="copyPromptDirect('${safePrompt}', this)">
+                    <i class="fa-regular fa-copy"></i> ${copyLabel}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
       }
 
-      // Uppdatera knappar
+      // Update info text
+      const pageInfo = document.getElementById('pageInfoText');
+      if (pageInfo) {
+        if (totalMatching === 0) {
+          pageInfo.innerText = dict.no_tools_found;
+        } else {
+          const startDisp = startIndex + 1;
+          const endDisp = Math.min(endIndex, totalMatching);
+          pageInfo.innerText = dict.showing_text(startDisp, endDisp, totalMatching);
+        }
+      }
+
+      // Update pagination buttons
       const prevBtn = document.getElementById('prevPageBtn');
       const nextBtn = document.getElementById('nextPageBtn');
       if (prevBtn) prevBtn.disabled = currentToolPage <= 1;
       if (nextBtn) nextBtn.disabled = currentToolPage >= totalPages;
 
-      // Rendera sidnummer
+      // Render page numbers
       const numContainer = document.getElementById('paginationNumbers');
       if (numContainer) {
         numContainer.innerHTML = '';
@@ -1620,10 +1735,10 @@ verified_data = res.json()["result"]
         }
       }
 
-      // Uppdatera totalbadge
+      // Update total badge
       const badge = document.getElementById('totalToolBadge');
       if (badge && currentCategory === 'all' && !currentSearchTerm) {
-        badge.innerText = allRows.length;
+        badge.innerText = TOOLS_DATA.length;
       }
     }
 
@@ -1657,12 +1772,11 @@ verified_data = res.json()["result"]
       renderToolsTable();
     }
 
-    // Initiera verktygstabellen vid sidladdning
+    // Initialize Language & Table
     document.addEventListener('DOMContentLoaded', () => {
-      renderToolsTable();
+      setLanguage(currentLang);
     });
-    // Kör direkt ifall DOMContentLoaded redan har triggats
-    renderToolsTable();
+    setLanguage(currentLang);
   </script>
 </body>
 </html>
