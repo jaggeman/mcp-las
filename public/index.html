@@ -966,7 +966,7 @@ Strukturera alltid svaren med:
     <!-- Tools Section -->
     <section id="verktyg" style="padding-top: 2rem;">
       <h2 class="section-title" data-i18n="tools_title">Vad du kan fråga din AI</h2>
-      <p class="section-sub" data-i18n="tools_sub">Dessa 17 intelligenta verktyg anropas automatiskt i bakgrunden via MCP eller direkt via snabbt REST API för AI-granskning</p>
+      <p class="section-sub" data-i18n="tools_sub">Dessa 19 intelligenta verktyg anropas automatiskt i bakgrunden via MCP eller direkt via snabbt REST API för AI-granskning</p>
 
       <!-- AI Tip Banner -->
       <div style="background: var(--brand-light); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 1rem; padding: 1.1rem 1.4rem; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow);">
@@ -988,7 +988,7 @@ Strukturera alltid svaren med:
             <input type="text" id="toolSearchInput" oninput="handleToolSearch()" placeholder="Sök verktyg (t.ex. semester, turordning, excel, LAS 7 §, varsel, basbelopp, reseavdrag)..." class="form-control" style="padding-left: 2.5rem; border-radius: 0.75rem; height: 2.75rem; font-size: 0.9rem;">
           </div>
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="categoryFilterContainer">
-            <button class="btn btn-secondary category-btn active" onclick="setCategoryFilter('all', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><span data-i18n="cat_all">Alla</span> (<span id="totalToolBadge">17</span>)</button>
+            <button class="btn btn-secondary category-btn active" onclick="setCategoryFilter('all', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><span data-i18n="cat_all">Alla</span> (<span id="totalToolBadge">19</span>)</button>
             <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('lag', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-scale-balanced"></i> <span data-i18n="cat_laws">Lagar & Paragrafer</span></button>
             <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('semester', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-calculator"></i> <span data-i18n="cat_salary">Semester & Lön</span></button>
             <button class="btn btn-secondary category-btn" onclick="setCategoryFilter('turordning', this)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"><i class="fa-solid fa-file-excel"></i> <span data-i18n="cat_turnorder">Turordning & Excel</span></button>
@@ -1149,7 +1149,7 @@ Strukturera alltid svaren med:
         badge_source: "Källa:",
         badge_calendar: "Officiell kalender:",
         tools_title: "Vad du kan fråga din AI",
-        tools_sub: "Dessa 17 intelligenta verktyg anropas automatiskt i bakgrunden via MCP för AI-agenter och Claude",
+        tools_sub: "Dessa 19 intelligenta verktyg anropas automatiskt i bakgrunden via MCP för AI-agenter och Claude",
         tip_heading: "💡 AI-Tips:",
         tip_text1: "Du behöver inte memorera verktygen! När du är ansluten i Claude, ChatGPT eller Cursor kan du bara fråga din AI:",
         tip_code: '"Vilka verktyg har du tillgång till via MCP LAS?"',
@@ -1235,7 +1235,7 @@ Strukturera alltid svaren med:
         badge_source: "Source:",
         badge_calendar: "Official calendar:",
         tools_title: "What you can ask your AI",
-        tools_sub: "These 17 intelligent tools are automatically invoked in the background via MCP for AI agents and Claude",
+        tools_sub: "These 19 intelligent tools are automatically invoked in the background via MCP for AI agents and Claude",
         tip_heading: "💡 AI Tip:",
         tip_text1: "You don't need to memorize the tools! Once connected in Claude, ChatGPT, or Cursor, simply ask your AI:",
         tip_code: '"What tools do you have access to via MCP LAS?"',
@@ -1517,6 +1517,34 @@ Strukturera alltid svaren med:
         prompt: {
           sv: "Vad är prisbasbeloppet och inkomstbasbeloppet för 2026 och hur påverkar det max SGI och pensionsgrundande inkomst?",
           en: "What are the price base amount and income base amount for 2026 and how do they determine the maximum SGI and pension qualifying income?"
+        }
+      },
+      {
+        id: "search_parliament_and_legislation",
+        icon: "fa-solid fa-landmark-dome",
+        categories: ["lag"],
+        title: { sv: "Sök Riksdagsdokument & Förarbeten", en: "Search Parliament Docs & Legislative History" },
+        desc: {
+          sv: "Live-sökning i Riksdagens Öppna Data API (data.riksdagen.se) efter propositioner (prop), Statens offentliga utredningar (SOU), utskottsbetänkanden (bet), Departementsserien (Ds) och nya lagförslag.",
+          en: "Live search in the Swedish Parliament Open Data API (data.riksdagen.se) for government bills (prop), SOU inquiries, parliamentary committee reports (bet), and legislative drafts."
+        },
+        prompt: {
+          sv: "Sök efter regeringens propositioner och utredningar om anställningsskydd och turordningsregler.",
+          en: "Search for government bills and official reports on employment protection and redundancy rules."
+        }
+      },
+      {
+        id: "get_parliament_document_details",
+        icon: "fa-solid fa-file-shield",
+        categories: ["lag"],
+        title: { sv: "Riksdagsdokument Detaljer & Fulltext", en: "Parliament Document Details & Full Text" },
+        desc: {
+          sv: "Hämtar fullständig beslutsstatus, förslag, tidslinje/aktiviteter, relaterade bilagor (PDF) och textutdrag för ett specifikt riksdagsdokument (t.ex. Prop. 2021/22:176 eller HD03304).",
+          en: "Retrieves complete legislative status, chamber proposals, timeline activities, PDF attachments, and full text for a specific parliamentary document (e.g. Prop. 2021/22:176 or HD03304)."
+        },
+        prompt: {
+          sv: "Hämta detaljer och förslag för proposition Prop. 2021/22:176 (Flexibilitet, omställningsförmåga och trygghet på arbetsmarknaden).",
+          en: "Fetch details and legislative proposals for bill Prop. 2021/22:176 regarding the new Employment Protection Act."
         }
       }
     ];

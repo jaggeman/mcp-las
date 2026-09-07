@@ -33,6 +33,8 @@ from src.mcp_tools.tools import (
     get_hr_document_template as _get_hr_document_template,
     calculate_travel_deduction_and_mileage as _calculate_travel_deduction_and_mileage,
     get_base_amounts_and_indices as _get_base_amounts_and_indices,
+    search_parliament_and_legislation as _search_parliament_and_legislation,
+    get_parliament_document_details as _get_parliament_document_details,
     GENERATED_EXCEL_FILES
 )
 
@@ -134,6 +136,8 @@ DIRECT_TOOLS_MAP = {
     "get_hr_document_template": _get_hr_document_template,
     "calculate_travel_deduction_and_mileage": _calculate_travel_deduction_and_mileage,
     "get_base_amounts_and_indices": _get_base_amounts_and_indices,
+    "search_parliament_and_legislation": _search_parliament_and_legislation,
+    "get_parliament_document_details": _get_parliament_document_details,
 }
 
 @mcp.custom_route("/api/tools/list", methods=["GET", "OPTIONS"])
@@ -579,6 +583,48 @@ def get_base_amounts_and_indices(
         compare_all_years=compare_all_years
     )
     auth_service.log_access(api_key or "anon", None, "get_base_amounts_and_indices", {"year": year, "all": compare_all_years}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def search_parliament_and_legislation(
+    query: str,
+    doc_type: Optional[str] = None,
+    limit: int = 5,
+    page: int = 1,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Söker live i Riksdagens Öppna Data API (data.riksdagen.se) efter propositioner (prop),
+    Statens offentliga utredningar (sou), utskottsbetänkanden (bet), departementsserien (ds) och lagförslag.
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _search_parliament_and_legislation(
+        query=query,
+        doc_type=doc_type,
+        limit=limit,
+        page=page
+    )
+    auth_service.log_access(api_key or "anon", None, "search_parliament_and_legislation", {"query": query, "doc_type": doc_type}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def get_parliament_document_details(
+    dok_id: str,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Hämtar detaljerad status, förslag, beslutsprocess, bilagor och textutdrag för ett specifikt
+    dokument från Riksdagen (t.ex. 'HD03304', 'sfs-1982-80', 'prop-202122-176').
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _get_parliament_document_details(dok_id=dok_id)
+    auth_service.log_access(api_key or "anon", None, "get_parliament_document_details", {"dok_id": dok_id}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":

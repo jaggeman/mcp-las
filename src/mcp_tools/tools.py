@@ -1895,8 +1895,29 @@ def get_base_amounts_and_indices(
     }
 
 
+def search_parliament_and_legislation(
+    query: str,
+    doc_type: Optional[str] = None,
+    limit: int = 5,
+    page: int = 1
+) -> Dict[str, Any]:
+    """
+    Söker live i Riksdagens Öppna Data API (data.riksdagen.se) efter propositioner (prop),
+    Statens offentliga utredningar (sou), utskottsbetänkanden (bet), departementspromemorior (ds) och lagförslag.
+    """
+    from src.services.riksdagen_api_service import riksdagen_api_service
+    return riksdagen_api_service.search_documents(
+        query=query,
+        doc_types=doc_type,
+        limit=limit,
+        page=page
+    )
 
 
-
-
-
+def get_parliament_document_details(dok_id: str) -> Dict[str, Any]:
+    """
+    Hämtar detaljerad status, förslag, beslutsprocess, bilagor och textutdrag för ett specifikt
+    dokument från Riksdagen (t.ex. 'HD03304', 'sfs-1982-80', 'prop-202122-176').
+    """
+    from src.services.riksdagen_api_service import riksdagen_api_service
+    return riksdagen_api_service.get_document_details(dok_id=dok_id)
