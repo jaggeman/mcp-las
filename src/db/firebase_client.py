@@ -18,6 +18,8 @@ class FirebaseLaborLawDB:
                 c_copy["embedding"] = Embedder.get_embedding(c_copy.get("title", "") + " " + c_copy.get("summary", "") + " " + c_copy.get("domskal", ""))
             self._local_precedents[c_copy["id"]] = c_copy
         self._local_rules: Dict[str, Any] = {}
+        self._cached_statute_sections: Optional[List[Dict[str, Any]]] = None
+        self._cached_precedents: Optional[List[Dict[str, Any]]] = None
         self._init_firebase()
 
     def _init_firebase(self):
@@ -63,19 +65,43 @@ class FirebaseLaborLawDB:
             except Exception:
                 pass
 
-    def get_statute_section(self, law: str, section: str, chapter: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        law_clean = law.strip().upper()
-        sec_clean = section.strip().lower().replace("§", "").strip()
-        
+    def _get_statute_items(self) -> List[Dict[str, Any]]:
+        if self._cached_statute_sections is not None:
+            return self._cached_statute_sections
         items = []
         if self.db:
             try:
-                docs = self.db.collection("statute_sections").stream()
+                docs = self.db.collection("statute_sections").limit(1000).stream()
                 items = [d.to_dict() for d in docs]
             except Exception:
                 pass
         if not items:
             items = list(self._local_sections.values())
+        if items:
+            self._cached_statute_sections = items
+        return items
+
+    def _get_precedent_items(self) -> List[Dict[str, Any]]:
+        if self._cached_precedents is not None:
+            return self._cached_precedents
+        items = []
+        if self.db:
+            try:
+                docs = self.db.collection("precedents").stream()
+                items = [d.to_dict() for d in docs]
+            except Exception:
+                pass
+        if not items:
+            items = list(self._local_precedents.values())
+        if items:
+            self._cached_precedents = items
+        return items
+
+    def get_statute_section(self, law: str, section: str, chapter: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        law_clean = law.strip().upper()
+        sec_clean = section.strip().lower().replace("§", "").strip()
+        
+        items = self._get_statute_items()
 
         for s in items:
             short = s.get("statute_short", "").upper()
@@ -154,15 +180,7 @@ class FirebaseLaborLawDB:
 
         q_emb = Embedder.get_embedding(query + " " + " ".join(expanded_query_terms))
 
-        items = []
-        if self.db:
-            try:
-                docs = self.db.collection("statute_sections").limit(1000).stream()
-                items = [d.to_dict() for d in docs]
-            except Exception:
-                pass
-        if not items:
-            items = list(self._local_sections.values())
+        items = self._get_statute_items()
 
         if not items:
             return []
@@ -278,15 +296,7 @@ class FirebaseLaborLawDB:
     def search_precedents(self, query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10) -> List[Dict[str, Any]]:
         q_emb = Embedder.get_embedding(query)
         q_lower = query.lower()
-        items = []
-        if self.db:
-            try:
-                docs = self.db.collection("precedents").stream()
-                items = [d.to_dict() for d in docs]
-            except Exception:
-                pass
-        if not items:
-            items = list(self._local_precedents.values())
+        items = self._get_precedent_items()
 
         results = []
         for p in items:

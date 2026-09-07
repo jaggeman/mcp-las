@@ -1839,6 +1839,14 @@ def calculate_travel_deduction_and_mileage(
         "conditions_met": conditions_met,
         "time_saved_minutes_per_day": time_saved_minutes,
         "condition_notes": condition_notes,
+        "skatteverket_schabloner": {
+            "milersattning_egen_bil": "25 kr/mil (25,00 kr per mil skattefritt)",
+            "milersattning_formansbil_bensin_diesel": "12 kr/mil",
+            "milersattning_formansbil_el": "9,50 kr/mil",
+            "inrikes_helt_traktamente": "290 kr per hel dag (skattefritt maximibelopp)",
+            "inrikes_halvt_traktamente": "145 kr per halv dag",
+            "nattraktamente": "145 kr per natt"
+        },
         "declaration_guide": {
             "deklarationsruta": "Under 'Avdrag för resor till och från arbetet' i Inkomstdeklaration 1",
             "belopp_att_fylla_i": f"{int(round(deductible_amount))} kr (efter avdragen självrisk om {int(threshold)} kr)",
