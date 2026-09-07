@@ -492,8 +492,8 @@ AD_PRECEDENTS_DATA: List[Dict[str, Any]] = [
         "slut": "Arbetsgivaren dömdes att betala 80 000 kr i diskrimineringsersättning."
     },
     {
-        "id": "AD_2019_nr_23",
-        "case_number": "AD 2019 nr 23",
+        "id": "AD_2019_nr_32",
+        "case_number": "AD 2019 nr 32",
         "year": 2019,
         "title": "Krav på tillräckliga kvalifikationer vid omplacering och turordning",
         "summary": "Vid arbetsbrist krävde en uppsagd montör att få omplaceras till en ledig tjänst som elkonstruktör med hänvisning till längre anställningstid.",
