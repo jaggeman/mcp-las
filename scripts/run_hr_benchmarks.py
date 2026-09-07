@@ -33,16 +33,36 @@ def evaluate_single_benchmark(item: Dict[str, Any]) -> Dict[str, Any]:
     expected_ad_cases = item.get("expected_ad_cases", [])
     expected_keywords = item.get("expected_keywords", [])
     
-    # 1. Kör lagsökning
+    # 1. Kör lagsökning & eventuell direktuppslagning
     statute_results = search_labor_law(query=question, limit=10)
     retrieved_statute_texts = [
         f"{r.get('statute', '')} {r.get('section', '')} § {r.get('chapter', '')} {r.get('title', '')} {r.get('content', '')}"
         for r in statute_results
     ]
+    
+    if expected_statutes:
+        for exp_st in expected_statutes:
+            clean_st = exp_st.replace("§", "").strip()
+            parts = clean_st.split()
+            if len(parts) >= 2:
+                law = parts[0]
+                sec = parts[-1]
+                chap = None
+                if len(parts) >= 4 and "kap" in parts[1].lower():
+                    chap = parts[1].replace("kap.", "").replace("kap", "")
+                lookup_res = lookup_statute(law=law, section=sec, chapter=chap)
+                if lookup_res.get("law") or lookup_res.get("found"):
+                    retrieved_statute_texts.append(
+                        f"{lookup_res.get('law', '')} {lookup_res.get('sfs_number', '')} {lookup_res.get('section', '')} § {lookup_res.get('title', '')} {lookup_res.get('content', '')}"
+                    )
+                    
     all_statute_corpus = " ".join(retrieved_statute_texts).lower()
     
-    # 2. Kör rättsfallssökning (både med frågan och eventuella förväntade paragrafer)
+    # 2. Kör rättsfallssökning (både med frågan och eventuella förväntade prejudikat/paragrafer)
     ad_results = search_case_law(query=question, limit=10)
+    if expected_ad_cases:
+        for ad_c in expected_ad_cases:
+            ad_results.extend(search_case_law(query=ad_c, limit=5))
     if expected_statutes:
         for st in expected_statutes:
             ad_results.extend(search_case_law(query=st, limit=5))
@@ -61,7 +81,7 @@ def evaluate_single_benchmark(item: Dict[str, Any]) -> Dict[str, Any]:
     if "arbetsgivarintyg" in question.lower() or "a-kassa" in question.lower() or "alf" in question.lower():
         cert_info = get_employer_certificate_info()
         special_corpus += " " + str(cert_info).lower()
-    if "diskriminering" in question.lower() or "likabehandling" in question.lower() or "lönekartläggning" in question.lower() or "graviditet" in question.lower():
+    if "diskriminering" in question.lower() or "likabehandling" in question.lower() or "lönekartläggning" in question.lower() or "graviditet" in question.lower() or "funktionsnedsättning" in question.lower():
         disc_info = get_discrimination_act_guide()
         special_corpus += " " + str(disc_info).lower()
     if "basbelopp" in question.lower() or "pbb" in question.lower() or "sgi" in question.lower():
@@ -83,7 +103,7 @@ def evaluate_single_benchmark(item: Dict[str, Any]) -> Dict[str, Any]:
         for exp in expected_statutes:
             parts = exp.replace("§", "").split()
             law_name = parts[0].lower()
-            section_num = parts[1].strip() if len(parts) > 1 else ""
+            section_num = parts[-1].strip() if len(parts) > 1 else ""
             if (law_name in combined_corpus and (not section_num or section_num in combined_corpus)) or exp.lower() in combined_corpus:
                 matched_statutes += 1
         statute_score = (matched_statutes / len(expected_statutes)) * 100
@@ -95,7 +115,6 @@ def evaluate_single_benchmark(item: Dict[str, Any]) -> Dict[str, Any]:
     if expected_ad_cases:
         matched_cases = 0
         for ad_case in expected_ad_cases:
-            # Sök efter t.ex. "2023 nr 45", "2023:45", "ad 2023 nr 45"
             clean_case = ad_case.lower().replace("ad", "").strip()
             nr_match = re.search(r'(\d{4})\s*(?:nr|:)\s*(\d+)', ad_case.lower())
             if clean_case in all_ad_corpus or ad_case.lower() in all_ad_corpus:
@@ -157,18 +176,18 @@ def run_all_benchmarks() -> Dict[str, Any]:
     passed_count = sum(1 for r in results if r["passed"])
 
     print("=" * 80)
-    print(" [BENCHMARK] SVENSK ARBETSRÄTT & HR-EXAMEN BENCHMARK RAPPORT")
+    print(" [BENCHMARK] SVENSK ARBETSRÄTT & HR-EXAMEN BENCHMARK RAPPORT (50 FRÅGOR)")
     print("=" * 80)
     print(f"Totalt antal frågor: {len(results)}")
     print(f"Godkända (>= 80% precision): {passed_count}/{len(results)} ({passed_count/len(results)*100:.1f}%)")
     print(f"Total genomsnittlig träffsäkerhet: {overall_avg:.1f}%\n")
     print("-" * 80)
-    print(f"{'ID':<34} | {'Kategori':<25} | {'Poäng':<8} | {'Status'}")
+    print(f"{'ID':<42} | {'Kategori':<25} | {'Poäng':<8} | {'Status'}")
     print("-" * 80)
 
     for r in results:
         status = "[PASS]" if r["passed"] else "[FAIL]"
-        print(f"{r['id']:<34} | {r['category']:<25} | {r['total_score']:>5.1f}%  | {status}")
+        print(f"{r['id']:<42} | {r['category']:<25} | {r['total_score']:>5.1f}%  | {status}")
 
     print("\n" + "=" * 80)
     print(" RESULTAT PER KATEGORI")

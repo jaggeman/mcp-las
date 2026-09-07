@@ -8,8 +8,8 @@ from src.benchmarks.hr_exam_data import HR_EXAM_BENCHMARKS
 from scripts.run_hr_benchmarks import evaluate_single_benchmark, run_all_benchmarks
 
 def test_hr_benchmark_dataset_integrity():
-    """Säkerställer att benchmark-datamängden har minst 25 validerade frågor."""
-    assert len(HR_EXAM_BENCHMARKS) >= 25
+    """Säkerställer att benchmark-datamängden har minst 50 validerade frågor."""
+    assert len(HR_EXAM_BENCHMARKS) >= 50
     categories = set(item["category"] for item in HR_EXAM_BENCHMARKS)
     assert len(categories) == 6
     assert "Uppsägning & Sakliga Skäl" in categories

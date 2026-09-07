@@ -321,13 +321,19 @@ class FirebaseLaborLawDB:
             summary_text = p.get("summary", "").lower()
             case_num = p.get("case_number", "").lower()
             domskal_text = p.get("domskal", "").lower()
-            full_text = f"{case_num} {title_text} {summary_text} {domskal_text}"
+            keywords_text = " ".join(p.get("legal_keywords", [])).lower()
+            prov_text = " ".join(p.get("legal_provisions_referenced", [])).lower()
+            full_text = f"{case_num} {title_text} {summary_text} {domskal_text} {keywords_text} {prov_text}"
             
             # Extract search tokens
             tokens = [w for w in re.findall(r'[\w/]+', q_lower) if len(w) > 2]
             lex_score = 0.0
             for t in tokens:
-                if t in title_text or t in case_num:
+                if t in case_num:
+                    lex_score += 8.0
+                elif t in title_text:
+                    lex_score += 5.0
+                elif t in keywords_text:
                     lex_score += 4.0
                 elif t in summary_text:
                     lex_score += 2.5
