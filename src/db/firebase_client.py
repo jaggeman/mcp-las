@@ -236,6 +236,13 @@ class FirebaseLaborLawDB:
 
         scored_sections = []
         for s in items:
+            if filters:
+                requested_jurisdiction = filters.get("jurisdiction") or filters.get("country")
+                requested_language = filters.get("language")
+                if requested_jurisdiction and str(s.get("jurisdiction", "SE")).upper() != str(requested_jurisdiction).upper():
+                    continue
+                if requested_language and str(s.get("language", "sv")).lower() != str(requested_language).lower():
+                    continue
             content = s.get("content", "")
             title = s.get("section_title") or ""
             keywords = s.get("keywords", [])
@@ -320,7 +327,9 @@ class FirebaseLaborLawDB:
                     "section": s.get("section_number"),
                     "title": s.get("section_title"),
                     "content": s.get("content"),
-                    "keywords": s.get("keywords")
+                    "keywords": s.get("keywords"),
+                    "jurisdiction": s.get("jurisdiction", "SE"),
+                    "language": s.get("language", "sv")
                 })
 
         scored_sections.sort(key=lambda x: x["score"], reverse=True)

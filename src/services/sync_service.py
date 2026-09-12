@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable
 from src.db.firebase_client import db_client
 from src.embeddings.embedder import Embedder
 from src.scrapers.riksdagen_fetcher import RiksdagenFetcher
+from src.scrapers.retsinformation_fetcher import RetsinformationFetcher
 
 
 DEFAULT_STATUTES = (
@@ -26,10 +27,11 @@ def content_hash(value: str) -> str:
 class SourceSyncService:
     """Fetch, fingerprint and index statutes without rewriting unchanged data."""
 
-    def __init__(self, db: Any = db_client, fetcher: Any = RiksdagenFetcher, embedder: Any = Embedder):
+    def __init__(self, db: Any = db_client, fetcher: Any = RiksdagenFetcher, embedder: Any = Embedder, danish_fetcher: Any = RetsinformationFetcher):
         self.db = db
         self.fetcher = fetcher
         self.embedder = embedder
+        self.danish_fetcher = danish_fetcher
 
     def sync_statutes(self, statutes: Iterable[str] = DEFAULT_STATUTES) -> Dict[str, Any]:
         result: Dict[str, Any] = {"changed": 0, "skipped": 0, "errors": 0, "items": []}
@@ -63,6 +65,54 @@ class SourceSyncService:
                     "status": "success",
                 }
                 self.db.save_sync_state(source_id, state)
+                result["changed"] += 1
+                result["items"].append({"source_id": source_id, "status": "changed", "sections": len(sections)})
+            except Exception as exc:
+                result["errors"] += 1
+                result["items"].append({"source_id": source_id, "status": "error", "error": str(exc)})
+                self.db.save_sync_state(source_id, {
+                    "source_id": source_id,
+                    "synced_at": datetime.now(timezone.utc).isoformat(),
+                    "status": "error",
+                    "error": str(exc),
+                })
+
+        result["status"] = "error" if result["errors"] else "success"
+        return result
+
+    def sync_danish_documents(self, documents: Iterable[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Harvest and index changed Danish laws from Retsinformation."""
+        result: Dict[str, Any] = {"changed": 0, "skipped": 0, "errors": 0, "items": []}
+        source_documents = documents if documents is not None else self.danish_fetcher.get_changed_laws()
+
+        for document in source_documents:
+            document_id = document.get("documentId") or document.get("document_id") or document.get("id")
+            source_id = f"danish:{document_id}"
+            try:
+                metadata, sections = self.danish_fetcher.get_document(document)
+                fingerprint_input = str(metadata) + "\n" + "\n".join(section.raw_text for section in sections)
+                fingerprint = content_hash(fingerprint_input)
+                previous = self.db.get_sync_state(source_id) or {}
+                if previous.get("content_hash") == fingerprint and previous.get("status") == "success":
+                    result["skipped"] += 1
+                    result["items"].append({"source_id": source_id, "status": "skipped"})
+                    continue
+
+                self.db.save_statute(metadata)
+                for section in sections:
+                    section_data = section.model_dump()
+                    section_data.update({"jurisdiction": "DK", "language": "da"})
+                    section_data["embedding"] = self.embedder.get_embedding(section.raw_text)
+                    self.db.save_statute_section(section_data)
+
+                self.db.save_sync_state(source_id, {
+                    "source_id": source_id,
+                    "content_hash": fingerprint,
+                    "source_url": metadata.get("source_url"),
+                    "section_count": len(sections),
+                    "synced_at": datetime.now(timezone.utc).isoformat(),
+                    "status": "success",
+                })
                 result["changed"] += 1
                 result["items"].append({"source_id": source_id, "status": "changed", "sections": len(sections)})
             except Exception as exc:

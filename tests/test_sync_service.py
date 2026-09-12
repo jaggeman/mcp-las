@@ -83,3 +83,39 @@ def test_sync_records_error_and_continues_with_other_sources():
     assert result["errors"] == 1
     assert result["items"][0]["status"] == "error"
     assert result["items"][1]["status"] == "changed"
+
+
+def test_sync_indexes_changed_danish_document_with_jurisdiction():
+    class DanishFetcher:
+        @classmethod
+        def get_changed_laws(cls):
+            return [{"documentId": "A202400001", "href": "https://example.test/doc.xml"}]
+
+        @classmethod
+        def get_document(cls, document):
+            metadata = {
+                "id": "DK:A202400001",
+                "title": "Funktionærlov",
+                "source_url": document["href"],
+                "jurisdiction": "DK",
+                "language": "da",
+            }
+            section = SimpleNamespace(
+                raw_text="§ 1. Loven gælder for funktionærer.",
+                model_dump=lambda: {
+                    "id": "dk-a202400001_s1",
+                    "raw_text": "§ 1. Loven gælder for funktionærer.",
+                    "jurisdiction": "DK",
+                    "language": "da",
+                },
+            )
+            return metadata, [section]
+
+    db = FakeDB()
+    service = SourceSyncService(db=db, danish_fetcher=DanishFetcher)
+
+    result = service.sync_danish_documents()
+
+    assert result["changed"] == 1
+    assert db.statutes[0]["jurisdiction"] == "DK"
+    assert db.sections[0]["language"] == "da"

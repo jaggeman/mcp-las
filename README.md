@@ -79,6 +79,16 @@ Detta hämtar och indexerar automatiskt:
 - **Arbetstidslagen** (SFS 1982:673)
 - **Diskrimineringslagen** (SFS 2008:567)
 
+### Dansk lagstiftning
+
+Danska lagar kan synkroniseras från Retsinformations officiella öppna API med:
+
+```powershell
+python scripts/sync_sources.py --danish
+```
+
+Synkroniseringen hämtar ändrade danska lagdokument, parser `Kapitel`/`§`, sparar jurisdiktion `DK` och språk `da`, samt återanvänder hash- och versionskontrollen i Firestore. Danska träffar kan begränsas med `filters={"jurisdiction": "DK"}` i `search_labor_law`.
+
 ---
 
 ## 🔌 Anslut till MCP-klienter (Claude Desktop / Cursor)
