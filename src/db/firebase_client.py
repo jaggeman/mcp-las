@@ -59,9 +59,31 @@ class FirebaseLaborLawDB:
         if not section.get("embedding"):
             section["embedding"] = Embedder.get_embedding(section.get("raw_text", ""))
         self._local_sections[doc_id] = section
+        self._cached_statute_sections = None
         if self.db:
             try:
                 self.db.collection("statute_sections").document(doc_id).set(section)
+            except Exception:
+                pass
+
+    def get_sync_state(self, source_id: str) -> Optional[Dict[str, Any]]:
+        """Read the last successful or failed synchronization state for a source."""
+        if self.db:
+            try:
+                doc = self.db.collection("source_sync_state").document(source_id).get()
+                if doc.exists:
+                    return doc.to_dict()
+            except Exception:
+                pass
+        return getattr(self, "_local_sync_state", {}).get(source_id)
+
+    def save_sync_state(self, source_id: str, state: Dict[str, Any]) -> None:
+        if not hasattr(self, "_local_sync_state"):
+            self._local_sync_state = {}
+        self._local_sync_state[source_id] = dict(state)
+        if self.db:
+            try:
+                self.db.collection("source_sync_state").document(source_id).set(state)
             except Exception:
                 pass
 

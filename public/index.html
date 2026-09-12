@@ -969,6 +969,30 @@ Strukturera alltid svaren med:
     </section>
 
     <!-- Tools Section -->
+    <section id="uppdateringar" style="padding-top: 2rem;">
+      <div style="background: var(--brand-light); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 1.25rem; padding: 1.75rem; margin-top: 2rem; box-shadow: var(--shadow);">
+        <div style="display: flex; align-items: flex-start; gap: 0.9rem;">
+          <div style="width: 2.5rem; height: 2.5rem; border-radius: 0.7rem; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </div>
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 800; margin: 0 0 0.45rem;" data-i18n="sync_title">Automatisk källsynkronisering</h2>
+            <p style="margin: 0 0 0.9rem; color: var(--text-muted); line-height: 1.6;" data-i18n="sync_desc">MCP LAS byggs nu för veckovis kontroll av officiella rättskällor. Ändrade lagar identifieras med hash, valideras och indexeras endast när innehållet har förändrats.</p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.82rem;">
+              <span class="tech-badge"><i class="fa-solid fa-cloud"></i> Cloud Run Job</span>
+              <span class="tech-badge"><i class="fa-solid fa-database"></i> Firestore versionsstatus</span>
+              <span class="tech-badge"><i class="fa-solid fa-shield-check"></i> Validering före publicering</span>
+            </div>
+            <p style="margin: 0.9rem 0 0; font-size: 0.82rem; color: var(--text-muted);" data-i18n="sync_note">Status: första synkroniseringskärnan är implementerad. Schemaläggning och produktionskörning följer i nästa deploysteg.</p>
+          </div>
+        </div>
+      </div>
+      <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; padding: 1.5rem 1.75rem; margin-top: 1rem; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0 0 0.45rem;"><i class="fa-solid fa-road" style="color: var(--brand); margin-right: 0.4rem;"></i> <span data-i18n="danish_title">Danska lagar — planerad utökning</span></h3>
+        <p style="margin: 0; color: var(--text-muted); line-height: 1.6;" data-i18n="danish_desc">Ticket DA-001 beskriver nästa jurisdiktion: officiella danska arbetsrättsliga källor, språkmedveten sökning, versionshistorik och separata Danmark-filter. Svenska och danska regler kommer att hållas tydligt åtskilda.</p>
+      </div>
+    </section>
+
     <section id="verktyg" style="padding-top: 2rem;">
       <h2 class="section-title" data-i18n="tools_title">Vad du kan fråga din AI</h2>
       <p class="section-sub" data-i18n="tools_sub">Dessa 19 intelligenta verktyg anropas automatiskt i bakgrunden via MCP eller direkt via snabbt REST API för AI-granskning</p>
@@ -1137,6 +1161,11 @@ Strukturera alltid svaren med:
         btn_copy_prompt: "Kopiera Prompt",
         sources_title: "Datakällor i Realtid",
         sources_sub: "Strukturerad juridisk kunskapsbas indexerad i Google Firestore",
+        sync_title: "Automatisk källsynkronisering",
+        sync_desc: "MCP LAS byggs nu för veckovis kontroll av officiella rättskällor. Ändrade lagar identifieras med hash, valideras och indexeras endast när innehållet har förändrats.",
+        sync_note: "Status: första synkroniseringskärnan är implementerad. Schemaläggning och produktionskörning följer i nästa deploysteg.",
+        danish_title: "Danska lagar — planerad utökning",
+        danish_desc: "Ticket DA-001 beskriver nästa jurisdiktion: officiella danska arbetsrättsliga källor, språkmedveten sökning, versionshistorik och separata Danmark-filter. Svenska och danska regler kommer att hållas tydligt åtskilda.",
         src_card1_title: "Sveriges Riksdag",
         src_card1_desc: "Fulltext-indexerade lagar med paragrafindelat innehåll: LAS (1982:80), MBL (1976:580), Semesterlagen (1977:480), Arbetstidslagen m.fl.",
         src_card2_title: "17 Kollektivavtal",
@@ -1223,6 +1252,11 @@ Strukturera alltid svaren med:
         btn_copy_prompt: "Copy Prompt",
         sources_title: "Real-Time Legal Knowledge Base",
         sources_sub: "Structured Swedish employment law dataset indexed in Google Firestore",
+        sync_title: "Automated source synchronization",
+        sync_desc: "MCP LAS is being prepared for weekly checks of official legal sources. Changed statutes are identified by hash, validated, and indexed only when their content changes.",
+        sync_note: "Status: the first synchronization core is implemented. Scheduling and production execution are the next deployment step.",
+        danish_title: "Danish laws — planned expansion",
+        danish_desc: "Ticket DA-001 covers the next jurisdiction: official Danish employment-law sources, language-aware search, version history, and separate Denmark filters. Swedish and Danish rules will remain clearly separated.",
         src_card1_title: "Swedish Parliament (Riksdagen)",
         src_card1_desc: "Full-text indexed statutes partitioned by section: Employment Protection Act (LAS 1982:80), Co-Determination Act (MBL 1976:580), Annual Leave Act (1977:480), etc.",
         src_card2_title: "17 Collective Agreements",

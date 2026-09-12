@@ -33,3 +33,11 @@ def test_website_navbar_does_not_contain_unauthenticated_rest_api_link():
     content = html_path.read_text(encoding="utf-8")
     nav_section = content[content.find("<nav>"):content.find("</nav>")]
     assert "REST API" not in nav_section, "'REST API' link still present in navigation bar"
+
+def test_website_documents_automated_source_sync_and_danish_roadmap():
+    html_path = Path("public/index.html")
+    content = html_path.read_text(encoding="utf-8")
+    assert "Automatisk källsynkronisering" in content
+    assert "Cloud Run Job" in content
+    assert "Danska lagar" in content
+    assert "DA-001" in content
