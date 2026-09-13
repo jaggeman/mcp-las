@@ -1009,7 +1009,7 @@ def generate_turordningslista_excel(
         "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
     }
 
-    download_url = f"https://mcp-las-rules.web.app/api/download-turordning?id={file_id}"
+    download_url = f"https://las.novro.se/api/download-turordning?id={file_id}"
 
     # Skapa markdown-tabell för AI-chatten
     md_lines = [

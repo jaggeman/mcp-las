@@ -76,7 +76,7 @@ class NotificationService:
       </div>
     </div>
     <div class="footer">
-      Detta är en automatisk notis från <a href="https://mcp-las-rules.web.app" style="color: #64748b;">mcp-las-rules.web.app</a>.
+      Detta är en automatisk notis från <a href="https://las.novro.se" style="color: #64748b;">las.novro.se</a>.
     </div>
   </div>
 </body>

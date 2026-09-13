@@ -150,7 +150,7 @@ async def list_available_tools_rest(request):
     if not api_key:
         return JSONResponse({
             "success": False,
-            "error": "API-nyckel krävs. Ansök om en API-nyckel på https://mcp-las-rules.web.app/#key-request."
+            "error": "API-nyckel krävs. Ansök om en API-nyckel på https://las.novro.se/#key-request."
         }, status_code=401, headers={"Access-Control-Allow-Origin": "*"})
         
     key_info = auth_service.validate_key(api_key)
@@ -194,7 +194,7 @@ async def execute_tool_direct_rest(request):
         if not api_key:
             return JSONResponse({
                 "success": False,
-                "error": "API-nyckel krävs för att anropa verktyg. Ansök om en personlig nyckel på https://mcp-las-rules.web.app/#key-request eller skicka med 'X-API-Key' i HTTP-headern."
+                "error": "API-nyckel krävs för att anropa verktyg. Ansök om en personlig nyckel på https://las.novro.se/#key-request eller skicka med 'X-API-Key' i HTTP-headern."
             }, status_code=401, headers={"Access-Control-Allow-Origin": "*"})
 
         key_info = auth_service.validate_key(api_key)

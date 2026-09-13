@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "mcp-las-rules"
+    "default": "paygap-prod"
   },
   "targets": {
     "paygap-prod": {

@@ -96,7 +96,7 @@ Synkroniseringen hämtar ändrade danska lagdokument, parser `Kapitel`/`§`, spa
 ### Alternativ A: Anslut via Molnet (Streamable HTTP — Ny modern standard)
 Ingen lokal installation krävs. Använd den publika Streamable HTTP-endpointen i Claude Connector / Claude Desktop / ChatGPT:
 ```
-https://mcp-las-rules.web.app/mcp
+https://las.novro.se/mcp
 ```
 
 ### Alternativ B: Lokal körning i `claude_desktop_config.json`
