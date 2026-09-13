@@ -12,6 +12,7 @@ from src.chunking.law_chunker import StatuteSection
 
 class FinlexFetcher:
     API_URL = "https://opendata.finlex.fi/finlex/avoindata/v1"
+    STATUTE_LIST_URL = f"{API_URL}/akn/fi/act/statute/list"
     USER_AGENT = "MCP-LAS/1.0 (legal-source-sync)"
 
     @classmethod
@@ -37,7 +38,7 @@ class FinlexFetcher:
         if end_year is not None:
             params["endYear"] = end_year
         response = requests.get(
-            f"{cls.API_URL}/akn/fi/act/statute/list",
+            cls.STATUTE_LIST_URL,
             params=params,
             headers={"User-Agent": cls.USER_AGENT, "Accept": "application/json"},
             timeout=30,
@@ -67,13 +68,17 @@ class FinlexFetcher:
         language: str = "fi",
     ) -> Tuple[Dict[str, Any], List[StatuteSection]]:
         root = ET.fromstring(xml)
-        local = lambda tag: tag.rsplit("}", 1)[-1].lower()
+        def local_name(tag: str) -> str:
+            return tag.rsplit("}", 1)[-1].lower()
+
         nodes = list(root.iter())
         if not title:
-            title_node = next((node for node in nodes if local(node.tag) in {"frbrname", "title", "doctitle"}), None)
+            title_node = next((node for node in nodes if local_name(node.tag) in {"frbrname", "title", "doctitle"}), None)
             title = title_node.attrib.get("value") if title_node is not None else None
-            title = title or " ".join(title_node.itertext()) if title_node is not None else document_id
-        date_node = next((node for node in nodes if local(node.tag) in {"frbrdate", "date"}), None)
+            if not title and title_node is not None:
+                title = " ".join(part.strip() for part in title_node.itertext() if part.strip())
+            title = title or document_id
+        date_node = next((node for node in nodes if local_name(node.tag) in {"frbrdate", "date"}), None)
         valid_from = date_node.attrib.get("date") if date_node is not None else None
         if not valid_from and date_node is not None:
             valid_from = " ".join(date_node.itertext()).strip() or None
@@ -98,8 +103,18 @@ class FinlexFetcher:
 
     @classmethod
     def get_document(cls, document: Dict[str, Any]) -> Tuple[Dict[str, Any], List[StatuteSection]]:
-        document_id = document.get("id") or document.get("documentId") or document.get("document_id") or document.get("akn_uri")
-        document_url = document.get("url") or document.get("href") or document.get("documentUrl") or document.get("akn_uri")
+        document_id = (
+            document.get("id")
+            or document.get("documentId")
+            or document.get("document_id")
+            or document.get("akn_uri")
+        )
+        document_url = (
+            document.get("url")
+            or document.get("href")
+            or document.get("documentUrl")
+            or document.get("akn_uri")
+        )
         xml_url = document.get("xmlUrl") or document.get("xml_url") or document_url
         if not document_id or not xml_url:
             raise ValueError("Finlex document lacks id and XML URL")

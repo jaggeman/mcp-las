@@ -759,12 +759,12 @@
       <div id="tabContent-claude" class="tab-pane">
         <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="claude_url_title">1. Streamable HTTP URL (för Custom Connector)</div>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <code id="claudeUrl">https://mcp-las-639268366595.europe-north1.run.app/mcp</code>
+          <code id="claudeUrl">https://las.novro.se/mcp</code>
           <button class="copy-btn" onclick="copyText('claudeUrl', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_url">Kopiera URL</span></button>
         </div>
         <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="claude_config_title">2. Konfiguration för Claude Desktop (<code>claude_desktop_config.json</code>)</div>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="claudeConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://mcp-las-639268366595.europe-north1.run.app/mcp"\n    }\n  }\n}</pre>
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="claudeConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://las.novro.se/mcp"\n    }\n  }\n}</pre>
           <button class="copy-btn" onclick="copyText('claudeConfig', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_json">Kopiera JSON</span></button>
         </div>
       </div>
@@ -774,14 +774,14 @@
         <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="gpt_url_title">1. MCP-koppling för ChatGPT Desktop / OpenAI Developer Mode</div>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;" data-i18n="gpt_url_desc">Använd denna Streamable HTTP-adress direkt i ChatGPT Desktop:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <code id="gptUrl">https://mcp-las-639268366595.europe-north1.run.app/mcp</code>
+          <code id="gptUrl">https://las.novro.se/mcp</code>
           <button class="copy-btn" onclick="copyText('gptUrl', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_url">Kopiera URL</span></button>
         </div>
 
         <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="gpt_prompt_title">2. System Prompt för Custom GPTs</div>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;" data-i18n="gpt_prompt_desc">Klistra in denna instruktion i din Custom GPT:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="gptPrompt">Du är en svensk arbetsrättsexpert driven av MCP LAS (https://mcp-las-639268366595.europe-north1.run.app/mcp).
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="gptPrompt">Du är en svensk arbetsrättsexpert driven av MCP LAS (https://las.novro.se/mcp).
 När användaren ställer frågor om svensk arbetsrätt, anställningsskydd (LAS), medbestämmande (MBL), semester eller kollektivavtal:
 1. Slå alltid upp gällande lagtext och exakt paragraf via MCP LAS.
 2. Kontrollera alltid om tillämpligt kollektivavtal (t.ex. Teknikavtalet, Almega IT, Handels, Unionen) har semidispositiva avvikelser från lagen.
@@ -799,7 +799,7 @@ När användaren ställer frågor om svensk arbetsrätt, anställningsskydd (LAS
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;" data-i18n="gemini_prompt_desc">Klistra in denna instruktion i din Gemini Gem eller AI Studio Agent:</p>
         <div class="code-box" style="margin-bottom: 1.25rem;">
           <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="geminiPrompt">Du är en specialiserad rådgivare inom svensk arbetsrätt och den svenska partsmodellen.
-Använd MCP LAS (https://mcp-las-639268366595.europe-north1.run.app/mcp) för att hämta gällande lagstiftning från Riksdagen, 17 centrala kollektivavtal, vägledande domar från Arbetsdomstolen (AD) samt beräkna semester och avdrag.
+Använd MCP LAS (https://las.novro.se/mcp) för att hämta gällande lagstiftning från Riksdagen, 17 centrala kollektivavtal, vägledande domar från Arbetsdomstolen (AD) samt beräkna semester och avdrag.
 Strukturera alltid svaren med:
 - Lagens grundregel (§)
 - Eventuella avvikelser i kollektivavtal
@@ -814,7 +814,7 @@ Strukturera alltid svaren med:
       <div id="tabContent-cursor" class="tab-pane" style="display: none;">
         <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="cursor_config_title">1. Cursor / Windsurf MCP-konfiguration (<code>.cursor/mcp.json</code>)</div>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="cursorConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://mcp-las-639268366595.europe-north1.run.app/mcp"\n    }\n  }\n}</pre>
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="cursorConfig">{\n  "mcpServers": {\n    "mcp-las": {\n      "url": "https://las.novro.se/mcp"\n    }\n  }\n}</pre>
           <button class="copy-btn" onclick="copyText('cursorConfig', this)"><i class="fa-solid fa-copy"></i> <span data-i18n="btn_copy_json">Kopiera JSON</span></button>
         </div>
       </div>

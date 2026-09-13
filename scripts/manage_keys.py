@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 import secrets
 from datetime import datetime, timezone
 from pathlib import Path
@@ -71,7 +71,7 @@ def approve_request(email_or_id: str):
     print(f"Hej {name},\n")
     print("Din ansökan om tillgång till MCP LAS är godkänd!")
     print("Här är din personliga anslutningskonfiguration för Claude Desktop / Cursor:\n")
-    print("{\n  \"mcpServers\": {\n    \"mcp-las\": {\n      \"url\": \"https://mcp-las-511579677488.europe-north1.run.app/sse?key=" + key_id + "\"\n    }\n  }\n}\n")
+    print("{\n  \"mcpServers\": {\n    \"mcp-las\": {\n      \"url\": \"https://las.novro.se/mcp?key=" + key_id + "\"\n    }\n  }\n}\n")
     print("Mvh,\nFörvaltningen för MCP LAS")
     print("="*60 + "\n")
 
@@ -88,7 +88,7 @@ def create_key(name: str):
         "total_requests": 0
     }
     db_client.db.collection("api_keys").document(key_id).set(key_data)
-    print(f"\nNy API-nyckel skapad: {key_id}\nLänk: https://mcp-las-511579677488.europe-north1.run.app/sse?key={key_id}\n")
+    print(f"\nNy API-nyckel skapad: {key_id}\nLänk: https://las.novro.se/mcp?key={key_id}\n")
 
 def list_keys():
     docs = list(db_client.db.collection("api_keys").stream())

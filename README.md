@@ -57,12 +57,15 @@ pip install -r requirements.txt
 Skapa en `.env`-fil från `.env.example`:
 
 ```ini
-# Firebase-konfiguration (valfritt för offline/lokalt läge)
-FIREBASE_PROJECT_ID=ditt-firebase-projekt
+# Firebase-konfiguration (paygap-prod för drift)
+FIREBASE_PROJECT_ID=paygap-prod
 FIREBASE_CREDENTIALS_PATH=./firebase-credentials.json
 USE_FIRESTORE_EMULATOR=false
 
-# Embeddings: 'openai', 'gemini' eller 'mock'
+# Port och miljö
+PORT=8080
+
+# Embeddings: 'mock' (standard), 'openai' eller 'gemini'
 EMBEDDING_PROVIDER=mock
 OPENAI_API_KEY=
 ```
@@ -97,6 +100,17 @@ Synkroniseringen hämtar ändrade danska lagdokument, parser `Kapitel`/`§`, spa
 Ingen lokal installation krävs. Använd den publika Streamable HTTP-endpointen i Claude Connector / Claude Desktop / ChatGPT:
 ```
 https://las.novro.se/mcp
+```
+
+Konfiguration för `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "mcp-las": {
+      "url": "https://las.novro.se/mcp"
+    }
+  }
+}
 ```
 
 ### Alternativ B: Lokal körning i `claude_desktop_config.json`
@@ -139,15 +153,37 @@ Projektet utvecklas strikt enligt **Test-Driven Development (TDD)**:
 
 ---
 
----
-
-## 🚀 Drift & Novro Subdomän (`las.novro.se`)
+## 🚀 Drift & Driftsättning (`las.novro.se`)
 
 Projektet är integrerat och driftsatt mot **Novro Prod (`paygap-prod`)** i `europe-west3`.
 
 - **Live Subdomän**: `https://las.novro.se` (Hosting-site: `mcp-novro`)
 - **MCP Endpoint**: `https://las.novro.se/mcp`
 - **DNS Setup Guide**: Fullständig guide för konfigurering i Loopia Kundzon finns i [`docs/deployment/novro-dns-and-subdomain-setup.md`](docs/deployment/novro-dns-and-subdomain-setup.md).
+
+### Deploy-kommandon
+
+#### 1. Driftsätt Backend & MCP Server (Cloud Run)
+```powershell
+gcloud run deploy mcp-las --source . --project=paygap-prod --region=europe-west3 --allow-unauthenticated
+```
+
+#### 2. Driftsätt Webbplats & UI (Firebase Hosting)
+```powershell
+firebase deploy --only hosting:mcp-novro --project=paygap-prod
+```
+
+---
+
+## 🤖 AI-Agenter & Synkroniseringskrav
+
+Projektet innehåller dedikerade instruktionsfiler anpassade för olika AI-assistenter:
+- **`AGENTS.md`**: Universella riktlinjer för autonoma agenter.
+- **`CLAUDE.md`**: Claude Code / Claude Desktop / Anthropic.
+- **`GEMINI.md`**: Google Gemini / Gems / AI Studio / Vertex AI.
+- **`CODEX.md`**: OpenAI Codex / Custom GPTs / Copilot / Cursor.
+
+> 🔄 **Viktigt (Synkroniseringskrav)**: Om ändringar görs i infrastruktur, driftsättningskommandon, miljövariabler, domäner/endpoints eller regler i någon av filerna (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `CODEX.md` eller `README.md`), **måste samtliga dessa 5 filer uppdateras samtidigt** så att alla AI-agenter och modeller alltid är 100% i synk.
 
 ---
 

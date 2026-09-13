@@ -10,9 +10,10 @@ from src.services.sync_service import DEFAULT_STATUTES, SourceSyncService
 
 
 if __name__ == "__main__":
-    args = [arg for arg in sys.argv[1:] if arg not in {"--danish", "--finnish"}]
-    include_danish = "--danish" in sys.argv[1:] or not args
-    include_finnish = "--finnish" in sys.argv[1:]
+    raw_args = sys.argv[1:]
+    args = [arg for arg in raw_args if arg not in {"--danish", "--finnish"}]
+    include_danish = "--danish" in raw_args or not raw_args
+    include_finnish = "--finnish" in raw_args
     statutes = args or list(DEFAULT_STATUTES)
     service = SourceSyncService()
     summary = service.sync_statutes(statutes)

@@ -58,7 +58,8 @@ class FinnishLawChunker:
         section_number = re.sub(r"\s+", "", match.group(1).lower())
         title_node = next((child for child in children if cls._local_name(child.tag) in {"heading", "title"}), None)
         content_nodes = [child for child in children if cls._local_name(child.tag) not in {"num", "heading", "title"}]
-        content = " ".join(cls._text(child) for child in content_nodes if cls._text(child)).strip()
+        content_parts = [cls._text(child) for child in content_nodes]
+        content = " ".join(part for part in content_parts if part).strip()
         if not content:
             return
         doc_id = f"fi-{safe_id}{f'_k{chapter}' if chapter else ''}_s{section_number}"
