@@ -98,7 +98,7 @@ GEMINI_API_KEY=
 
 ## 🧪 Test-Driven Development (TDD) & Verifiering
 
-Följ strikt projektets utvecklingsregler ([AGENTS.md](file:///c:/LAS/AGENTS.md)):
+Följ strikt projektets utvecklingsregler ([AGENTS.md](AGENTS.md)):
 
 1. **Kör tester före commit/deploy**:
    ```powershell
