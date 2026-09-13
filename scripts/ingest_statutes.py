@@ -9,14 +9,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.scrapers.riksdagen_fetcher import RiksdagenFetcher
 from src.db.firebase_client import db_client
 from src.embeddings.embedder import Embedder
+from src.services.sync_service import DEFAULT_STATUTES
 
-DEFAULT_LAWS = [
-    "1982:80",   # LAS
-    "1977:480",  # Semesterlagen
-    "1976:580",  # MBL
-    "1982:673",  # Arbetstidslagen
-    "2008:567",  # Diskrimineringslagen
-]
+# En enda kalla: samma lista som veckosynken anvander, sa de aldrig glider isar.
+DEFAULT_LAWS = list(DEFAULT_STATUTES)
 
 def run_ingestion(laws=None):
     if laws is None:

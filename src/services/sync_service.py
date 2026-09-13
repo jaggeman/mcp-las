@@ -12,11 +12,15 @@ from src.scrapers.finlex_fetcher import FinlexFetcher
 
 
 DEFAULT_STATUTES = (
-    "1982:80",
-    "1977:480",
-    "1976:580",
-    "1982:673",
-    "2008:567",
+    "1982:80",    # LAS
+    "1977:480",   # Semesterlagen
+    "1976:580",   # MBL
+    "1982:673",   # Arbetstidslagen
+    "2008:567",   # Diskrimineringslagen
+    "1991:1047",  # Sjuklonelagen
+    "1977:1160",  # Arbetsmiljolagen
+    "1995:584",   # Foraldraledighetslagen
+    "1974:981",   # Studieledighetslagen
 )
 
 
