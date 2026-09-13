@@ -47,7 +47,7 @@ mcp = FastMCP(
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
         "HR-dokumentmallar (omplaceringsutredning 7 § LAS, omplaceringserbjudande, varsel 30 § LAS, uppsägningsbesked), "
         "turordningsregler, Excel-export av turordningslista vid arbetsbrist (Unionen & 22 § LAS), "
-        "Arbetsdomstolens prejudikat, 17 kollektivavtal, semesterberäkningar, Försäkringskassans plan för återgång i arbete (FK 7459), "
+        "Arbetsdomstolens prejudikat, 13 kollektivavtal, semesterberäkningar, Försäkringskassans plan för återgång i arbete (FK 7459), "
         "arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF), DO:s vägledning samt Riksbankens bankdagar och helgdagar för löneutbetalning och lagstadgade frister."
     )
 )
