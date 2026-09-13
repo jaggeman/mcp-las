@@ -1,0 +1,48 @@
+{
+  "hosting": {
+    "target": "mcp-novro",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/mcp",
+        "run": {
+          "serviceId": "mcp-las",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/mcp/**",
+        "run": {
+          "serviceId": "mcp-las",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/sse",
+        "run": {
+          "serviceId": "mcp-las",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/sse/**",
+        "run": {
+          "serviceId": "mcp-las",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "mcp-las",
+          "region": "europe-west3"
+        }
+      }
+    ]
+  }
+}
