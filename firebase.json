@@ -1,48 +1,63 @@
 {
-  "hosting": {
-    "target": "mcp-novro",
-    "public": "public",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "/mcp",
-        "run": {
-          "serviceId": "mcp-las",
-          "region": "europe-west3"
+  "hosting": [
+    {
+      "target": "mcp-las-rules",
+      "public": "public",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+          ]
         }
-      },
-      {
-        "source": "/mcp/**",
-        "run": {
-          "serviceId": "mcp-las",
-          "region": "europe-west3"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "run": {
+            "serviceId": "mcp-las",
+            "region": "europe-north1"
+          }
         }
-      },
-      {
-        "source": "/sse",
-        "run": {
-          "serviceId": "mcp-las",
-          "region": "europe-west3"
+      ]
+    },
+    {
+      "target": "mcp-novro",
+      "public": "public",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+          ]
         }
-      },
-      {
-        "source": "/sse/**",
-        "run": {
-          "serviceId": "mcp-las",
-          "region": "europe-west3"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "run": {
+            "serviceId": "mcp-las",
+            "region": "europe-west3"
+          }
         }
-      },
-      {
-        "source": "/api/**",
-        "run": {
-          "serviceId": "mcp-las",
-          "region": "europe-west3"
-        }
-      }
-    ]
-  }
+      ]
+    }
+  ]
 }
+
