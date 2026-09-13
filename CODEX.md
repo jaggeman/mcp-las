@@ -6,7 +6,7 @@ Detta dokument beskriver arkitektur, driftsättning, miljö och integrationsrikt
 
 ## 🏛️ Systemöversikt & Infrastruktur
 
-MCP-LAS är ett **Model Context Protocol (MCP)**-system för nordisk arbetsrätt (Sverige, Danmark, Finland), rättspraxis (Arbetsdomstolen), kollektivavtal (17 CBA:er) och HR-verktyg.
+MCP-LAS är ett **Model Context Protocol (MCP)**-system för nordisk arbetsrätt (Sverige, Danmark, Finland), rättspraxis (Arbetsdomstolen), kollektivavtal (13 avtal, 17 regler) och HR-verktyg.
 
 | Egenskap | Specifikation / Värde |
 | :--- | :--- |

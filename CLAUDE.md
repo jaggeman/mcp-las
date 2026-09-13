@@ -6,7 +6,7 @@ Detta dokument beskriver arkitektur, driftsättning, miljövariabler och MCP-kon
 
 ## 🏛️ Systemöversikt & Arkitektur
 
-MCP-LAS är en **Model Context Protocol (MCP)**-server för nordisk arbetsrätt (Sverige, Danmark, Finland), rättspraxis (Arbetsdomstolen), kollektivavtal (17+ CBA:er) och praktiska HR-beräkningsverktyg (turordning enligt LAS 22 §, semesterlöner, avdrag, m.m.).
+MCP-LAS är en **Model Context Protocol (MCP)**-server för nordisk arbetsrätt (Sverige, Danmark, Finland), rättspraxis (Arbetsdomstolen), kollektivavtal (13 avtal, 17 kurerade regler) och praktiska HR-beräkningsverktyg (turordning enligt LAS 22 §, semesterlöner, avdrag, m.m.).
 
 | Egenskap | Specifikation / Värde |
 | :--- | :--- |
