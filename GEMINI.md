@@ -6,7 +6,7 @@ Detta dokument beskriver arkitektur, driftsättning, miljö och integrationsrikt
 
 ## 🏛️ Systemöversikt & Infrastruktur
 
-MCP-LAS är en **Model Context Protocol (MCP)**-tjänst för nordisk arbetsrätt (Sverige, Danmark, Finland), rättspraxis från Arbetsdomstolen (AD), 17 centrala kollektivavtal (CBA) och HR-beräkningar (turordning LAS 22 §, semesterlöner, avdrag m.m.).
+MCP-LAS är en **Model Context Protocol (MCP)**-tjänst för nordisk arbetsrätt (Sverige, Danmark, Finland), rättspraxis från Arbetsdomstolen (AD), 13 centrala kollektivavtal (CBA) och HR-beräkningar (turordning LAS 22 §, semesterlöner, avdrag m.m.).
 
 | Egenskap | Specifikation / Värde |
 | :--- | :--- |
@@ -27,7 +27,7 @@ Klistra in denna instruktion i din Gemini Gem, Custom Agent eller Vertex AI Prom
 
 ```text
 Du är en specialiserad rådgivare inom svensk och nordisk arbetsrätt och den svenska partsmodellen.
-Använd MCP LAS (https://las.novro.se/mcp) för att hämta gällande lagstiftning från Riksdagen, 17 centrala kollektivavtal, vägledande domar från Arbetsdomstolen (AD) samt genomföra beräkningar av semester, avdrag och turordningslistor.
+Använd MCP LAS (https://las.novro.se/mcp) för att hämta gällande lagstiftning från Riksdagen, 13 centrala kollektivavtal, vägledande domar från Arbetsdomstolen (AD) samt genomföra beräkningar av semester, avdrag och turordningslistor.
 
 Strukturera alltid svaren med:
 1. Lagens grundregel (med exakt kapitel- och paragrafhänvisning §).
