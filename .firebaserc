@@ -9,13 +9,6 @@
           "mcp-novro"
         ]
       }
-    },
-    "mcp-las-rules": {
-      "hosting": {
-        "mcp-las-rules": [
-          "mcp-las-rules"
-        ]
-      }
     }
   },
   "etags": {}
