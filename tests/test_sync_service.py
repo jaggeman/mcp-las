@@ -119,3 +119,39 @@ def test_sync_indexes_changed_danish_document_with_jurisdiction():
     assert result["changed"] == 1
     assert db.statutes[0]["jurisdiction"] == "DK"
     assert db.sections[0]["language"] == "da"
+
+
+def test_sync_indexes_changed_finnish_document_with_jurisdiction():
+    class FinnishFetcher:
+        @classmethod
+        def get_changed_laws(cls):
+            return [{"id": "akn/fi/act/statute/2001/55"}]
+
+        @classmethod
+        def get_document(cls, document):
+            metadata = {
+                "id": "FI:2001/55",
+                "title": "Työsopimuslaki",
+                "source_url": "https://example.test/fi/2001/55",
+                "jurisdiction": "FI",
+                "language": "fi",
+            }
+            section = SimpleNamespace(
+                raw_text="1 § Työsopimuksesta.",
+                model_dump=lambda: {
+                    "id": "fi-2001-55_s1",
+                    "raw_text": "1 § Työsopimuksesta.",
+                    "jurisdiction": "FI",
+                    "language": "fi",
+                },
+            )
+            return metadata, [section]
+
+    db = FakeDB()
+    service = SourceSyncService(db=db, finnish_fetcher=FinnishFetcher)
+
+    result = service.sync_finnish_documents()
+
+    assert result["changed"] == 1
+    assert db.statutes[0]["jurisdiction"] == "FI"
+    assert db.sections[0]["language"] == "fi"

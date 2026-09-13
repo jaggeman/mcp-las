@@ -10,8 +10,9 @@ from src.services.sync_service import DEFAULT_STATUTES, SourceSyncService
 
 
 if __name__ == "__main__":
-    args = [arg for arg in sys.argv[1:] if arg != "--danish"]
+    args = [arg for arg in sys.argv[1:] if arg not in {"--danish", "--finnish"}]
     include_danish = "--danish" in sys.argv[1:] or not args
+    include_finnish = "--finnish" in sys.argv[1:]
     statutes = args or list(DEFAULT_STATUTES)
     service = SourceSyncService()
     summary = service.sync_statutes(statutes)
@@ -22,6 +23,14 @@ if __name__ == "__main__":
         summary["skipped"] += danish_summary["skipped"]
         summary["errors"] += danish_summary["errors"]
         if danish_summary["status"] == "error":
+            summary["status"] = "error"
+    if include_finnish:
+        finnish_summary = service.sync_finnish_documents()
+        summary["finnish"] = finnish_summary
+        summary["changed"] += finnish_summary["changed"]
+        summary["skipped"] += finnish_summary["skipped"]
+        summary["errors"] += finnish_summary["errors"]
+        if finnish_summary["status"] == "error":
             summary["status"] = "error"
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     raise SystemExit(1 if summary["status"] == "error" else 0)

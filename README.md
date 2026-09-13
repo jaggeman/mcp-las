@@ -141,6 +141,16 @@ Projektet utvecklas strikt enligt **Test-Driven Development (TDD)**:
 
 ## 📄 Licens
 
+### Finsk lagstiftning
+
+Finlands kärnlagskatalog kan synkroniseras från Finlex öppna API med:
+
+```powershell
+python scripts/sync_sources.py --finnish
+```
+
+Finlex-adaptern använder Akoma Ntoso/XML, delar upp `luku`/`§`, sparar jurisdiktion `FI` och språk `fi`, samt använder samma hash- och versionskontroll i Firestore. Finska träffar kan begränsas med `filters={"jurisdiction": "FI"}` i `search_labor_law`. Synkroniseringen är opt-in tills urvalet av officiella arbetsrättsliga lagar är färdiggranskat.
+
 Öppen källkod licensierad under **[MIT License](LICENSE)**.
 
 
