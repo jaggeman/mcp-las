@@ -342,6 +342,7 @@
       justify-content: space-between;
       font-size: 0.9rem;
       overflow-x: auto;
+      flex-wrap: wrap;
       gap: 1rem;
     }
     .copy-btn {
@@ -354,6 +355,7 @@
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
+      flex-shrink: 0;
       transition: background 0.15s ease;
     }
     .copy-btn:hover {
@@ -716,8 +718,14 @@
       .hero h1 { font-size: 1.65rem; }
       .hero { padding: 2rem 0 1.5rem; }
       .btn { padding: 0.65rem 1.1rem; font-size: 0.88rem; }
-      .code-box { padding: 0.75rem; }
+      .code-box {
+        padding: 0.75rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+      }
       .code-box code, .code-box pre { font-size: 0.72rem; }
+      .code-box .copy-btn { width: 100%; padding: 0.6rem 0.85rem; }
       #paginationNumbers { max-width: none; padding: 0.2rem 0; }
       .pg-btn-label { display: none; }
       #prevPageBtn, #nextPageBtn { padding: 0.55rem 0.7rem !important; flex-shrink: 0; }
@@ -874,7 +882,7 @@
         </div>
         <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="claude_config_title">2. Konfiguration för Claude Desktop (<code>claude_desktop_config.json</code>)</div>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="claudeConfig">{
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre; overflow-x: auto; min-width: 0;" id="claudeConfig">{
   "mcpServers": {
     "mcp-las": {
       "url": "https://las.novro.se/mcp"
@@ -930,7 +938,7 @@ Strukturera alltid svaren med:
       <div id="tabContent-cursor" class="tab-pane" style="display: none;">
         <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;" data-i18n="cursor_config_title">1. Cursor / Windsurf MCP-konfiguration (<code>.cursor/mcp.json</code>)</div>
         <div class="code-box" style="margin-bottom: 1.25rem;">
-          <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap;" id="cursorConfig">{
+          <pre style="font-size: 0.8rem; margin: 0; white-space: pre; overflow-x: auto; min-width: 0;" id="cursorConfig">{
   "mcpServers": {
     "mcp-las": {
       "url": "https://las.novro.se/mcp"
