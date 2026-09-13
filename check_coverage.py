@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.scrapers.riksdagen_fetcher import RiksdagenFetcher
 from src.chunking.law_chunker import LawChunker
+from src.services.sync_service import DEFAULT_STATUTES
 
 LAWS_TO_CHECK = [
     ('1982:80', 'LAS', 50),
@@ -16,6 +17,7 @@ LAWS_TO_CHECK = [
     ('1977:1160', 'Arbetsmiljölagen', 80),
     ('1991:1047', 'Sjuklönelagen', 20),
     ('1995:584', 'Föräldraledighetslagen', 20),
+    ('1974:981', 'Studieledighetslagen', 10),
 ]
 
 CRITICAL_SECTIONS = [
@@ -41,6 +43,15 @@ def check_database_coverage():
     total_statutes = len(LAWS_TO_CHECK)
     total_sections_all = 0
     all_passed = True
+
+    # En lag som ingesteras men saknas har blir aldrig tackningsverifierad.
+    # Studieledighetslagen foll ur pa precis det sattet.
+    unchecked = [s for s in DEFAULT_STATUTES if s not in {x[0] for x in LAWS_TO_CHECK}]
+    if unchecked:
+        all_passed = False
+        print(f'[FAIL] | Ingesteras men tackningskontrolleras inte: {", ".join(unchecked)}')
+        print('        Lagg till dem i LAWS_TO_CHECK med ett rimligt minimiantal paragrafer.\n')
+
     for sfs, short_name, min_expected in LAWS_TO_CHECK:
         try:
             meta, sections = RiksdagenFetcher.get_statute(sfs)
@@ -61,7 +72,12 @@ def check_database_coverage():
     print('VERIFYING CRITICAL PARAGRAPH INTEGRITY (No truncated starts / no cross-reference leaks)')
     print('-' * 80)
     for sfs, short_name, sec_num, expected_text in CRITICAL_SECTIONS:
-        meta, sections = RiksdagenFetcher.get_statute(sfs)
+        try:
+            meta, sections = RiksdagenFetcher.get_statute(sfs)
+        except Exception as e:
+            all_passed = False
+            print(f'[FAIL]    | {short_name:>15} {sec_num:>3} §: Kunde inte hamta SFS {sfs} ({e})')
+            continue
         sec = next((s for s in sections if s.section_number.lower().replace(' ', '') == sec_num.lower().replace(' ', '')), None)
         if not sec:
             print(f'[MISSING] | {short_name} {sec_num} § not found!')
