@@ -88,7 +88,7 @@ class SourceSyncService:
         source_documents = documents if documents is not None else self.danish_fetcher.get_changed_laws()
 
         for document in source_documents:
-            document_id = document.get("documentId") or document.get("document_id") or document.get("id")
+            document_id = document.get("documentId") or document.get("document_id") or document.get("id") or document.get("akn_uri")
             source_id = f"danish:{document_id}"
             try:
                 metadata, sections = self.danish_fetcher.get_document(document)
@@ -136,10 +136,12 @@ class SourceSyncService:
         source_documents = documents if documents is not None else self.finnish_fetcher.get_changed_laws()
 
         for document in source_documents:
-            document_id = document.get("id") or document.get("documentId") or document.get("document_id")
+            document_id = document.get("id") or document.get("documentId") or document.get("document_id") or document.get("akn_uri")
             source_id = f"finnish:{document_id}"
             try:
                 metadata, sections = self.finnish_fetcher.get_document(document)
+                safe_document_id = str(metadata.get("statute_id") or document_id).replace("/", "_")
+                source_id = f"finnish:{safe_document_id}"
                 fingerprint_input = str(metadata) + "\n" + "\n".join(section.raw_text for section in sections)
                 fingerprint = content_hash(fingerprint_input)
                 previous = self.db.get_sync_state(source_id) or {}

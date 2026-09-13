@@ -53,3 +53,13 @@ def test_website_presents_nordic_labor_law_for_sweden_denmark_finland():
     assert "Työsopimuslaki" in content
     assert "🇸🇪" in content and "🇩🇰" in content and "🇫🇮" in content
 
+
+def test_mcp_server_instructions_describe_nordic_labor_law():
+    server_path = Path("src/server.py")
+    content = server_path.read_text(encoding="utf-8")
+
+    assert "Sverige, Danmark och Finland" in content
+    assert "jurisdiction" in content
+    assert "Retsinformation" in content
+    assert "Finlex" in content
+    assert "Svensk Arbetsrätt & LAS MCP Server" not in content

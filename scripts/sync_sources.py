@@ -11,12 +11,21 @@ from src.services.sync_service import DEFAULT_STATUTES, SourceSyncService
 
 if __name__ == "__main__":
     raw_args = sys.argv[1:]
-    args = [arg for arg in raw_args if arg not in {"--danish", "--finnish"}]
-    include_danish = "--danish" in raw_args or not raw_args
+    source_flags = {"--swedish", "--danish", "--finnish"}
+    args = [arg for arg in raw_args if arg not in source_flags]
+    explicit_sources = source_flags.intersection(raw_args)
+    include_swedish = "--swedish" in raw_args or not explicit_sources
+    include_danish = "--danish" in raw_args
     include_finnish = "--finnish" in raw_args
     statutes = args or list(DEFAULT_STATUTES)
     service = SourceSyncService()
-    summary = service.sync_statutes(statutes)
+
+    summary = {"changed": 0, "skipped": 0, "errors": 0, "items": [], "status": "success"}
+    if include_swedish:
+        swedish_summary = service.sync_statutes(statutes)
+        summary.update({key: swedish_summary[key] for key in ("changed", "skipped", "errors", "items", "status")})
+        summary["swedish"] = swedish_summary
+
     if include_danish:
         danish_summary = service.sync_danish_documents()
         summary["danish"] = danish_summary

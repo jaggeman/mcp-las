@@ -65,11 +65,13 @@ def test_finlex_fetcher_builds_paginated_list_request(monkeypatch):
 
     monkeypatch.setattr("src.scrapers.finlex_fetcher.requests.get", fake_get)
 
-    documents = FinlexFetcher.harvest_statutes(start_year=2024, page=2, limit=5)
+    documents = FinlexFetcher.harvest_statutes(start_year=2024, end_year=2024, page=2, limit=5)
 
     assert documents == [{"akn_uri": "https://example.test/akn/fi/act/statute/2001/55/fin@"}]
     assert calls[0][0].endswith("/akn/fi/act/statute/list")
     assert calls[0][1]["params"]["page"] == 2
     assert calls[0][1]["params"]["limit"] == 5
     assert calls[0][1]["params"]["langAndVersion"] == "fin@"
+    assert calls[0][1]["params"]["startYear"] == 2024
+    assert calls[0][1]["params"]["endYear"] == 2024
     assert "User-Agent" in calls[0][1]["headers"]

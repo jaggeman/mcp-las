@@ -41,7 +41,9 @@ from src.mcp_tools.tools import (
 mcp = FastMCP(
     name=settings.MCP_SERVER_NAME,
     instructions=(
-        "Svensk Arbetsrätt & LAS MCP Server för AI-agenter och Claude. "
+        "Nordisk arbetsrätts-MCP för Sverige, Danmark och Finland för AI-agenter och Claude. "
+        "Svenska, danska och finska lagar hålls separerade med jurisdiction-filter (SE, DK, FI) och officiella källor. "
+        "Sverige använder Riksdagen/Arbetsdomstolen, Danmark Retsinformation och Finland Finlex. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
         "HR-dokumentmallar (omplaceringsutredning 7 § LAS, omplaceringserbjudande, varsel 30 § LAS, uppsägningsbesked), "
         "turordningsregler, Excel-export av turordningslista vid arbetsbrist (Unionen & 22 § LAS), "

@@ -2,6 +2,7 @@
 
 import re
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
@@ -21,36 +22,53 @@ class FinlexFetcher:
         start_year: Optional[int] = None,
         end_year: Optional[int] = None,
         page: int = 1,
-        limit: int = 100,
+        limit: int = 5,
         language: str = "fin",
     ) -> List[Dict[str, Any]]:
-        params: Dict[str, Any] = {
-            "format": "json",
-            "page": page,
-            "limit": limit,
-            "sortBy": "dateIssued",
-            "langAndVersion": f"{language}@",
-            "typeStatute": "act",
-            "categoryStatute": "new-statute",
-        }
-        if start_year is not None:
-            params["startYear"] = start_year
-        if end_year is not None:
-            params["endYear"] = end_year
-        response = requests.get(
-            cls.STATUTE_LIST_URL,
-            params=params,
-            headers={"User-Agent": cls.USER_AGENT, "Accept": "application/json"},
-            timeout=30,
+        current_year = datetime.now().year
+        explicit_range = start_year is not None or end_year is not None
+        year_ranges = (
+            [(start_year or current_year, end_year or current_year)]
+            if explicit_range
+            else [(year, year) for year in range(current_year, max(current_year - 4, 2000), -1)]
         )
-        response.raise_for_status()
-        payload = response.json()
-        if isinstance(payload, list):
-            return payload
-        for key in ("results", "items", "documents"):
-            if isinstance(payload.get(key), list):
-                return payload[key]
-        raise ValueError("Finlex returned an unexpected statute list")
+        last_error: Optional[Exception] = None
+
+        for range_start, range_end in year_ranges:
+            params: Dict[str, Any] = {
+                "format": "json",
+                "page": page,
+                "limit": limit,
+                "sortBy": "dateIssued",
+                "langAndVersion": f"{language}@",
+                "typeStatute": "act",
+                "categoryStatute": "new-statute",
+                "startYear": range_start,
+                "endYear": range_end,
+            }
+            response = requests.get(
+                cls.STATUTE_LIST_URL,
+                params=params,
+                headers={"User-Agent": cls.USER_AGENT, "Accept": "application/json"},
+                timeout=30,
+            )
+            try:
+                response.raise_for_status()
+            except requests.HTTPError as exc:
+                last_error = exc
+                if explicit_range:
+                    raise
+                continue
+
+            payload = response.json()
+            if isinstance(payload, list):
+                return payload
+            for key in ("results", "items", "documents"):
+                if isinstance(payload.get(key), list):
+                    return payload[key]
+            raise ValueError("Finlex returned an unexpected statute list")
+
+        raise last_error or RuntimeError("Finlex returned no usable statute year")
 
     @classmethod
     def fetch_document_xml(cls, url: str) -> str:
