@@ -139,18 +139,21 @@ Projektet utvecklas strikt enligt **Test-Driven Development (TDD)**:
 
 ---
 
+---
+
+## 🚀 Drift & Novro Subdomän (`las.novro.se`)
+
+Projektet är integrerat och driftsatt mot **Novro Prod (`paygap-prod`)** i `europe-west3`.
+
+- **Live Subdomän**: `https://las.novro.se` (Hosting-site: `mcp-novro`)
+- **MCP Endpoint**: `https://las.novro.se/mcp`
+- **DNS Setup Guide**: Fullständig guide för konfigurering i Loopia Kundzon finns i [`docs/deployment/novro-dns-and-subdomain-setup.md`](docs/deployment/novro-dns-and-subdomain-setup.md).
+
+---
+
 ## 📄 Licens
 
-### Finsk lagstiftning
-
-Finlands kärnlagskatalog kan synkroniseras från Finlex öppna API med:
-
-```powershell
-python scripts/sync_sources.py --finnish
-```
-
-Finlex-adaptern använder Akoma Ntoso/XML, delar upp `luku`/`§`, sparar jurisdiktion `FI` och språk `fi`, samt använder samma hash- och versionskontroll i Firestore. Finska träffar kan begränsas med `filters={"jurisdiction": "FI"}` i `search_labor_law`. Synkroniseringen är opt-in tills urvalet av officiella arbetsrättsliga lagar är färdiggranskat.
-
 Öppen källkod licensierad under **[MIT License](LICENSE)**.
+
 
 
