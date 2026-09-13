@@ -30,6 +30,7 @@ def test_search_parliament_filtering_by_doc_type():
     for doc in res["documents"]:
         assert doc["doc_type"] == "prop"
 
+@pytest.mark.network
 def test_get_document_details():
     # Test detail fetching on a known proposition e.g. HD03304
     res = riksdagen_api_service.get_document_details("HD03304")

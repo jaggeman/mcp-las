@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    name: Tester
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"   # samma som Dockerfile (python:3.11-slim)
+          cache: pip
+
+      - name: Installera beroenden
+        run: pip install -r requirements.txt
+
+      # Grinden. Körs utan credentials och utan externa tjänster, så ett fel
+      # här betyder att koden är trasig - inte att en tredje part ligger nere.
+      - name: Kör testsviten
+        run: pytest -m "not network" -q
+
+  external-sources:
+    name: Externa källor (blockerar inte)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installera beroenden
+        run: pip install -r requirements.txt
+
+      # Allt här beror på att Riksdagens API svarar. Det är värdefull signal -
+      # särskilt om parsningen slutar fungera efter en lagändring - men en
+      # störning hos Riksdagen ska inte hindra en merge, därav
+      # continue-on-error ovan.
+      - name: Tester mot Riksdagens API
+        run: pytest -m network -q
+
+      - name: Lagparagraftäckning
+        run: python check_coverage.py
