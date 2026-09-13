@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 from src.config import settings
 from src.embeddings.embedder import Embedder
 from src.db.ad_cases_data import AD_PRECEDENTS_DATA
+from src.db.cba_data import CBA_RULES_DATA
 
 class FirebaseLaborLawDB:
     def __init__(self):
@@ -17,7 +18,11 @@ class FirebaseLaborLawDB:
             if not c_copy.get("embedding"):
                 c_copy["embedding"] = Embedder.get_embedding(c_copy.get("title", "") + " " + c_copy.get("summary", "") + " " + c_copy.get("domskal", ""))
             self._local_precedents[c_copy["id"]] = c_copy
-        self._local_rules: Dict[str, Any] = {}
+        # Sas har, som _local_precedents ovan. Utan detta ar fallbacken i
+        # get_cba_exception och compare_statute_vs_cba dod utanfor en
+        # ingestionskorning. Ingen embedding behovs - bada metoderna
+        # matchar pa strangar, aldrig pa vektor.
+        self._local_rules: Dict[str, Any] = {r["id"]: dict(r) for r in CBA_RULES_DATA}
         self._cached_statute_sections: Optional[List[Dict[str, Any]]] = None
         self._cached_precedents: Optional[List[Dict[str, Any]]] = None
         self._init_firebase()
