@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 def test_website_contains_60_ad_cases_and_no_legacy_30_ad():
     html_path = Path("public/index.html")
@@ -39,5 +39,17 @@ def test_website_documents_automated_source_sync_and_danish_roadmap():
     content = html_path.read_text(encoding="utf-8")
     assert "Automatisk källsynkronisering" in content
     assert "Cloud Run Job" in content
-    assert "Danska lagar" in content
+    assert "Danska lagar" in content or "Nordiska lagar" in content
     assert "DA-001" in content
+
+
+def test_website_presents_nordic_labor_law_for_sweden_denmark_finland():
+    html_path = Path("public/index.html")
+    content = html_path.read_text(encoding="utf-8")
+    assert "Nordisk Arbetsrätt" in content
+    assert "retsinformation.dk" in content
+    assert "opendata.finlex.fi" in content
+    assert "Funktionærloven" in content
+    assert "Työsopimuslaki" in content
+    assert "🇸🇪" in content and "🇩🇰" in content and "🇫🇮" in content
+
