@@ -1,11 +1,15 @@
 import math
 import os
 import re
+import logging
 from typing import List, Dict, Any, Optional
 from src.config import settings
 from src.embeddings.embedder import Embedder
 from src.db.ad_cases_data import AD_PRECEDENTS_DATA
 from src.db.cba_data import CBA_RULES_DATA
+
+logger = logging.getLogger(__name__)
+
 
 class FirebaseLaborLawDB:
     def __init__(self):
@@ -30,11 +34,11 @@ class FirebaseLaborLawDB:
     def _init_firebase(self):
         if settings.USE_FIRESTORE_EMULATOR:
             os.environ["FIRESTORE_EMULATOR_HOST"] = settings.FIRESTORE_EMULATOR_HOST
-            
+
         try:
             import firebase_admin
             from firebase_admin import credentials, firestore
-            
+
             if not firebase_admin._apps:
                 if settings.FIREBASE_CREDENTIALS_PATH and os.path.exists(settings.FIREBASE_CREDENTIALS_PATH):
                     cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
@@ -43,7 +47,7 @@ class FirebaseLaborLawDB:
                     firebase_admin.initialize_app(options={'projectId': settings.FIREBASE_PROJECT_ID})
                 else:
                     firebase_admin.initialize_app()
-                    
+
             self.db = firestore.client()
             print("Successfully connected to Firebase Firestore.")
         except Exception as e:
@@ -53,11 +57,18 @@ class FirebaseLaborLawDB:
     def save_statute(self, metadata: Dict[str, Any]):
         doc_id = str(metadata.get("id", "")).replace(":", "_")
         self._local_statutes[doc_id] = metadata
-        if self.db:
-            try:
-                self.db.collection("statutes").document(doc_id).set(metadata)
-            except Exception:
-                pass
+        if not self.db:
+            # Ingen databas: raden finns bara i minnet och forsvinner med
+            # processen. Returnera det, sa anroparen inte rapporterar succe.
+            return False
+        try:
+            self.db.collection("statutes").document(doc_id).set(metadata)
+            return True
+        except Exception as e:
+            # Tidigare "pass". En svald skrivning gjorde att ingestionen
+            # rapporterade rader den aldrig sparat.
+            logger.warning("Kunde inte spara %s/%s: %s", "statutes", doc_id, e)
+            return False
 
     def save_statute_section(self, section: Dict[str, Any]):
         doc_id = section.get("id")
@@ -65,11 +76,18 @@ class FirebaseLaborLawDB:
             section["embedding"] = Embedder.get_embedding(section.get("raw_text", ""))
         self._local_sections[doc_id] = section
         self._cached_statute_sections = None
-        if self.db:
-            try:
-                self.db.collection("statute_sections").document(doc_id).set(section)
-            except Exception:
-                pass
+        if not self.db:
+            # Ingen databas: raden finns bara i minnet och forsvinner med
+            # processen. Returnera det, sa anroparen inte rapporterar succe.
+            return False
+        try:
+            self.db.collection("statute_sections").document(doc_id).set(section)
+            return True
+        except Exception as e:
+            # Tidigare "pass". En svald skrivning gjorde att ingestionen
+            # rapporterade rader den aldrig sparat.
+            logger.warning("Kunde inte spara %s/%s: %s", "statute_sections", doc_id, e)
+            return False
 
     def get_sync_state(self, source_id: str) -> Optional[Dict[str, Any]]:
         """Read the last successful or failed synchronization state for a source."""
@@ -127,7 +145,7 @@ class FirebaseLaborLawDB:
     def get_statute_section(self, law: str, section: str, chapter: Optional[str] = None) -> Optional[Dict[str, Any]]:
         law_clean = law.strip().upper()
         sec_clean = section.strip().lower().replace("§", "").strip()
-        
+
         items = self._get_statute_items()
 
         for s in items:
@@ -317,7 +335,7 @@ class FirebaseLaborLawDB:
                 boost += 45.0
             elif target_sec and target_sec == sec_num:
                 boost += 30.0
-                
+
             if target_statute and (target_statute.lower() in statute_short.lower() or target_statute in s.get("statute_id", "")):
                 boost += 10.0
 
@@ -345,11 +363,18 @@ class FirebaseLaborLawDB:
     def save_precedent(self, precedent: Dict[str, Any]):
         doc_id = precedent.get("id")
         self._local_precedents[doc_id] = precedent
-        if self.db:
-            try:
-                self.db.collection("precedents").document(doc_id).set(precedent)
-            except Exception:
-                pass
+        if not self.db:
+            # Ingen databas: raden finns bara i minnet och forsvinner med
+            # processen. Returnera det, sa anroparen inte rapporterar succe.
+            return False
+        try:
+            self.db.collection("precedents").document(doc_id).set(precedent)
+            return True
+        except Exception as e:
+            # Tidigare "pass". En svald skrivning gjorde att ingestionen
+            # rapporterade rader den aldrig sparat.
+            logger.warning("Kunde inte spara %s/%s: %s", "precedents", doc_id, e)
+            return False
 
     def search_precedents(self, query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10) -> List[Dict[str, Any]]:
         q_emb = Embedder.get_embedding(query)
@@ -361,13 +386,13 @@ class FirebaseLaborLawDB:
             # Flexible year filter
             if year_from and p.get("year") and int(p["year"]) < int(year_from):
                 continue
-                
+
             # Flexible statute reference matching
             if statute_ref:
                 ref_clean = re.sub(r'[^a-zA-Z0-9]', '', statute_ref.lower())
                 prov_text = "".join(p.get("legal_provisions_referenced", [])).lower()
                 prov_clean = re.sub(r'[^a-zA-Z0-9]', '', prov_text)
-                
+
                 # Check if digits match (e.g. '7' in '7')
                 digits_ref = re.findall(r'\d+', statute_ref)
                 if digits_ref and not any(d in prov_clean for d in digits_ref):
@@ -382,7 +407,7 @@ class FirebaseLaborLawDB:
             keywords_text = " ".join(p.get("legal_keywords", [])).lower()
             prov_text = " ".join(p.get("legal_provisions_referenced", [])).lower()
             full_text = f"{case_num} {title_text} {summary_text} {domskal_text} {keywords_text} {prov_text}"
-            
+
             # Extract search tokens
             tokens = [w for w in re.findall(r'[\w/]+', q_lower) if len(w) > 2]
             lex_score = 0.0
@@ -404,9 +429,9 @@ class FirebaseLaborLawDB:
                 clean_qs = qs.replace(' ', '')
                 if clean_qs in prov_text:
                     lex_score += 6.0
-            
+
             total_score = (0.3 * sem_score) + (0.7 * lex_score)
-            
+
             results.append({
                 "score": round(total_score, 3),
                 "case_number": p.get("case_number"),
@@ -418,7 +443,7 @@ class FirebaseLaborLawDB:
                 "domskal": p.get("domskal"),
                 "slut": p.get("slut")
             })
-            
+
         results.sort(key=lambda x: x["score"], reverse=True)
         return results[:limit]
 
@@ -426,17 +451,24 @@ class FirebaseLaborLawDB:
     def save_cba_rule(self, rule: Dict[str, Any]):
         doc_id = rule.get("id")
         self._local_rules[doc_id] = rule
-        if self.db:
-            try:
-                self.db.collection("agreement_rules").document(doc_id).set(rule)
-            except Exception:
-                pass
+        if not self.db:
+            # Ingen databas: raden finns bara i minnet och forsvinner med
+            # processen. Returnera det, sa anroparen inte rapporterar succe.
+            return False
+        try:
+            self.db.collection("agreement_rules").document(doc_id).set(rule)
+            return True
+        except Exception as e:
+            # Tidigare "pass". En svald skrivning gjorde att ingestionen
+            # rapporterade rader den aldrig sparat.
+            logger.warning("Kunde inte spara %s/%s: %s", "agreement_rules", doc_id, e)
+            return False
 
     def get_cba_exception(self, statute: str, section: str, agreement_name: str) -> Optional[Dict[str, Any]]:
         statute_clean = statute.strip().upper()
         sec_clean = section.strip().lower().replace("§", "").strip()
         ag_clean = agreement_name.strip().lower()
-        
+
         items = []
         if self.db:
             try:
@@ -448,8 +480,8 @@ class FirebaseLaborLawDB:
             items = list(self._local_rules.values())
 
         for r in items:
-            if (ag_clean in r.get("agreement_name", "").lower() and 
-                statute_clean in r.get("statute", "").upper() and 
+            if (ag_clean in r.get("agreement_name", "").lower() and
+                statute_clean in r.get("statute", "").upper() and
                 sec_clean == r.get("section", "").lower()):
                 return r
         return None
@@ -458,7 +490,7 @@ class FirebaseLaborLawDB:
         matched_rules = []
         ag_clean = agreement_name.strip().lower()
         top_clean = topic.strip().lower()
-        
+
         items = []
         if self.db:
             try:
@@ -473,12 +505,12 @@ class FirebaseLaborLawDB:
             if ag_clean in r.get("agreement_name", "").lower():
                 if top_clean in r.get("topic", "").lower() or top_clean in r.get("rule_content", "").lower():
                     matched_rules.append(r)
-                    
+
         statute_baseline = None
         if matched_rules:
             first = matched_rules[0]
             statute_baseline = self.get_statute_section(first.get("statute", "LAS"), first.get("section", "11"))
-            
+
         return {
             "topic": topic,
             "agreement_name": agreement_name,
