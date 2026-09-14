@@ -1,9 +1,23 @@
 name: CI / CD
 
 on:
+  # PR-triggern filtreras med flit INTE. Grinden ska alltid rapportera, annars
+  # blockeras en dok-PR för evigt om "Tester" görs till required check -
+  # en overksam kontroll rapporterar aldrig, och PR:en väntar i all evighet.
   pull_request:
+
+  # Push-triggern är den som driver deploy. Ändringar som omöjligt kan påverka
+  # det som körs hoppas över här, så en README-redigering inte kostar en
+  # tvåminuters Cloud Run-deploy. Ändras både kod och dokumentation i samma
+  # push körs den ändå - paths-ignore hoppar bara över när ALLT som ändrats
+  # matchar.
   push:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+      - ".gitignore"
+      - ".github/ISSUE_TEMPLATE/**"
 
 jobs:
   tests:
