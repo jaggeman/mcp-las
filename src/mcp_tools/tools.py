@@ -75,10 +75,10 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None) -> Dic
                 "level": "NOT_FOUND"
             }
         }
-    
+
     content = result.get("content", "")
     certainty = _determine_certainty(content, source_type="statute")
-    
+
     return {
         "found": True,
         "law": result.get("statute_short"),
@@ -269,6 +269,111 @@ def calculate_unpaid_vacation_deduction(
         }
 
     return response
+
+def calculate_notice_period(
+    employment_years: float,
+    terminated_by: str = "employer",
+    agreement_name: Optional[str] = None,
+    age: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Beräknar uppsägningstid enligt LAS 11 § utifrån sammanlagd anställningstid,
+    och visar avvikelser i tillämpligt kollektivavtal (LAS 2 § är semidispositiv).
+
+    Trappan i 11 § andra stycket gäller endast när ARBETSGIVAREN säger upp.
+    Säger arbetstagaren upp sig själv gäller en månad oavsett anställningstid.
+    """
+    if employment_years < 0:
+        return {"error": "Anställningstiden kan inte vara negativ."}
+
+    vem = (terminated_by or "employer").strip().lower()
+    if vem not in {"employer", "employee", "arbetsgivare", "arbetstagare"}:
+        return {"error": "terminated_by måste vara 'employer' eller 'employee'."}
+    uppsagd_av_arbetsgivaren = vem in {"employer", "arbetsgivare"}
+
+    # LAS 11 § andra stycket. Nedre gränsen är inklusive, övre exklusive.
+    TRAPPA = [
+        (0, 2, 1), (2, 4, 2), (4, 6, 3), (6, 8, 4), (8, 10, 5), (10, None, 6),
+    ]
+
+    if uppsagd_av_arbetsgivaren:
+        manader = next(
+            m for lag, hog, m in TRAPPA
+            if employment_years >= lag and (hog is None or employment_years < hog)
+        )
+        grund = (
+            "LAS 11 § andra stycket — arbetstagarens rätt till förlängd "
+            "uppsägningstid när arbetsgivaren säger upp."
+        )
+    else:
+        # 11 § första stycket: minsta uppsägningstid en månad för båda parter.
+        # Trappan i andra stycket ger bara ARBETSTAGAREN en rättighet, och
+        # gäller därför inte när arbetstagaren själv säger upp sig.
+        manader = 1
+        grund = (
+            "LAS 11 § första stycket — en månad gäller för arbetstagarens egen "
+            "uppsägning. Trappan i andra stycket är en rättighet för "
+            "arbetstagaren när arbetsgivaren säger upp, inte en skyldighet vid "
+            "egen uppsägning."
+        )
+
+    # Avvikelser i kollektivavtal. LAS 2 § gör 11 § semidispositiv, så ett
+    # avtal kan ge längre tid - men aldrig kortare till arbetstagarens nackdel
+    # utan stöd i avtalet.
+    avtalsregler = []
+    if agreement_name:
+        traff = db_client.get_cba_exception(statute="LAS", section="11",
+                                            agreement_name=agreement_name)
+        if traff:
+            avtalsregler.append({
+                "agreement_name": traff.get("agreement_name"),
+                "rule_content": traff.get("rule_content"),
+                "statutory_deviation_ref": traff.get("statutory_deviation_ref"),
+            })
+
+    noteringar = [
+        "Anställningstiden beräknas enligt LAS 3 § — all sammanlagd tid hos "
+        "arbetsgivaren räknas, oavsett anställningsform.",
+        "LAS 11 § är semidispositiv enligt LAS 2 §. Kontrollera alltid "
+        "tillämpligt kollektivavtal innan beskedet lämnas.",
+    ]
+    if age is not None and age >= 69:
+        noteringar.append(
+            "Arbetstagaren har uppnått LAS-åldern. Särskilda regler i LAS "
+            "33-33 b §§ kan gälla — kontrollera dem separat, verktyget "
+            "tillämpar dem inte."
+        )
+
+    return {
+        "input": {
+            "employment_years": employment_years,
+            "terminated_by": "arbetsgivaren" if uppsagd_av_arbetsgivaren else "arbetstagaren",
+            "agreement_name": agreement_name,
+            "age": age,
+        },
+        "result": {
+            "notice_period_months": manader,
+            "legal_basis": grund,
+        },
+        "statutory_ladder": [
+            {"from_years": lag, "to_years": hog, "months": m} for lag, hog, m in TRAPPA
+        ],
+        "collective_agreement_deviations": avtalsregler,
+        "notes": noteringar,
+        "summary": (
+            f"Uppsägningstiden är {manader} "
+            f"{'månad' if manader == 1 else 'månader'} vid "
+            f"{employment_years} års anställning när "
+            f"{'arbetsgivaren' if uppsagd_av_arbetsgivaren else 'arbetstagaren'} "
+            f"säger upp."
+        ),
+        "certainty": {
+            "score_pct": 97,
+            "badge": "🟢 Mycket hög (97%) — Direkt tillämpning av LAS 11 §",
+            "level": "EXACT_CALCULATION",
+        },
+    }
+
 
 def calculate_earned_vacation_days(
     employment_days_in_earning_year: int = 365,
@@ -492,7 +597,7 @@ def check_bank_days_and_deadlines(
         curr = target_date
         while not is_bank_day(curr):
             curr -= datetime.timedelta(days=1)
-        
+
         sw_days = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
         return {
             "month": month,
@@ -527,7 +632,7 @@ def check_bank_days_and_deadlines(
             is_bday = is_bank_day(d)
             sw_days = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
             holiday_name = holidays_2026.get(d.strftime("%Y-%m-%d"))
-            
+
             next_bday = d
             while not is_bank_day(next_bday):
                 next_bday += datetime.timedelta(days=1)
@@ -575,7 +680,7 @@ def calculate_redundancy_turnorder_and_exceptions(
     # 1. Undantagsberäkningar (Exemption calculations)
     las_max_exemptions = 3
     cba_alternatives = {}
-    
+
     # Alternativ 1: 3 arbetstagare per berörd driftsenhet och avtalsområde
     cba_alternatives["alternativ_1"] = {
         "name": "Standardundantag per driftsenhet & avtalsområde",
@@ -583,7 +688,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         "rule": "Arbetsgivaren kan vid berörd driftsenhet och avtalsområde undanta 3 arbetstagare.",
         "applies_per": "Per berörd driftsenhet och avtalsområde"
     }
-    
+
     # Alternativ 2: Om arbetsgivaren endast har en enda driftsenhet totalt
     cba_alternatives["alternativ_2"] = {
         "name": "Ensam driftsenhet i företaget (totalt för samtliga avtalsområden)",
@@ -591,7 +696,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         "rule": "Arbetsgivare som endast har en driftsenhet i hela bolaget kan istället välja att undanta totalt 4 arbetstagare för samtliga avtalsområden gemensamt.",
         "is_applicable": single_operating_unit_only
     }
-    
+
     # Alternativ 3: Sammanslagna driftsenheter på samma ort (22 § 3 st LAS)
     alt3_count = 3 + contract_areas_count if merged_operating_units_in_municipality else None
     # Ar alternativet inte tillampligt finns inget antal att ange. Skriv inte ut
@@ -612,7 +717,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         "rule": alt3_rule,
         "is_applicable": merged_operating_units_in_municipality
     }
-    
+
     # Alternativ 4: Procentregeln (15% av de uppsagda, max 10% av enhetens totala personal)
     if total_employees_in_unit is not None and redundancy_count is not None:
         raw_15_pct = int(redundancy_count * 0.15)
@@ -845,7 +950,7 @@ def generate_turordningslista_excel(
 
     # Skapa Excel-fil med openpyxl
     wb = Workbook()
-    
+
     # ----------------------------------------------------
     # Flik 1: Turordningslista
     # ----------------------------------------------------
@@ -857,13 +962,13 @@ def generate_turordningslista_excel(
     font_title = Font(name="Calibri", size=16, bold=True, color="FFFFFF")
     font_subtitle = Font(name="Calibri", size=10, italic=True, color="E2E8F0")
     fill_header_banner = PatternFill(start_color="166534", end_color="166534", fill_type="solid") # Dark Forest Green
-    
+
     font_col_header = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
     fill_col_header = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid") # Slate Dark Header
-    
+
     thin_border_side = Side(border_style="thin", color="CBD5E1")
     thin_border = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
-    
+
     fill_exempt = PatternFill(start_color="FEF9C3", end_color="FEF9C3", fill_type="solid") # Yellow / Gold
     fill_risk = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid") # Light Red
     fill_protected = PatternFill(start_color="DCFCE7", end_color="DCFCE7", fill_type="solid") # Light Green
@@ -912,18 +1017,18 @@ def generate_turordningslista_excel(
     # Rader med anställda
     for row_idx, emp in enumerate(table_rows, start=5):
         ws1.row_dimensions[row_idx].height = 22
-        
+
         c1 = ws1.cell(row=row_idx, column=1, value=emp["id"])
         c2 = ws1.cell(row=row_idx, column=2, value=emp["name"])
         c3 = ws1.cell(row=row_idx, column=3, value=emp["title"])
         c4 = ws1.cell(row=row_idx, column=4, value=emp["driftsenhet"])
         c5 = ws1.cell(row=row_idx, column=5, value=emp["avtalsomrade"])
         c6 = ws1.cell(row=row_idx, column=6, value=emp["start_date"])
-        
+
         # Excel Formel för anställningsdagar: =DATEDIF(F5, TODAY(), "d")
         formula_days = f'=DATEDIF(F{row_idx}, TODAY(), "D")'
         c7 = ws1.cell(row=row_idx, column=7, value=formula_days)
-        
+
         c8 = ws1.cell(row=row_idx, column=8, value=emp["tenure_text"])
         c9 = ws1.cell(row=row_idx, column=9, value=emp["birth_date"])
         c10 = ws1.cell(row=row_idx, column=10, value="Ja" if emp["has_qualifications"] else "Nej")
@@ -936,7 +1041,7 @@ def generate_turordningslista_excel(
             cell = ws1.cell(row=row_idx, column=col_i)
             cell.border = thin_border
             cell.alignment = Alignment(vertical="center", horizontal="center" if col_i in [1, 6, 7, 8, 9, 10, 11, 12] else "left")
-            
+
             if emp["status_code"] == "EXEMPT":
                 if col_i in [11, 13]:
                     cell.fill = fill_exempt
@@ -1737,7 +1842,7 @@ def calculate_travel_deduction_and_mileage(
 ) -> Dict[str, Any]:
     """
     Beräknar avdrag för resor till och från arbetet (reseavdrag & milersättning) enligt Skatteverkets regler.
-    
+
     Regler och gränsvärden (Inkomstskattelagen 12 kap. 26–30 §§):
     - Egen bil: 25,00 kr per mil.
     - Förmånsbil (ren elbil): 9,50 kr per mil.
@@ -1746,36 +1851,36 @@ def calculate_travel_deduction_and_mileage(
     - Moped: 6,00 kr per mil.
     - Cykel: Schablon 350 kr/år.
     - Kollektivtrafik: Faktiska biljettkostnader (avstånd >= 2 km).
-    
+
     Villkor för bilavdrag:
     - Minst 5 km enkel resa (eller minst 2 km om kollektivtrafik saknas).
     - Tidsvinst: Du måste regelmässigt tjäna minst 2 timmar (120 min) per dag tur och retur jämfört med kollektivtrafik.
-    
+
     Självrisk / Beloppsgräns:
     - Inkomstår 2026 (Deklaration 2027): 15 000 kr.
     - Inkomstår 2025 (Deklaration 2026): 11 000 kr.
     """
     mode = transport_mode.strip().lower()
-    
+
     # Validering
     if distance_km_one_way <= 0 and mode != "kollektivtrafik":
         return {"error": "Avstånd enkel resa (distance_km_one_way) måste vara större än 0 km."}
     if work_days_per_year <= 0:
         return {"error": "Antal arbetsdagar per år måste vara minst 1."}
-        
+
     total_km_daily = distance_km_one_way * 2.0
     total_km_yearly = total_km_daily * work_days_per_year
     total_mil_yearly = total_km_yearly / 10.0
-    
+
     threshold = 15000.0 if tax_year >= 2026 else 11000.0
-    
+
     # Beräkning per transportmedel
     rate_per_mil = 0.0
     mode_name = "Egen bil"
     total_expense = 0.0
     conditions_met = True
     condition_notes = []
-    
+
     if "formansbil_el" in mode or "elbil" in mode:
         mode_name = "Förmånsbil (Ren Elbil)"
         rate_per_mil = 9.50
@@ -1818,7 +1923,7 @@ def calculate_travel_deduction_and_mileage(
             condition_notes.append(
                 f"Avståndet ({distance_km_one_way} km) är kortare än minimikravet på {min_dist} km enkel väg."
             )
-            
+
         # 2. Tidsvinstkrav (om kollektivtrafik finns)
         if has_public_transit:
             if public_transit_time_minutes_roundtrip is not None and car_time_minutes_roundtrip is not None:
@@ -1835,7 +1940,7 @@ def calculate_travel_deduction_and_mileage(
 
     deductible_amount = max(0.0, total_expense - threshold) if conditions_met else 0.0
     tax_reduction = deductible_amount * (marginal_tax_pct / 100.0)
-    
+
     return {
         "transport_mode": mode_name,
         "tax_year": tax_year,
@@ -1882,14 +1987,14 @@ def get_base_amounts_and_indices(
     Inkluderar automatisk årlig kontrollfunktion för 1 januari.
     """
     from src.services.base_amount_service import BaseAmountService
-    
+
     if compare_all_years:
         return BaseAmountService.list_all_years()
-        
+
     target_year = year or 2026
     data = BaseAmountService.get_amounts_for_year(target_year)
     update_info = BaseAmountService.check_and_update_yearly()
-    
+
     return {
         "target_year": target_year,
         "data": data,
