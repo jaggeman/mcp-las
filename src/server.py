@@ -24,6 +24,7 @@ from src.mcp_tools.tools import (
     get_cba_exception as _get_cba_exception,
     compare_statute_vs_cba as _compare_statute_vs_cba,
     calculate_vacation_pay as _calculate_vacation_pay,
+    calculate_notice_period as _calculate_notice_period,
     calculate_unpaid_vacation_deduction as _calculate_unpaid_vacation_deduction,
     calculate_earned_vacation_days as _calculate_earned_vacation_days,
     get_employer_certificate_info as _get_employer_certificate_info,
@@ -157,6 +158,7 @@ DIRECT_TOOLS_MAP = {
     "get_cba_exception": _get_cba_exception,
     "compare_statute_vs_cba": _compare_statute_vs_cba,
     "calculate_vacation_pay": _calculate_vacation_pay,
+    "calculate_notice_period": _calculate_notice_period,
     "calculate_unpaid_vacation_deduction": _calculate_unpaid_vacation_deduction,
     "calculate_earned_vacation_days": _calculate_earned_vacation_days,
     "get_employer_certificate_info": _get_employer_certificate_info,
@@ -348,6 +350,36 @@ def compare_statute_vs_cba(topic: str, agreement_name: str, api_key: Optional[st
     t0 = time.time()
     res = _compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
     auth_service.log_access(api_key or "anon", None, "compare_statute_vs_cba", {"topic": topic, "agreement": agreement_name}, (time.time() - t0)*1000)
+    return res
+
+@mcp.tool()
+def calculate_notice_period(
+    employment_years: float,
+    terminated_by: str = "employer",
+    agreement_name: Optional[str] = None,
+    age: Optional[int] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Beräknar uppsägningstid enligt LAS 11 § utifrån sammanlagd anställningstid
+    (LAS 3 §), och visar avvikelser i tillämpligt kollektivavtal.
+
+    Trappan i 11 § andra stycket gäller endast när arbetsgivaren säger upp.
+    Vid arbetstagarens egen uppsägning gäller en månad oavsett anställningstid.
+    """
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    t0 = time.time()
+    res = _calculate_notice_period(
+        employment_years=employment_years,
+        terminated_by=terminated_by,
+        agreement_name=agreement_name,
+        age=age
+    )
+    auth_service.log_access(api_key or "anon", None, "calculate_notice_period",
+                            {"years": employment_years, "by": terminated_by},
+                            (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
