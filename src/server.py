@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import logging
+import inspect
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -71,7 +73,7 @@ async def download_turordning_excel(request):
     file_id = request.query_params.get("id", "")
     if not file_id or file_id not in GENERATED_EXCEL_FILES:
         return JSONResponse({"error": "Filen hittades inte eller har löpt ut. Generera en ny via MCP-verktyget."}, status_code=404)
-    
+
     file_data = GENERATED_EXCEL_FILES[file_id]
     headers = {
         "Content-Disposition": f"attachment; filename=\"{file_data['file_name']}\"",
@@ -92,10 +94,10 @@ async def handle_key_request(request):
         email = data.get("email", "").strip()
         company = data.get("company", "").strip()
         reason = data.get("reason", "").strip()
-        
+
         if not name or not email or "@" not in email or "." not in email:
             return JSONResponse({"success": False, "message": "Giltigt namn och e-postadress krävs."}, status_code=400)
-            
+
         request_record = {
             "name": name,
             "email": email,
@@ -109,7 +111,7 @@ async def handle_key_request(request):
         if db_client.db:
             doc_ref = db_client.db.collection("key_requests").document()
             doc_ref.set(request_record)
-        
+
         # Skicka e-postavisering till administratören
         try:
             notification_service.send_key_request_notification(request_record)
@@ -147,14 +149,14 @@ async def list_available_tools_rest(request):
     """Returnerar lista över tillgängliga verktyg för behöriga klienter med giltig API-nyckel."""
     if request.method == "OPTIONS":
         return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
-    
+
     api_key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
     if not api_key:
         return JSONResponse({
             "success": False,
             "error": "API-nyckel krävs. Ansök om en API-nyckel på https://las.novro.se/#key-request."
         }, status_code=401, headers={"Access-Control-Allow-Origin": "*"})
-        
+
     key_info = auth_service.validate_key(api_key)
     if not key_info:
         return JSONResponse({
@@ -177,21 +179,21 @@ async def execute_tool_direct_rest(request):
     """
     if request.method == "OPTIONS":
         return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
-    
+
     tool_name = request.path_params.get("tool_name", "").strip()
     if tool_name not in DIRECT_TOOLS_MAP:
         return JSONResponse({
             "error": f"Verktyget '{tool_name}' finns inte.",
             "available_tools": list(DIRECT_TOOLS_MAP.keys())
         }, status_code=404, headers={"Access-Control-Allow-Origin": "*"})
-        
+
     try:
         body = {}
         try:
             body = await request.json()
         except Exception:
             pass
-            
+
         api_key = request.headers.get("X-API-Key") or body.pop("api_key", None)
         if not api_key:
             return JSONResponse({
@@ -209,22 +211,56 @@ async def execute_tool_direct_rest(request):
         rl_err = _check_rate_limit(api_key)
         if rl_err:
             return JSONResponse(rl_err, status_code=429, headers={"Access-Control-Allow-Origin": "*"})
-            
+
         func = DIRECT_TOOLS_MAP[tool_name]
+
+        # Validera parameternamnen innan anropet. Gors det inte blir ett
+        # stavfel hos anroparen ett TypeError som ser ut som ett serverfel.
+        giltiga = set(inspect.signature(func).parameters)
+        okanda = sorted(set(body) - giltiga)
+        if okanda:
+            return JSONResponse({
+                "success": False,
+                "error": f"Okand(a) parameter(rar): {', '.join(okanda)}.",
+                "valid_parameters": sorted(giltiga - {"api_key"}),
+            }, status_code=400, headers={"Access-Control-Allow-Origin": "*"})
+
         t0 = time.time()
-        result = func(**body)
+        try:
+            result = func(**body)
+        except (TypeError, ValueError) as e:
+            # Fel typ eller otillatet varde - anroparens fel, inte serverns.
+            # Detaljen loggas, men gar inte ut: den har formen
+            # "'<=' not supported between instances of 'str' and 'int'", vilket
+            # inte hjalper anroparen och rojer interna detaljer.
+            logging.warning("Ogiltiga argument till %s: %s", tool_name, e)
+            auth_service.log_access(api_key, key_info, tool_name, body,
+                                    (time.time() - t0) * 1000, status="bad_request")
+            return JSONResponse({
+                "success": False,
+                "error": "Ett eller flera varden har fel typ eller format.",
+                "valid_parameters": sorted(giltiga - {"api_key"}),
+            }, status_code=400, headers={"Access-Control-Allow-Origin": "*"})
+
         duration_ms = (time.time() - t0) * 1000
-        
+
         auth_service.log_access(api_key, key_info, tool_name, body, duration_ms)
-        
+
         return JSONResponse({
             "success": True,
             "tool": tool_name,
             "execution_time_ms": round(duration_ms, 2),
             "result": result
         }, headers={"Access-Control-Allow-Origin": "*"})
-    except Exception as e:
-        return JSONResponse({"success": False, "error": str(e)}, status_code=500, headers={"Access-Control-Allow-Origin": "*"})
+    except Exception:
+        # Genuint serverfel. Meddelandet loggas men returneras aldrig - samma
+        # except fangar fel fran Firestore, embedder och natverkslager, vars
+        # texter kan innehalla projekt-id och sokvagar.
+        logging.exception("Fel vid anrop av verktyget %s", tool_name)
+        return JSONResponse({
+            "success": False,
+            "error": "Internt fel vid korning av verktyget."
+        }, status_code=500, headers={"Access-Control-Allow-Origin": "*"})
 
 def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
     client_id = api_key if api_key else "anon"
