@@ -3,6 +3,7 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import html
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -19,14 +20,26 @@ class NotificationService:
         """
         Sends an email notification when a user submits an API key request.
         """
-        name = request_data.get("name", "Okänd")
-        email = request_data.get("email", "Ingen e-post")
-        company = request_data.get("company", "Ej angivet") or "Ej angivet"
-        reason = request_data.get("reason", "Ej angivet") or "Ej angivet"
+        # Ravarden till textdelen och loggning, escapade varden till HTML.
+        # Faltena kommer fran ett publikt formular: utan escaping renderas
+        # inskickad markup i mottagarens e-postklient, och ett citattecken i
+        # adressen bryter sig ur href="mailto:...".
+        raw_name = request_data.get("name", "Okänd")
+        raw_email = request_data.get("email", "Ingen e-post")
+        raw_company = request_data.get("company", "Ej angivet") or "Ej angivet"
+        raw_reason = request_data.get("reason", "Ej angivet") or "Ej angivet"
         created_at = request_data.get("created_at", "")
 
-        subject = f"[MCP LAS] Ny ansökan om API-nyckel: {name} ({company})"
-        
+        name = html.escape(str(raw_name), quote=True)
+        email = html.escape(str(raw_email), quote=True)
+        company = html.escape(str(raw_company), quote=True)
+        reason = html.escape(str(raw_reason), quote=True)
+
+        # Radbrytningar i en rubrik kan anvandas for att injicera e-posthuvuden.
+        amne_namn = " ".join(str(raw_name).split())
+        amne_foretag = " ".join(str(raw_company).split())
+        subject = f"[MCP LAS] Ny ansökan om API-nyckel: {amne_namn} ({amne_foretag})"
+
         html_content = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -84,10 +97,10 @@ class NotificationService:
 """
 
         text_content = f"""Ny ansökan om API-nyckel till MCP LAS:
-- Namn: {name}
-- E-post: {email}
-- Företag: {company}
-- Användningsområde: {reason}
+- Namn: {raw_name}
+- E-post: {raw_email}
+- Företag: {raw_company}
+- Användningsområde: {raw_reason}
 - Tidpunkt: {created_at}
 """
 
@@ -103,7 +116,9 @@ class NotificationService:
             msg["Subject"] = subject
             msg["From"] = self.smtp_user
             msg["To"] = self.recipient
-            msg["Reply-To"] = email
+            # Adressfalt ska ha ravardet, inte HTML-escapat. Radbrytningar
+            # strips av samma skal som i amnesraden: de kan injicera huvuden.
+            msg["Reply-To"] = " ".join(str(raw_email).split())
 
             part1 = MIMEText(text_content, "plain", "utf-8")
             part2 = MIMEText(html_content, "html", "utf-8")

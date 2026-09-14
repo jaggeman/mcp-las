@@ -88,15 +88,39 @@ from src.services.notification_service import notification_service
 async def handle_key_request(request):
     if request.method == "OPTIONS":
         return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
+    # Enda publika endpointet som skriver utan nyckel. Utan tak kan en loop
+    # fylla Firestore och samtidigt mejlbomba mottagaren av aviseringarna.
+    # Nycklas pa klientens IP - "anon" delas av alla, sa en ensam avsandare
+    # skulle annars sla ut formuläret for alla andra.
+    klient_ip = (request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+                 or getattr(getattr(request, "client", None), "host", "")
+                 or "anon")
+    if not auth_service.check_rate_limit(f"key-request:{klient_ip}",
+                                         max_requests=5, window_seconds=600):
+        return JSONResponse(
+            {"success": False, "message": "För många ansökningar. Försök igen om en stund."},
+            status_code=429, headers={"Access-Control-Allow-Origin": "*"})
+
+    # Falten hamnar i databasen och i ett mejl. Utan tak ar de obegransade.
+    MAXLANGD = {"name": 200, "email": 320, "company": 200, "reason": 2000}
+
     try:
         data = await request.json()
-        name = data.get("name", "").strip()
-        email = data.get("email", "").strip()
-        company = data.get("company", "").strip()
-        reason = data.get("reason", "").strip()
+        name = str(data.get("name", "")).strip()
+        email = str(data.get("email", "")).strip()
+        company = str(data.get("company", "")).strip()
+        reason = str(data.get("reason", "")).strip()
 
         if not name or not email or "@" not in email or "." not in email:
             return JSONResponse({"success": False, "message": "Giltigt namn och e-postadress krävs."}, status_code=400)
+
+        for falt, varde in (("name", name), ("email", email),
+                            ("company", company), ("reason", reason)):
+            if len(varde) > MAXLANGD[falt]:
+                return JSONResponse(
+                    {"success": False,
+                     "message": f"Fältet '{falt}' är för långt (max {MAXLANGD[falt]} tecken)."},
+                    status_code=400, headers={"Access-Control-Allow-Origin": "*"})
 
         request_record = {
             "name": name,
@@ -119,8 +143,12 @@ async def handle_key_request(request):
             print(f"[NOTIFICATION ERROR] {notify_err}")
 
         return JSONResponse({"success": True, "message": "Din ansökan har tagits emot! Vi återkommer via e-post."})
-    except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+    except Exception:
+        # Samma skal som i /api/tools: undantagstexten kan bara projekt-id och
+        # sokvagar, och sager anroparen ingenting. Loggas, returneras inte.
+        logging.exception("Fel vid mottagning av nyckelansokan")
+        return JSONResponse({"success": False, "message": "Kunde inte ta emot ansökan just nu."},
+                            status_code=500)
 
 DIRECT_TOOLS_MAP = {
     "lookup_statute": _lookup_statute,
