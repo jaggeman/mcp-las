@@ -152,6 +152,41 @@ def test_calculate_redundancy_turnorder_and_exceptions():
     assert sorted_list[3]["name"] == "Bob"
     assert "Risk för uppsägning" in sorted_list[3]["protection_status"]
 
+def test_no_placeholder_values_leak_into_legal_text():
+    """Inget svar far innehalla "None" i text en anvandare laser.
+
+    Turordningsverktyget byggde tidigare sin regeltext med en f-strang som
+    interpolerade ett rakneresultat aven nar alternativet inte var tillampligt,
+    och gav da "(None st totalt)" mitt i ett juridiskt svar. Vakten ar generell
+    med flit: den letar efter hela felklassen i alla stranganr, inte bara den
+    rad som rakade ha buggen.
+    """
+    import re
+    from src.mcp_tools.tools import calculate_redundancy_turnorder_and_exceptions
+
+    def strings(node):
+        if isinstance(node, str):
+            yield node
+        elif isinstance(node, dict):
+            for v in node.values():
+                yield from strings(v)
+        elif isinstance(node, (list, tuple)):
+            for v in node:
+                yield from strings(v)
+
+    kombinationer = [
+        {},
+        {"total_employees_in_unit": 20, "redundancy_count": 3},
+        {"total_employees_in_unit": 100, "redundancy_count": 20, "contract_areas_count": 2},
+        {"merged_operating_units_in_municipality": True, "contract_areas_count": 3},
+        {"single_operating_unit_only": True, "has_collective_bargaining_agreement": False},
+    ]
+    trasiga = re.compile(r"\b(None|null|nan|undefined)\b")
+    for kwargs in kombinationer:
+        for text in strings(calculate_redundancy_turnorder_and_exceptions(**kwargs)):
+            assert not trasiga.search(text), f"platshallare lackte ut med {kwargs}: {text!r}"
+
+
 def test_generate_turordningslista_excel():
     from src.mcp_tools.tools import generate_turordningslista_excel, GENERATED_EXCEL_FILES
     

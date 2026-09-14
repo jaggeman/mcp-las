@@ -594,10 +594,22 @@ def calculate_redundancy_turnorder_and_exceptions(
     
     # Alternativ 3: Sammanslagna driftsenheter på samma ort (22 § 3 st LAS)
     alt3_count = 3 + contract_areas_count if merged_operating_units_in_municipality else None
+    # Ar alternativet inte tillampligt finns inget antal att ange. Skriv inte ut
+    # rakneresultatet da - det blev tidigare texten "(None st totalt)" rakt in i
+    # ett juridiskt svar.
+    alt3_rule = (
+        "Om driftsenheter slagits samman till en gemensam krets på samma ort "
+        "(22 § 3 st LAS) medges 3 undantag + 1 ytterligare per avtalsområde"
+    )
+    alt3_rule += (
+        f" ({alt3_count} st totalt)."
+        if alt3_count is not None
+        else ". Antalet beräknas först om enheterna faktiskt slagits samman."
+    )
     cba_alternatives["alternativ_3"] = {
         "name": "Sammanslagna driftsenheter på samma ort",
         "allowed_exemptions": alt3_count,
-        "rule": f"Om driftsenheter slagits samman till en gemensam krets på samma ort (22 § 3 st LAS) medges 3 undantag + 1 ytterligare per avtalsområde ({alt3_count} st totalt).",
+        "rule": alt3_rule,
         "is_applicable": merged_operating_units_in_municipality
     }
     
