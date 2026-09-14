@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     
+    # Nodutgang for admin-anrop. Lamnas tom ar master-vagen helt avstangd.
+    # Far ALDRIG ha ett defaultvarde i koden - repot ar publikt.
+    MASTER_ADMIN_KEY: Optional[str] = None
+
     MCP_SERVER_NAME: str = "mcp-las"
     MCP_SERVER_PORT: int = 8000
 

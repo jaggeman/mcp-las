@@ -88,6 +88,10 @@ PORT=8080
 MCP_SERVER_NAME=mcp-las
 MCP_SERVER_PORT=8000
 
+# Master-admin-nyckel. Tom = master-vagen avstangd (rekommenderat).
+# Sätts via Secret Manager i prod, aldrig i koden.
+MASTER_ADMIN_KEY=
+
 # Embeddings (mock, openai, gemini)
 EMBEDDING_PROVIDER=mock
 OPENAI_API_KEY=

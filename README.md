@@ -65,6 +65,10 @@ USE_FIRESTORE_EMULATOR=false
 # Port och miljö
 PORT=8080
 
+# Tom = master-admin-vägen avstängd (rekommenderat)
+MASTER_ADMIN_KEY=
+
+
 # Embeddings: 'mock' (standard), 'openai' eller 'gemini'
 EMBEDDING_PROVIDER=mock
 OPENAI_API_KEY=

@@ -1,4 +1,5 @@
 import hmac
+from src.config import settings
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -46,7 +47,10 @@ class AuthService:
             except Exception as e:
                 print(f"Auth error: {e}")
                 
-        if hmac.compare_digest(api_key, "las_master_admin_key_2026"):
+        # Master-vagen ar avstangd om MASTER_ADMIN_KEY inte ar satt i miljon.
+        # Fail closed: ingen nyckel konfigurerad => ingen master-atkomst.
+        master_key = settings.MASTER_ADMIN_KEY
+        if master_key and hmac.compare_digest(api_key, master_key):
             return {"name": "Master Admin", "is_active": True}
             
         return None

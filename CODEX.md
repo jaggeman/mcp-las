@@ -77,6 +77,10 @@ FIREBASE_PROJECT_ID=paygap-prod
 FIREBASE_CREDENTIALS_PATH=./firebase-credentials.json
 USE_FIRESTORE_EMULATOR=false
 PORT=8080
+
+# Tom = master-admin-vägen avstängd (rekommenderat)
+MASTER_ADMIN_KEY=
+
 EMBEDDING_PROVIDER=mock
 OPENAI_API_KEY=
 GEMINI_API_KEY=
