@@ -54,9 +54,13 @@ https://las.novro.se/mcp
 
 ## 🚢 Driftsättning & Deploy-kommandon
 
+### 1. Automatisk CI/CD (Standard för AI-agenter)
+Push eller merge till `main` triggar GitHub Actions (`.github/workflows/ci.yml`), som automatiskt kör hela testsviten och driftsätter både **Cloud Run** (`mcp-las`) och **Firebase Hosting** (`mcp-novro`).
+
+### 2. Manuell driftsättning (CLI)
 Driftsättning görs mot **`paygap-prod`** i **`europe-west3`**:
 
-### 1. Driftsätt Backend & MCP Server (Cloud Run)
+#### A. Driftsätt Backend & MCP Server (Cloud Run)
 ```powershell
 gcloud run deploy mcp-las `
   --source . `
@@ -65,7 +69,7 @@ gcloud run deploy mcp-las `
   --allow-unauthenticated
 ```
 
-### 2. Driftsätt Web UI & Hosting (Firebase Hosting)
+#### B. Driftsätt Web UI & Hosting (Firebase Hosting)
 ```powershell
 firebase deploy --only hosting:mcp-novro --project=paygap-prod
 ```

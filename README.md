@@ -165,14 +165,19 @@ Projektet är integrerat och driftsatt mot **Novro Prod (`paygap-prod`)** i `eur
 - **MCP Endpoint**: `https://las.novro.se/mcp`
 - **DNS Setup Guide**: Fullständig guide för konfigurering i Loopia Kundzon finns i [`docs/deployment/novro-dns-and-subdomain-setup.md`](docs/deployment/novro-dns-and-subdomain-setup.md).
 
-### Deploy-kommandon
+### Driftsättning
 
-#### 1. Driftsätt Backend & MCP Server (Cloud Run)
+#### 1. Automatisk CI/CD (Standard för AI-agenter)
+Push eller merge till `main` triggar GitHub Actions (`.github/workflows/ci.yml`), som automatiskt kör hela testsviten och driftsätter både **Cloud Run** (`mcp-las`) och **Firebase Hosting** (`mcp-novro`).
+
+#### 2. Manuell driftsättning (CLI)
+
+##### A. Driftsätt Backend & MCP Server (Cloud Run)
 ```powershell
 gcloud run deploy mcp-las --source . --project=paygap-prod --region=europe-west3 --allow-unauthenticated
 ```
 
-#### 2. Driftsätt Webbplats & UI (Firebase Hosting)
+##### B. Driftsätt Webbplats & UI (Firebase Hosting)
 ```powershell
 firebase deploy --only hosting:mcp-novro --project=paygap-prod
 ```

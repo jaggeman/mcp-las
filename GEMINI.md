@@ -41,15 +41,19 @@ Strukturera alltid svaren med:
 
 ## 🚢 Driftsättning & Deploy (GCP & Firebase)
 
+### 1. Automatisk CI/CD (Standard för AI-agenter)
+Push eller merge till `main` triggar GitHub Actions (`.github/workflows/ci.yml`), som automatiskt kör hela testsviten och driftsätter både **Cloud Run** (`mcp-las`) och **Firebase Hosting** (`mcp-novro`).
+
+### 2. Manuell driftsättning (CLI)
 ```powershell
-# 1. Bygg och driftsätt backend till Cloud Run (paygap-prod)
+# A. Bygg och driftsätt backend till Cloud Run (paygap-prod)
 gcloud run deploy mcp-las `
   --source . `
   --project=paygap-prod `
   --region=europe-west3 `
   --allow-unauthenticated
 
-# 2. Driftsätt frontend & hosting till Firebase (mcp-novro)
+# B. Driftsätt frontend & hosting till Firebase (mcp-novro)
 firebase deploy --only hosting:mcp-novro --project=paygap-prod
 ```
 

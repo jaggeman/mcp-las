@@ -56,15 +56,19 @@ När användaren ställer frågor om svensk arbetsrätt, anställningsskydd (LAS
 
 ## 🚢 Driftsättning (Cloud Run & Firebase Hosting)
 
+### 1. Automatisk CI/CD (Standard för AI-agenter)
+Push eller merge till `main` triggar GitHub Actions (`.github/workflows/ci.yml`), som automatiskt kör hela testsviten och driftsätter både **Cloud Run** (`mcp-las`) och **Firebase Hosting** (`mcp-novro`).
+
+### 2. Manuell driftsättning (CLI)
 ```powershell
-# Driftsätt Backend till Cloud Run
+# A. Driftsätt Backend till Cloud Run
 gcloud run deploy mcp-las `
   --source . `
   --project=paygap-prod `
   --region=europe-west3 `
   --allow-unauthenticated
 
-# Driftsätt Frontend/Hosting till Firebase
+# B. Driftsätt Frontend/Hosting till Firebase
 firebase deploy --only hosting:mcp-novro --project=paygap-prod
 ```
 

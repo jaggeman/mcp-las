@@ -18,6 +18,10 @@ Detta dokument utgör standardriktlinjerna för alla autonoma AI-agenter och kod
 
 ## 🚢 Driftsättningskommandon
 
+### 1. Automatisk CI/CD (Standard för AI-agenter)
+Push eller merge till `main` triggar GitHub Actions (`.github/workflows/ci.yml`), som automatiskt kör hela testsviten och driftsätter både **Cloud Run** (`mcp-las`) och **Firebase Hosting** (`mcp-novro`).
+
+### 2. Manuell driftsättning (CLI)
 ```powershell
 # 1. Cloud Run (Backend & MCP Server)
 gcloud run deploy mcp-las --source . --project=paygap-prod --region=europe-west3 --allow-unauthenticated
