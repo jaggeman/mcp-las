@@ -1,5 +1,6 @@
 import re
 import logging
+from datetime import date
 from typing import List, Dict, Any, Optional, Set
 from pydantic import BaseModel, Field
 
@@ -106,6 +107,51 @@ class LawChunker:
             return False
         return True
 
+    # Riksdagen skriver ut bada lydelserna nar en paragraf har en beslutad men
+    # annu inte ikrafttradd andring: den gallande markt "/Upphor att galla
+    # I:<datum>/" och den kommande "/Trader i kraft I:<datum>/". Markningen ar
+    # redaktionell, inte lagtext.
+    VERSION_MARKER = re.compile(
+        r'^\s*/\s*(träder i kraft|upphör att gälla)\s*I\s*:\s*(\d{4}-\d{2}-\d{2})\s*/\s*',
+        re.IGNORECASE
+    )
+
+    @classmethod
+    def _read_version_marker(cls, text_after_section_sign: str):
+        """('start'|'end', datum, antal tecken att klippa) eller (None, None, 0)."""
+        m = cls.VERSION_MARKER.match(text_after_section_sign)
+        if not m:
+            return None, None, 0
+        kind = 'start' if m.group(1).lower().startswith('träder') else 'end'
+        try:
+            when = date.fromisoformat(m.group(2))
+        except ValueError:
+            return None, None, 0
+        return kind, when, m.end()
+
+    @staticmethod
+    def _version_in_force(versions, today: date) -> int:
+        """Vilken av flera lydelser av samma paragraf galler i dag?
+
+        versions: [(index, kind, datum)]. Returnerar index.
+
+        En lydelse som tratt i kraft galler; har flera gjort det vinner den
+        senaste. Har ingen gjort det ar det den utgaende ("upphor att galla"
+        langre fram) som fortfarande galler. Faller allt annat bort tas den
+        forsta - att lamna paragrafen helt utan text vore samre an att ta fel
+        lydelse.
+        """
+        started = [(d, i) for i, k, d in versions if k == 'start' and d and d <= today]
+        if started:
+            return max(started)[1]
+        still_running = [i for i, k, d in versions if k == 'end' and d and d > today]
+        if still_running:
+            return still_running[0]
+        unmarked = [i for i, k, _ in versions if k is None]
+        if unmarked:
+            return unmarked[0]
+        return versions[0][0]
+
     @staticmethod
     def _log_rejected(statute_id: str, match, reason: str) -> None:
         """En tyst filtrering göms tills den syns som konstiga svar.
@@ -208,6 +254,43 @@ class LawChunker:
         if not valid_matches:
             return
 
+        # Vilken lydelse gäller i dag? En paragraf med en beslutad men ännu
+        # inte ikraftträdd ändring förekommer två gånger i källtexten. Den
+        # icke gällande lydelsen tas bort HÄR, före ordningsfiltret, och dess
+        # startposition sparas — annars sväljs dess text av paragrafen före,
+        # som då innehåller två lydelser utan att något skiljer dem åt.
+        today = date.today()
+        markers = [
+            cls._read_version_marker(block_text[m.end():m.end() + 80])
+            for m in valid_matches
+        ]
+
+        groups: Dict[Any, List[int]] = {}
+        for i, m in enumerate(valid_matches):
+            groups.setdefault((m.group(1) or chapter, m.group(2).strip().lower()), []).append(i)
+
+        superseded = set()
+        for idxs in groups.values():
+            if len(idxs) < 2 and markers[idxs[0]][0] is None:
+                continue
+            winner = cls._version_in_force(
+                [(i, markers[i][0], markers[i][1]) for i in idxs], today
+            )
+            for i in idxs:
+                if i != winner:
+                    superseded.add(i)
+                    cls._log_rejected(
+                        statute_id, valid_matches[i],
+                        f"ej gällande lydelse ({markers[i][0]} {markers[i][1]})"
+                    )
+
+        # Startpositionerna är gränser som klipper — till skillnad från en
+        # förkastad korsreferens, vars text hör hemma i paragrafen före.
+        cut_starts = sorted(valid_matches[i].start() for i in superseded)
+        kept = [i for i in range(len(valid_matches)) if i not in superseded]
+        marker_cuts = [markers[i][2] for i in kept]
+        valid_matches = [valid_matches[i] for i in kept]
+
         # Paragrafnumren stiger genom en lag. En referens som tagit sig förbi
         # filtren ovan avslöjas av att den går baklänges.
         #
@@ -223,6 +306,7 @@ class LawChunker:
             for i, m in enumerate(valid_matches):
                 if i not in keep:
                     cls._log_rejected(statute_id, m, "bryter paragrafordningen")
+            marker_cuts = [c for i, c in enumerate(marker_cuts) if i in keep]
             valid_matches = [m for i, m in enumerate(valid_matches) if i in keep]
 
         pending_heading = None
@@ -235,8 +319,14 @@ class LawChunker:
         seen_doc_ids: Set[str] = {s.id for s in sections}
 
         for i, m in enumerate(valid_matches):
-            start_idx = m.end()
+            start_idx = m.end() + marker_cuts[i]
             end_idx = valid_matches[i + 1].start() if i + 1 < len(valid_matches) else len(block_text)
+            # En bortvald lydelse mellan den här paragrafen och nästa avslutar
+            # innehållet här, i stället för att följa med in i det.
+            for cut in cut_starts:
+                if m.start() < cut < end_idx:
+                    end_idx = cut
+                    break
 
             inline_chap = m.group(1)
             sec_num = m.group(2).strip().lower()
