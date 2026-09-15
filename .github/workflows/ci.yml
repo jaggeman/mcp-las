@@ -123,6 +123,10 @@ jobs:
         with:
           node-version: "20"
 
+      # mcp-endpoint (mcp.novro.se) tillkom i #10 som ett rent additivt alias
+      # till las.novro.se — samma public-katalog, samma rewrite mot Cloud Run.
+      # Bada maste driftsattas i samma steg, annars glider de isar sig sjalva
+      # nasta gang bara en av dem andras.
       - name: Deploy to Firebase Hosting
         run: |
-          npx firebase-tools deploy --only hosting:mcp-novro --project=paygap-prod
+          npx firebase-tools deploy --only hosting:mcp-novro,hosting:mcp-endpoint --project=paygap-prod
