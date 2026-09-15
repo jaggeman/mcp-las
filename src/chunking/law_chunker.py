@@ -106,6 +106,52 @@ class LawChunker:
             return False
         return True
 
+    @staticmethod
+    def _log_rejected(statute_id: str, match, reason: str) -> None:
+        """En tyst filtrering göms tills den syns som konstiga svar.
+
+        Loggas på DEBUG: vid en normal ingest av en hel lag förkastas
+        korsreferenser i tiotal, och det är väntat — men när en paragraf
+        saknas är det här spåret som visar varför.
+        """
+        logger.debug(
+            "SFS %s: förkastade '%s §' som paragrafstart (%s).",
+            statute_id, match.group(2).strip(), reason
+        )
+
+    @staticmethod
+    def _order_key(sec_num: str):
+        """'6 a' -> (6, 'a'), '6' -> (6, ''). Ger 6 < 6 a < 6 b < 7."""
+        m = re.match(r'(\d+)\s*([a-zåäö]?)', sec_num.strip().lower())
+        if not m:
+            return (0, '')
+        return (int(m.group(1)), m.group(2))
+
+    @staticmethod
+    def _longest_ascending_run(keys: List[Any]) -> Set[int]:
+        """Index i den längsta strikt stigande delföljden av keys.
+
+        O(n²) räcker gott: en lag har tiotal paragrafer, inte miljoner. Vid
+        lika långa alternativ vinner det som börjar tidigast i texten, vilket
+        gör resultatet oberoende av var i filen en dubblett råkar ligga.
+        """
+        n = len(keys)
+        if n == 0:
+            return set()
+        best = [1] * n
+        prev = [-1] * n
+        for i in range(n):
+            for j in range(i):
+                if keys[j] < keys[i] and best[j] + 1 > best[i]:
+                    best[i] = best[j] + 1
+                    prev[i] = j
+        end = max(range(n), key=lambda i: best[i])
+        keep: Set[int] = set()
+        while end != -1:
+            keep.add(end)
+            end = prev[end]
+        return keep
+
     @classmethod
     def _extract_sections_from_block(
         cls,
@@ -140,16 +186,44 @@ class LawChunker:
 
             # Reject if previous line ends with preposition, conjunction, comma, hyphen, etc.
             if last_pre_line.endswith((',', '-', '–', '(', '/')) or last_w in cls.NON_START_PREV_WORDS:
+                cls._log_rejected(statute_id, m, f"föregås av {last_w or last_pre_line[-1:]!r}")
                 continue
 
             # Reject if post line starts with invalid continuation words
             if any(first_line.lower().startswith(prefix) for prefix in cls.INVALID_POST_STARTS):
+                cls._log_rejected(statute_id, m, f"följs av {first_line[:24]!r}")
+                continue
+
+            # En paragraf börjar aldrig med gemen bokstav — lagtext inleds med
+            # versal eller siffra. En korsreferens mitt i en mening gör det
+            # aldrig. Regeln ersätter behovet av att fylla på INVALID_POST_STARTS
+            # med ett ord per upptäckt bugg; listan ovan ligger kvar för de fall
+            # där fortsättningen råkar vara versal.
+            if first_line[:1].islower():
+                cls._log_rejected(statute_id, m, f"gemen fortsättning {first_line[:24]!r}")
                 continue
 
             valid_matches.append(m)
 
         if not valid_matches:
             return
+
+        # Paragrafnumren stiger genom en lag. En referens som tagit sig förbi
+        # filtren ovan avslöjas av att den går baklänges.
+        #
+        # Filtreringen sker genom längsta strikt stigande delföljd, inte genom
+        # att gå framåt och kasta allt som är lägre än det senast accepterade.
+        # Det senare skulle göra en enstaka falsk "38 §" inne i 4 § till tyst
+        # bortfall av alla paragrafer mellan 5 och 37 — ett värre fel än det
+        # som skulle lagas. Delföljden behåller i stället den största mängd
+        # träffar som faktiskt utgör en lag i ordning.
+        keys = [cls._order_key(m.group(2)) for m in valid_matches]
+        keep = cls._longest_ascending_run(keys)
+        if len(keep) < len(valid_matches):
+            for i, m in enumerate(valid_matches):
+                if i not in keep:
+                    cls._log_rejected(statute_id, m, "bryter paragrafordningen")
+            valid_matches = [m for i, m in enumerate(valid_matches) if i in keep]
 
         pending_heading = None
         first_pre = block_text[:valid_matches[0].start()].strip()
