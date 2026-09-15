@@ -7,6 +7,9 @@
       "hosting": {
         "mcp-novro": [
           "mcp-novro"
+        ],
+        "mcp-endpoint": [
+          "novro-mcp"
         ]
       }
     }
