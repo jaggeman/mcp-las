@@ -80,13 +80,43 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      # --update-env-vars, inte --set-env-vars: den senare ersätter HELA
+      # miljön på tjänsten och skulle radera allt som satts utanför den här
+      # filen (hemligheter, provider-val). Den här lägger bara till.
+      #
+      # BUILD_SHA gör /health till svaret på "kör produktionen det som ligger
+      # på main?". Utan den krävdes deployloggar och revisionslistor för att
+      # avgöra saken, och två parallella driftsättningar av samma tjänst gick
+      # inte att skilja åt utifrån alls.
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy mcp-las \
             --source . \
             --project=paygap-prod \
             --region=europe-west3 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --update-env-vars=BUILD_SHA=${{ github.sha }},BUILD_REF=${{ github.ref_name }}
+
+      # Deployen ovan rapporterar "serving 100 percent of traffic" även när
+      # trafiken redan låg på en äldre revision, så verifiera mot tjänsten
+      # själv att det är det här commitet som svarar.
+      - name: Verifiera att den nya koden svarar
+        run: |
+          URL=$(gcloud run services describe mcp-las \
+            --project=paygap-prod --region=europe-west3 \
+            --format='value(status.url)')
+          echo "Tjänste-URL: $URL"
+          for i in 1 2 3 4 5; do
+            LIVE=$(curl -fsS --max-time 20 "$URL/health" | python3 -c 'import sys,json; print(json.load(sys.stdin)["build_sha"])' || echo "")
+            if [ "$LIVE" = "${{ github.sha }}" ]; then
+              echo "OK: $URL/health svarar med ${{ github.sha }}"
+              exit 0
+            fi
+            echo "Försök $i: fick \"$LIVE\", väntade ${{ github.sha }}"
+            sleep 10
+          done
+          echo "Cloud Run svarar inte med det commit som just driftsattes."
+          exit 1
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

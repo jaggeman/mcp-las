@@ -56,6 +56,12 @@ mcp = FastMCP(
 )
 
 # Tillåt CORS för alla webbläsare och Claude
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "*",
+    "Access-Control-Allow-Headers": "*",
+}
+
 @mcp.custom_route("/", methods=["GET", "OPTIONS"])
 async def serve_landing_page(request):
     if request.method == "OPTIONS":
@@ -66,6 +72,38 @@ async def serve_landing_page(request):
             content = f.read()
             return HTMLResponse(content)
     return HTMLResponse("<h1>MCP LAS Server</h1><p><a href='/sse'>/sse</a></p>")
+
+@mcp.custom_route("/health", methods=["GET", "OPTIONS"])
+async def health_check(request):
+    """Vilken kod kör här just nu?
+
+    Finns för att frågan ska gå att ställa med ett anrop. Utan den krävdes
+    deployloggar, revisionslistor och git-historik för att avgöra om det som
+    svarar på en domän är det som ligger på main — och två parallella
+    driftsättningar av samma tjänst är då omöjliga att skilja åt utifrån.
+
+    BUILD_SHA sätts av CI vid deploy. En image byggd för hand har ingen, och
+    svarar "unknown" hellre än något som ser ut som en sha.
+
+    Ingen Firestore-läsning: endpointet är tänkt att kunna pollas. Det är
+    också publikt och oautentiserat — därav att det inte lämnar ut projekt-id
+    eller sökvägar, samma gräns som felsvaren drar sedan #30.
+    """
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers=CORS_HEADERS)
+
+    return JSONResponse(
+        {
+            "status": "ok",
+            "build_sha": os.environ.get("BUILD_SHA") or "unknown",
+            "build_ref": os.environ.get("BUILD_REF") or "unknown",
+            "server": settings.MCP_SERVER_NAME,
+            "database_connected": db_client.db is not None,
+            "tool_count": len(DIRECT_TOOLS_MAP),
+            "time": datetime.now(timezone.utc).isoformat(),
+        },
+        headers=CORS_HEADERS,
+    )
 
 @mcp.custom_route("/api/download-turordning", methods=["GET", "OPTIONS"])
 async def download_turordning_excel(request):
