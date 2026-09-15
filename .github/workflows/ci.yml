@@ -123,10 +123,21 @@ jobs:
         with:
           node-version: "20"
 
-      # mcp-endpoint (mcp.novro.se) tillkom i #10 som ett rent additivt alias
-      # till las.novro.se — samma public-katalog, samma rewrite mot Cloud Run.
-      # Bada maste driftsattas i samma steg, annars glider de isar sig sjalva
-      # nasta gang bara en av dem andras.
-      - name: Deploy to Firebase Hosting
+      # mcp-novro (las.novro.se) ar den etablerade, produktionsbarande siten -
+      # anvandare har den redan i sin claude_desktop_config.json. Den far ALDRIG
+      # sta och falla for att ett tillaggsalias inte ar klart.
+      - name: Deploy to Firebase Hosting (mcp-novro)
         run: |
-          npx firebase-tools deploy --only hosting:mcp-novro,hosting:mcp-endpoint --project=paygap-prod
+          npx firebase-tools deploy --only hosting:mcp-novro --project=paygap-prod
+
+      # mcp-endpoint (mcp.novro.se, #10) ar ett rent additivt alias vars Hosting-
+      # site skapas manuellt utanfor CI. Ett enda kombinerat `--only`-kommando
+      # visade sig gora HELA hosting-steget - mcp-novro inraknat - falla sa fort
+      # den har siten inte fanns: "Error: could not find site novro-mcp for
+      # project paygap-prod". continue-on-error har haller den fristaende: den
+      # borjar deploya sig sjalv automatiskt sa fort siten finns, utan att nagon
+      # behover komma ihag att ta bort flaggan, och paverkar aldrig mcp-novro.
+      - name: Deploy to Firebase Hosting (mcp-endpoint)
+        continue-on-error: true
+        run: |
+          npx firebase-tools deploy --only hosting:mcp-endpoint --project=paygap-prod
