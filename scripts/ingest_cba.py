@@ -16,10 +16,23 @@ if db_client.db is None:
     sys.exit(1)
 
 print(f"Laddar upp {len(CURATED_COLLECTIVE_AGREEMENTS)} kollektivavtal till Firebase...")
+misslyckade = []
 for rule in CURATED_COLLECTIVE_AGREEMENTS:
     rule_dict = dict(rule)
     rule_dict["embedding"] = Embedder.get_embedding(rule_dict["topic"] + " " + rule_dict["rule_content"])
-    sparade += 1 if db_client.save_cba_rule(rule_dict) else 0
-    print(f" - Sparad i Firestore: {rule_dict['agreement_name']} ({rule_dict['topic']})")
+    etikett = f"{rule_dict['agreement_name']} ({rule_dict['topic']})"
+    if db_client.save_cba_rule(rule_dict):
+        sparade += 1
+        print(f" - Sparad i Firestore: {etikett}")
+    else:
+        misslyckade.append(etikett)
+        print(f" - MISSLYCKADES: {etikett}")
 
-print("\nAlla kollektivavtal är uppladdade till Firebase Firestore!")
+print(f"\nKlart: {sparade} av {len(CURATED_COLLECTIVE_AGREEMENTS)} regler sparade i Firestore.")
+if misslyckade:
+    print(f"{len(misslyckade)} skrivningar gick inte igenom - se varningarna ovan.")
+
+# Samma krav som pa de ovriga ingestionsskripten sedan #32: skriv bara ut det
+# som faktiskt hamnade i databasen, och avsluta med en kod som gor att ett
+# skal-skript eller en agent inte gar vidare i tron att steget lyckades.
+sys.exit(0 if sparade == len(CURATED_COLLECTIVE_AGREEMENTS) else 1)
