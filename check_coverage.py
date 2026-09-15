@@ -36,6 +36,10 @@ CRITICAL_SECTIONS = [
     ('1976:580', 'MBL', '11', 'förhandla'),
 ]
 
+def _where(sec):
+    """'2 kap. 6 §' i flerkapitellagar, '6 §' i ovriga."""
+    return f"{sec.chapter} kap. {sec.section_number} §" if sec.chapter else f"{sec.section_number} §"
+
 _STATUTE_CACHE = {}
 
 def fetch_statute(sfs):
@@ -123,14 +127,21 @@ def check_database_coverage():
         for sec in sections:
             head = sec.content.lstrip()[:1]
             if head.islower():
-                problems.append(f'{sec.section_number} § borjar gement: "{sec.content[:50]}..."')
+                problems.append(f'{_where(sec)} borjar gement: "{sec.content[:60]}..."')
 
         # Ikrafttradandepunkter ska ha klippts bort med overgangsbestammelserna.
         for sec in sections:
             low = sec.content.lower()
-            for marker in ('trader i kraft', 'träder i kraft', 'i den aldre lydelsen', 'i den äldre lydelsen'):
-                if marker in low:
-                    problems.append(f'{sec.section_number} §: overgangsbestammelse i innehallet ("{marker}")')
+            for marker in ('träder i kraft', 'i den äldre lydelsen'):
+                at = low.find(marker)
+                if at >= 0:
+                    # Utdraget runt traffen ar hela diagnosen: det avgor om
+                    # overgangsbestammelserna lackt in, eller om paragrafen
+                    # sjalv legitimt talar om ikrafttradande.
+                    snippet = re.sub(r'\s+', ' ', sec.content[max(0, at - 60):at + 80])
+                    problems.append(
+                        f'{_where(sec)}: mojlig overgangsbestammelse -> "...{snippet}..."'
+                    )
                     break
 
         # Paragrafnumren stiger inom ett kapitel.
