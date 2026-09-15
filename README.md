@@ -184,6 +184,26 @@ firebase deploy --only hosting:mcp-novro --project=paygap-prod
 
 ---
 
+### Verifiera vilken kod som faktiskt kör
+
+`gcloud run deploy` rapporterar lyckad driftsättning även när trafiken ligger
+kvar på en äldre revision, och säger ingenting alls om en andra driftsättning
+av samma tjänst i ett annat projekt. `/health` svarar med det commit som kör:
+
+```powershell
+curl.exe -s https://las.novro.se/health
+```
+
+```json
+{"status":"ok","build_sha":"98b9878...","build_ref":"main","database_connected":true,"tool_count":20}
+```
+
+`build_sha` ska vara samma som `git rev-parse origin/main`. Är den äldre, eller
+`unknown`, svarar domänen från något annat än det CI driftsätter. CI stämplar
+`BUILD_SHA` vid deploy och bryter bygget om tjänsten inte svarar med det.
+
+---
+
 ## 🤖 AI-Agenter & Synkroniseringskrav
 
 Projektet innehåller dedikerade instruktionsfiler anpassade för olika AI-assistenter:
