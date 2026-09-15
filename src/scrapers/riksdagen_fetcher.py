@@ -32,7 +32,12 @@ class RiksdagenFetcher:
         "1977:1160": {"short_name": "Arbetsmiljölagen", "title": "Arbetsmiljölag (1977:1160)"},
         "1991:1047": {"short_name": "Sjuklönelagen", "title": "Lag (1991:1047) om sjuklön"},
         "1995:584": {"short_name": "Föräldraledighetslagen", "title": "Föräldraledighetslag (1995:584)"},
+        "1974:981": {"short_name": "Studieledighetslagen", "title": "Lag (1974:981) om arbetstagares rätt till ledighet för utbildning"},
     }
+    # Varje SFS-nummer i sync_service.DEFAULT_STATUTES måste finnas här. Saknas
+    # det lagras lagen under reservnamnet "SFS <nummer>" och går inte att slå
+    # upp på det namn en användare faktiskt skriver. Bevakas av
+    # tests/test_statute_short_names.py.
 
     @classmethod
     def sfs_to_doc_id(cls, sfs_number: str) -> str:

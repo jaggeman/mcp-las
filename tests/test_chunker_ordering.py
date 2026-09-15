@@ -242,3 +242,65 @@ def test_a_reference_with_a_capitalised_continuation_is_caught_by_the_order():
     sections = _chunk(text)
     assert [s.section_number for s in sections] == ["30", "31"]
     assert "Ska underrätta arbetstagaren om detta" in _by_number(sections)["31"].content
+
+
+# ---------------------------------------------------------------------------
+# INVALID_POST_STARTS matchades skiftlägesokänsligt mot fortsättningen, och
+# listan innehåller hela ord: 'har ', 'kan ', 'ska ', 'som ', 'och ', 'eller '.
+# Svensk lagtext inleder paragrafer med precis de orden, med versal.
+#
+# Hittat i den fyllda databasen, inte i testerna: LAS 34 § innehöll hela
+# 35 § inuti sig, och lookup_statute("LAS", "35") fanns inte alls.
+#
+# Sedan den generella gemen-regeln finns är ordlistan överflödig för sitt
+# syfte — en äkta fortsättning mitt i en mening är gemen och fångas där —
+# och aktivt skadlig för allt som börjar med versal.
+# ---------------------------------------------------------------------------
+
+def test_a_section_may_begin_with_a_word_from_the_blocklist():
+    """LAS 35 § börjar med "Har". Den ska finnas."""
+    text = """
+34 § Om en arbetstagare sägs upp utan sakliga skäl, ska uppsägningen
+förklaras ogiltig på yrkande av arbetstagaren. Lag (2022:835).
+
+35 § Har en arbetstagare blivit avskedad under omständigheter som inte ens
+skulle ha räckt till för en giltig uppsägning, ska avskedandet förklaras
+ogiltigt. Lag (2022:835).
+
+36 § Ett beslut enligt 34 eller 35 § får verkställas.
+"""
+    sections = _chunk(text)
+    assert [s.section_number for s in sections] == ["34", "35", "36"]
+
+    sec34 = _by_number(sections)["34"]
+    assert "35 §" not in sec34.content, \
+        f"34 § svalde 35 §: {sec34.content!r}"
+    assert "blivit avskedad" in _by_number(sections)["35"].content
+
+
+@pytest.mark.parametrize("ord_", ["Har", "Kan", "Ska", "Som", "Hade", "Skall"])
+def test_every_blocklisted_word_still_works_capitalised(ord_):
+    """Hela klassen, inte bara det ord som råkade upptäckas."""
+    text = f"""
+10 § Första paragrafen med eget innehåll.
+
+11 § {ord_} arbetstagaren rätt till detta gäller vad som följer av lagen.
+
+12 § Tredje paragrafen med eget innehåll.
+"""
+    numbers = [s.section_number for s in _chunk(text)]
+    assert numbers == ["10", "11", "12"], f"{ord_!r} fällde paragrafen: {numbers}"
+
+
+def test_a_genuine_lowercase_continuation_is_still_rejected():
+    """Skyddet får inte försvinna på kuppen — gemen fortsättning är fortfarande en referens."""
+    text = """
+10 § Första paragrafen.
+
+11 § Bestämmelserna tillämpas på det sätt som anges i
+12 § har arbetstagaren rätt till detta gäller vad som följer av lagen.
+
+13 § Tredje paragrafen.
+"""
+    numbers = [s.section_number for s in _chunk(text)]
+    assert "12" not in numbers, f"gemen fortsättning blev en paragraf: {numbers}"

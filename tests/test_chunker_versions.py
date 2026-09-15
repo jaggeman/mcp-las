@@ -112,3 +112,64 @@ def test_an_ordinary_statute_without_pending_amendments_is_untouched():
     sections = _chunk(text, statute_id="1982:80", short="LAS")
     assert [s.section_number for s in sections] == ["5", "6", "7"]
     assert "provanställning" in _by_number(sections)["6"].content
+
+
+# ---------------------------------------------------------------------------
+# Riksdagen skriver INTE "I:" i båda markeringarna. Den utgående lydelsen är
+# märkt med U (upphör), den kommande med I (ikraftträdande):
+#
+#     /Upphör att gälla U:2028-07-01/
+#     /Träder i kraft   I:2028-07-01/
+#
+# Fixturerna ovan använde "I:" i båda, så testet för att markeringen inte når
+# lagtexten passerade utan att pröva det som faktiskt förekommer. Upptäckt
+# först när paragraferna lästes ur den fyllda databasen: innehållet i
+# Diskrimineringslagen 2 kap. 6 §, Arbetsmiljölagen 6 kap. 17 § och
+# Föräldraledighetslagen 5 § börjar med markeringsraden.
+# ---------------------------------------------------------------------------
+
+DL_REAL_NOTATION = """
+5 § Den som söker praktik ska anses som arbetstagare. Lag (2023:352).
+
+6 § /Upphör att gälla U:2028-07-01/
+Förbudet i 5 § hindrar inte särbehandling som föranleds av ålder.
+Lag (2014:958).
+
+6 § /Träder i kraft I:2028-07-01/
+Förbudet i 5 § hindrar inte åtgärder som främjar jämställdhet.
+
+7 § Den som omfattas av förbudet ska utreda omständigheterna.
+"""
+
+
+def test_the_upphor_marker_uses_U_and_is_stripped_too():
+    sec6 = _by_number(_chunk(DL_REAL_NOTATION))["6"]
+    assert not sec6.content.lstrip().startswith("/"),         f"markeringsraden står kvar i lagtexten: {sec6.content[:60]!r}"
+    assert "Upphör att gälla" not in sec6.content
+    assert "U:2028" not in sec6.content
+    # Rätt lydelse ska ändå ha valts.
+    assert "särbehandling som föranleds av ålder" in sec6.content
+    assert "främjar jämställdhet" not in sec6.content
+
+
+def test_the_outgoing_version_is_recognised_as_such_not_as_unmarked():
+    """Skillnaden syns när ikraftträdandet redan passerat.
+
+    Läses "U:" inte alls blir den utgående lydelsen "omarkerad", och faller
+    tillbaka på regeln "ta den första" — vilket ger rätt svar före datumet av
+    ren tur, och fel svar efter det.
+    """
+    text = """
+5 § Den som söker praktik ska anses som arbetstagare.
+
+6 § /Upphör att gälla U:2020-01-01/
+Den gamla lydelsen som slutade gälla 2020.
+
+6 § /Träder i kraft I:2020-01-01/
+Den lydelse som gäller sedan 2020.
+
+7 § Den som omfattas av förbudet ska utreda omständigheterna.
+"""
+    sec6 = _by_number(_chunk(text))["6"]
+    assert "gäller sedan 2020" in sec6.content
+    assert "slutade gälla 2020" not in sec6.content
