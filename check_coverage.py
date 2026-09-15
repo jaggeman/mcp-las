@@ -24,6 +24,11 @@ CRITICAL_SECTIONS = [
     ('1982:80', 'LAS', '5', 'Avtal om tidsbegränsad anställning får träffas'),
     ('1982:80', 'LAS', '6', 'Avtal får även träffas om tidsbegränsad provanställning'),
     ('1982:80', 'LAS', '7', 'sakliga skäl'),
+    # Andra stycket. Den ingesterade korpusen hade bara forsta meningen av
+    # 7 §, och omplaceringsskyldigheten - den mest aberopade regeln i svensk
+    # uppsagningsratt - saknades helt. Stickprovet ovan sag inget fel,
+    # eftersom "sakliga skal" star i forsta meningen.
+    ('1982:80', 'LAS', '7', 'annat arbete hos sig'),
     ('1982:80', 'LAS', '8', 'skriftlig'),
     ('1982:80', 'LAS', '11', 'minsta uppsägningstid'),
     ('1982:80', 'LAS', '18', 'Avskedande får ske'),
@@ -35,6 +40,42 @@ CRITICAL_SECTIONS = [
     ('1982:673', 'Arbetstidslagen', '14', 'veckovila'),
     ('1976:580', 'MBL', '11', 'förhandla'),
 ]
+
+def _rejection_log(sfs):
+    """Kor om styckningen med chunkerns DEBUG-logg pafslagen.
+
+    Chunkern loggar varje forkastad paragrafstart med skalet - "gemen
+    fortsattning", "bryter paragrafordningen", "foregas av ..." - men pa DEBUG,
+    sa ingen har nagonsin sett det. Nar en invariant slar till ar just det
+    loggen den diagnos som behovs, och den kostar ingenting att visa da.
+    """
+    import io
+    import logging
+
+    from src.chunking.law_chunker import LawChunker
+
+    buf = io.StringIO()
+    handler = logging.StreamHandler(buf)
+    handler.setLevel(logging.DEBUG)
+    log = logging.getLogger('src.chunking.law_chunker')
+    gammal_niva = log.level
+    log.addHandler(handler)
+    log.setLevel(logging.DEBUG)
+    try:
+        meta, _ = fetch_statute(sfs)
+        raw = RiksdagenFetcher.fetch_statute_html_or_text(sfs)
+        if raw:
+            LawChunker.chunk_statute_text(
+                statute_id=sfs, statute_short=meta.short_name, full_text=raw
+            )
+    except Exception as e:
+        return [f'kunde inte aterskapa avslagsloggen: {e}']
+    finally:
+        log.removeHandler(handler)
+        log.setLevel(gammal_niva)
+
+    rader = [r for r in buf.getvalue().splitlines() if r.strip()]
+    return rader[:25] or ['inga avslag loggades - paragrafen matchade aldrig monstret alls']
 
 def _where(sec):
     """'2 kap. 6 §' i flerkapitellagar, '6 §' i ovriga."""
@@ -188,6 +229,8 @@ def check_database_coverage():
         if problems:
             all_passed = False
             print(f'[FAIL] | {short_name:<22}: {len(problems)} problem')
+            for rad in _rejection_log(sfs):
+                print(f'        # {rad}')
             for line in problems[:8]:
                 print(f'        - {line}')
             if len(problems) > 8:
