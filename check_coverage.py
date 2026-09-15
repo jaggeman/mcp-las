@@ -36,6 +36,18 @@ CRITICAL_SECTIONS = [
     ('1976:580', 'MBL', '11', 'förhandla'),
 ]
 
+def _where(sec):
+    """'2 kap. 6 §' i flerkapitellagar, '6 §' i ovriga."""
+    return f"{sec.chapter} kap. {sec.section_number} §" if sec.chapter else f"{sec.section_number} §"
+
+_STATUTE_CACHE = {}
+
+def fetch_statute(sfs):
+    """Hamtar en lag en gang per korning, inte en gang per slinga."""
+    if sfs not in _STATUTE_CACHE:
+        _STATUTE_CACHE[sfs] = RiksdagenFetcher.get_statute(sfs)
+    return _STATUTE_CACHE[sfs]
+
 def check_database_coverage():
     print('=' * 80)
     print('SWEDISH LABOR LAW DATABASE COVERAGE & CHUNKER INTEGRITY CHECK')
@@ -54,7 +66,7 @@ def check_database_coverage():
 
     for sfs, short_name, min_expected in LAWS_TO_CHECK:
         try:
-            meta, sections = RiksdagenFetcher.get_statute(sfs)
+            meta, sections = fetch_statute(sfs)
             count = len(sections)
             total_sections_all += count
             doc_ids = [s.id for s in sections]
@@ -73,7 +85,7 @@ def check_database_coverage():
     print('-' * 80)
     for sfs, short_name, sec_num, expected_text in CRITICAL_SECTIONS:
         try:
-            meta, sections = RiksdagenFetcher.get_statute(sfs)
+            meta, sections = fetch_statute(sfs)
         except Exception as e:
             all_passed = False
             print(f'[FAIL]    | {short_name:>15} {sec_num:>3} §: Kunde inte hamta SFS {sfs} ({e})')
@@ -93,12 +105,81 @@ def check_database_coverage():
             clean_sub = re.sub(r'\s+', ' ', sec.content[:60])
             print(f'[CORRUPT] | {short_name:>15} {sec_num:>3} §: Missing expected phrase "{expected_text}"! -> "{clean_sub}..."')
             all_passed = False
+    print('\n' + '-' * 80)
+    print('INVARIANTS ACROSS EVERY PARSED SECTION (not just the sampled ones)')
+    print('-' * 80)
+    # Stickproven ovan tacker 13 paragrafer. Felklassen i #6 - korsreferenser
+    # som blir paragrafer - drabbar alla lagar, sa invarianterna kors over
+    # allt som parsas. Ingen av dem kraver att nagon kan lagarnas
+    # paragrafuppsattning utantill.
+    for sfs, short_name, _min in LAWS_TO_CHECK:
+        try:
+            meta, sections = fetch_statute(sfs)
+        except Exception as e:
+            all_passed = False
+            print(f'[FAIL] | {short_name:<22}: kunde inte hamtas ({e})')
+            continue
+
+        problems = []
+
+        # Lagtext borjar med versal eller siffra. Gemen bokstav betyder att
+        # sektionen borjar mitt i en mening - en korsreferens, inte en rubrik.
+        for sec in sections:
+            head = sec.content.lstrip()[:1]
+            if head.islower():
+                problems.append(f'{_where(sec)} borjar gement: "{sec.content[:60]}..."')
+
+        # Ikrafttradandepunkter ska ha klippts bort med overgangsbestammelserna.
+        for sec in sections:
+            low = sec.content.lower()
+            for marker in ('träder i kraft', 'i den äldre lydelsen'):
+                at = low.find(marker)
+                if at >= 0:
+                    # Utdraget runt traffen ar hela diagnosen: det avgor om
+                    # overgangsbestammelserna lackt in, eller om paragrafen
+                    # sjalv legitimt talar om ikrafttradande.
+                    snippet = re.sub(r'\s+', ' ', sec.content[max(0, at - 60):at + 80])
+                    problems.append(
+                        f'{_where(sec)}: mojlig overgangsbestammelse -> "...{snippet}..."'
+                    )
+                    break
+
+        # Paragrafnumren stiger inom ett kapitel.
+        by_chapter = {}
+        for sec in sections:
+            by_chapter.setdefault(sec.chapter, []).append(sec)
+        for chap, secs in by_chapter.items():
+            keys = [LawChunker._order_key(x.section_number) for x in secs]
+            for a, b in zip(keys, keys[1:]):
+                if b <= a:
+                    where = f'{chap} kap. ' if chap else ''
+                    problems.append(f'{where}{a[0]}{a[1]} § foljs av {b[0]}{b[1]} § - fel ordning')
+
+        # Dubbletter skrivs inte over langre, de hoppas over - och da
+        # forsvinner den riktiga paragrafens innehall tyst.
+        ids = [x.id for x in sections]
+        if len(ids) != len(set(ids)):
+            problems.append(f'{len(ids) - len(set(ids))} dubbletter bland doc_id')
+
+        if problems:
+            all_passed = False
+            print(f'[FAIL] | {short_name:<22}: {len(problems)} problem')
+            for line in problems[:8]:
+                print(f'        - {line}')
+            if len(problems) > 8:
+                print(f'        ... och {len(problems) - 8} till')
+        else:
+            print(f'[OK]   | {short_name:<22}: {len(sections)} paragrafer, inga invariantbrott')
+
     print('=' * 80)
     if all_passed:
         print(f'ALL CHECKS PASSED! {total_sections_all} sections across {total_statutes} statutes are 100% valid and verified.')
     else:
         print('SOME CHECKS FAILED! Review issues above.')
     print('=' * 80)
+    return all_passed
 
 if __name__ == '__main__':
-    check_database_coverage()
+    # Utan exitkod var det har steget en utskrift, inte en kontroll: CI
+    # rapporterade gront aven nar utskriften sa SOME CHECKS FAILED.
+    sys.exit(0 if check_database_coverage() else 1)
