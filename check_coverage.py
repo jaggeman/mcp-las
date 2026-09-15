@@ -130,9 +130,19 @@ def check_database_coverage():
                 problems.append(f'{_where(sec)} borjar gement: "{sec.content[:60]}..."')
 
         # Ikrafttradandepunkter ska ha klippts bort med overgangsbestammelserna.
+        # Riksdagens redaktionella markering ar inte lagtext. Den star forst i
+        # paragrafen och inleds med snedstreck: "/Upphor att galla U:.../".
+        # Den forsta versionen av den har kontrollen letade bara efter
+        # "trader i kraft" och sag darfor inte den UTGAENDE markeringen alls -
+        # CI rapporterade ALL CHECKS PASSED medan fem paragrafer i databasen
+        # borjade med en markeringsrad.
         for sec in sections:
+            if sec.content.lstrip().startswith('/'):
+                forsta = re.sub(r'\s+', ' ', sec.content.lstrip()[:70])
+                problems.append(f'{_where(sec)}: borjar med redaktionell markering -> "{forsta}..."')
+                continue
             low = sec.content.lower()
-            for marker in ('träder i kraft', 'i den äldre lydelsen'):
+            for marker in ('träder i kraft', 'upphör att gälla', 'i den äldre lydelsen'):
                 at = low.find(marker)
                 if at >= 0:
                     # Utdraget runt traffen ar hela diagnosen: det avgor om

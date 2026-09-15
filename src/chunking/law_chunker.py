@@ -112,7 +112,11 @@ class LawChunker:
     # I:<datum>/" och den kommande "/Trader i kraft I:<datum>/". Markningen ar
     # redaktionell, inte lagtext.
     VERSION_MARKER = re.compile(
-        r'^\s*/\s*(träder i kraft|upphör att gälla)\s*I\s*:\s*(\d{4}-\d{2}-\d{2})\s*/\s*',
+        # Bokstaven före kolon skiljer sig åt: U för upphör, I för
+        # ikraftträdande. Båda måste matcha — läses bara "I:" blir den
+        # utgående lydelsen omarkerad och dess markeringsrad ligger kvar
+        # överst i lagtexten.
+        r'^\s*/\s*(träder i kraft|upphör att gälla)\s*[A-ZÅÄÖ]?\s*:\s*(\d{4}-\d{2}-\d{2})\s*/\s*',
         re.IGNORECASE
     )
 
