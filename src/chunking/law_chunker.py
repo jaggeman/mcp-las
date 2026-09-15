@@ -239,8 +239,16 @@ class LawChunker:
                 cls._log_rejected(statute_id, m, f"föregås av {last_w or last_pre_line[-1:]!r}")
                 continue
 
-            # Reject if post line starts with invalid continuation words
-            if any(first_line.lower().startswith(prefix) for prefix in cls.INVALID_POST_STARTS):
+            # Skiftlägeskänsligt, med flit. Listan innehåller hela ord - 'har ',
+            # 'kan ', 'ska ', 'som ' - och svensk lagtext inleder paragrafer med
+            # precis dem, med versal: "Har en arbetstagare blivit avskedad..."
+            # ÄR LAS 35 §. Matchades listan skiftlägesokänsligt försvann den
+            # paragrafen helt och texten hamnade inuti 34 §.
+            #
+            # Att jämföra i originalskiftläge räcker, eftersom en äkta
+            # fortsättning mitt i en mening alltid är gemen - och då fångas
+            # den ändå av gemen-regeln nedan.
+            if any(first_line.startswith(prefix) for prefix in cls.INVALID_POST_STARTS):
                 cls._log_rejected(statute_id, m, f"följs av {first_line[:24]!r}")
                 continue
 

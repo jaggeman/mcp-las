@@ -154,6 +154,20 @@ def check_database_coverage():
                     )
                     break
 
+        # En paragraf far inte innehalla nasta paragrafs rubrik. Det ar exakt
+        # vad som hander nar en akta paragrafstart forkastas av filtret: dess
+        # text hamnar inuti paragrafen fore, och den forsvinner ur databasen.
+        # LAS 34 § innehall hela 35 § pa det sattet, och lookup_statute for
+        # 35 § fanns inte alls - osynligt for bade antalskontrollen (antalet
+        # ser rimligt ut) och stickproven (34 § innehaller ratt text OCKSA).
+        for sec in sections:
+            svald = re.search(r'\n\s*(\d+\s*[a-z]?)\s*§\s+[A-ZÅÄÖ]', sec.content)
+            if svald:
+                problems.append(
+                    f'{_where(sec)}: innehaller rubriken for {svald.group(1).strip()} § '
+                    f'- den paragrafen har sannolikt forkastats och forsvunnit'
+                )
+
         # Paragrafnumren stiger inom ett kapitel.
         by_chapter = {}
         for sec in sections:
