@@ -36,3 +36,8 @@ def test_short_names_are_unique():
     """Två lagar med samma kortnamn gör uppslagningen tvetydig."""
     namn = [i["short_name"].lower() for i in RiksdagenFetcher.KNOWN_LABOR_LAWS.values()]
     assert len(namn) == len(set(namn)), f"dubblerade kortnamn: {namn}"
+
+
+def test_business_leave_statute_is_in_default_catalog():
+    assert "1997:1293" in DEFAULT_STATUTES
+    assert RiksdagenFetcher.KNOWN_LABOR_LAWS["1997:1293"]["short_name"] == "Näringsverksamhetsledighetslagen"

@@ -170,6 +170,15 @@ class LawChunker:
         )
 
     @staticmethod
+    def _previous_line_ends_completed_citation(line: str) -> bool:
+        """Returnera True när raden avslutas med en komplett lagrumshänvisning.
+
+        ``last_words`` hittar annars ``och`` i exempelvis ``23 och 24 §§.``
+        och klassar nästa riktiga paragraf som en radbruten korsreferens.
+        """
+        return bool(re.search(r"\d+\s*§{1,2}\s*[.!?:;]?\s*$", line.strip()))
+
+    @staticmethod
     def _order_key(sec_num: str):
         """'6 a' -> (6, 'a'), '6' -> (6, ''). Ger 6 < 6 a < 6 b < 7."""
         m = re.match(r'(\d+)\s*([a-zåäö]?)', sec_num.strip().lower())
@@ -235,7 +244,11 @@ class LawChunker:
             first_line = post_chunk.split('\n')[0] if post_chunk else ''
 
             # Reject if previous line ends with preposition, conjunction, comma, hyphen, etc.
-            if last_pre_line.endswith((',', '-', '–', '(', '/')) or last_w in cls.NON_START_PREV_WORDS:
+            completed_citation = cls._previous_line_ends_completed_citation(last_pre_line)
+            if (
+                last_pre_line.endswith((',', '-', '–', '(', '/'))
+                or (last_w in cls.NON_START_PREV_WORDS and not completed_citation)
+            ):
                 cls._log_rejected(statute_id, m, f"föregås av {last_w or last_pre_line[-1:]!r}")
                 continue
 

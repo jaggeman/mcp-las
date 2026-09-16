@@ -21,6 +21,7 @@ DEFAULT_STATUTES = (
     "1977:1160",  # Arbetsmiljolagen
     "1995:584",   # Foraldraledighetslagen
     "1974:981",   # Studieledighetslagen
+    "1997:1293",  # Ledighet for att bedriva naringsverksamhet
 )
 
 

@@ -33,6 +33,7 @@ class RiksdagenFetcher:
         "1991:1047": {"short_name": "Sjuklönelagen", "title": "Lag (1991:1047) om sjuklön"},
         "1995:584": {"short_name": "Föräldraledighetslagen", "title": "Föräldraledighetslag (1995:584)"},
         "1974:981": {"short_name": "Studieledighetslagen", "title": "Lag (1974:981) om arbetstagares rätt till ledighet för utbildning"},
+        "1997:1293": {"short_name": "Näringsverksamhetsledighetslagen", "title": "Lag (1997:1293) om rätt till ledighet för att bedriva näringsverksamhet"},
     }
     # Varje SFS-nummer i sync_service.DEFAULT_STATUTES måste finnas här. Saknas
     # det lagras lagen under reservnamnet "SFS <nummer>" och går inte att slå

@@ -304,3 +304,32 @@ def test_a_genuine_lowercase_continuation_is_still_rejected():
 """
     numbers = [s.section_number for s in _chunk(text)]
     assert "12" not in numbers, f"gemen fortsättning blev en paragraf: {numbers}"
+
+
+def test_completed_citation_before_real_suffix_section_is_not_rejected():
+    """MBL 25 a § får inte sväljas efter ``23 och 24 §§.``."""
+    text = """
+25 § Avtal saknar verkan som kollektivavtal i den mån det har annat
+innehåll än sådant som avses i 23 och 24 §§.
+
+25 a § Ett kollektivavtal som är ogiltigt enligt utländsk rätt är trots
+detta giltigt här i landet om stridsåtgärden var tillåten enligt denna lag.
+"""
+    sections = _chunk(text, statute_id="1976:580", short="MBL")
+    assert [s.section_number for s in sections] == ["25", "25 a"]
+    assert "Ett kollektivavtal" in _by_number(sections)["25 a"].content
+
+
+def test_completed_citation_before_real_chapter_section_is_not_rejected():
+    """Diskrimineringslagen 4 kap. 15 § får inte sväljas efter 9 och 10 §§."""
+    text = """
+14 § Vid handläggningen av ett överklagat beslut om vitesföreläggande
+tillämpas 9 och 10 §§.
+
+15 § Till en förhandling ska Nämnden mot diskriminering kalla den som har
+överklagat beslutet.
+"""
+    sections = LawChunker.chunk_statute_text(
+        statute_id="2008:567", statute_short="DL", full_text=text, default_chapter="4"
+    )
+    assert [(s.chapter, s.section_number) for s in sections] == [("4", "14"), ("4", "15")]
