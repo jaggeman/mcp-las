@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import sys
 import re
 from pathlib import Path
@@ -18,6 +18,7 @@ LAWS_TO_CHECK = [
     ('1991:1047', 'Sjuklönelagen', 20),
     ('1995:584', 'Föräldraledighetslagen', 20),
     ('1974:981', 'Studieledighetslagen', 10),
+    ('1997:1293', 'Näringsverksamhetsledighetslagen', 10),
 ]
 
 CRITICAL_SECTIONS = [
