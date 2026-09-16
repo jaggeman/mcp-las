@@ -1,6 +1,34 @@
 from typing import Optional, Dict, Any, List
 from src.db.firebase_client import db_client
 
+SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi"}
+
+
+def get_legal_coverage() -> Dict[str, Any]:
+    """Beskriver faktisk land- och områdestäckning för MCP-servern."""
+    return {
+        "jurisdictions": {
+            "SE": {
+                "country": "Sverige", "language": "sv", "statutes": True,
+                "case_law": "Arbetsdomstolen", "collective_agreements": True,
+                "calculators": ["notice_period", "vacation", "turnorder", "travel"],
+                "hr_templates": True,
+            },
+            "DK": {
+                "country": "Danmark", "language": "da", "statutes": True,
+                "case_law": False, "collective_agreements": False,
+                "calculators": [], "hr_templates": False,
+            },
+            "FI": {
+                "country": "Finland", "language": "fi", "statutes": True,
+                "case_law": False, "collective_agreements": False,
+                "calculators": [], "hr_templates": False,
+            },
+        },
+        "selection_rule": "Ange jurisdiction=SE, DK eller FI i lookup_statute och search_labor_law.",
+        "sources": {"SE": "Riksdagen", "DK": "Retsinformation", "FI": "Finlex"},
+    }
+
 def _determine_certainty(text: str, source_type: str = "statute") -> Dict[str, Any]:
     """
     Bedömer den juridiska säkerhetsnivån baserat på källtyp och förekomst av tolkningsrekvisit.
@@ -58,17 +86,31 @@ def _determine_certainty(text: str, source_type: str = "statute") -> Dict[str, A
         "is_interpretive": False
     }
 
-def lookup_statute(law: str, section: str, chapter: Optional[str] = None) -> Dict[str, Any]:
+def _normalize_jurisdiction(jurisdiction: str) -> str:
+    value = (jurisdiction or "SE").strip().upper()
+    if value not in SUPPORTED_JURISDICTIONS:
+        raise ValueError(f"jurisdiction must be one of: {', '.join(SUPPORTED_JURISDICTIONS)}")
+    return value
+
+
+def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE") -> Dict[str, Any]:
     """
-    Exact retrieval of a specific Swedish legal paragraph (e.g. law='LAS', section='7').
-    Returns the active statutory text, metadata, certainty score, and cross-references.
+    Exact retrieval of a legal paragraph. ``jurisdiction`` is required conceptually
+    and must be SE (Sweden), DK (Denmark), or FI (Finland); it defaults to SE for
+    backwards compatibility. Returns source and language metadata as well.
     """
-    result = db_client.get_statute_section(law=law, section=section, chapter=chapter)
+    try:
+        jurisdiction = _normalize_jurisdiction(jurisdiction)
+    except ValueError as exc:
+        return {"found": False, "error": str(exc), "certainty": {"score_pct": 0, "level": "INVALID_JURISDICTION"}}
+    result = db_client.get_statute_section(law=law, section=section, chapter=chapter, jurisdiction=jurisdiction)
     if not result:
         return {
             "found": False,
             "message": f"Kunde inte hitta {law} {chapter + ' kap. ' if chapter else ''}{section} § i databasen.",
             "data": None,
+            "jurisdiction": jurisdiction,
+            "language": SUPPORTED_JURISDICTIONS[jurisdiction],
             "certainty": {
                 "score_pct": 0,
                 "badge": "🔴 Ej funnen i databasen",
@@ -88,31 +130,51 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None) -> Dic
         "title": result.get("section_title"),
         "content": content,
         "keywords": result.get("keywords"),
+        "jurisdiction": result.get("jurisdiction", jurisdiction),
+        "language": result.get("language", SUPPORTED_JURISDICTIONS[jurisdiction]),
+        "source": result.get("source") or result.get("source_url"),
         "certainty": certainty
     }
 
-def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5) -> List[Dict[str, Any]]:
+def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5, jurisdiction: str = "SE", language: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Hybrid semantic + lexical search across Swedish labor law provisions with relevance & certainty scoring.
+    Hybrid search across labor-law provisions in one jurisdiction. Use SE, DK, or
+    FI explicitly; the legacy ``filters`` argument remains supported.
     """
-    results = db_client.search_statute_sections(query=query, filters=filters, limit=limit)
+    legacy_jurisdiction = (filters or {}).get("jurisdiction") or (filters or {}).get("country")
+    # Preserve clients using the original filters={"jurisdiction": "DK"}
+    # shape. An explicitly supplied non-SE value always takes precedence.
+    requested_jurisdiction = legacy_jurisdiction if jurisdiction == "SE" and legacy_jurisdiction else jurisdiction
+    try:
+        jurisdiction = _normalize_jurisdiction(requested_jurisdiction)
+    except ValueError as exc:
+        return [{"error": str(exc), "status": "invalid_jurisdiction"}]
+    effective_filters = dict(filters or {})
+    effective_filters["jurisdiction"] = jurisdiction
+    if language:
+        effective_filters["language"] = language
+    results = db_client.search_statute_sections(query=query, filters=effective_filters, limit=limit)
     for r in results:
         r["certainty"] = _determine_certainty(r.get("content", ""), source_type="statute")
     return results
 
-def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 5) -> List[Dict[str, Any]]:
+def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 5, jurisdiction: str = "SE") -> List[Dict[str, Any]]:
     """
     Searches Arbetsdomstolen (AD) case law precedents. Returns matching cases, citations, and legal certainty score.
     """
+    if jurisdiction.upper() != "SE":
+        return [{"error": "search_case_law stöder för närvarande endast jurisdiction=SE (Arbetsdomstolen).", "status": "unsupported_jurisdiction", "jurisdiction": jurisdiction.upper()}]
     results = db_client.search_precedents(query=query, statute_ref=statute_ref, year_from=year_from, limit=limit)
     for r in results:
         r["certainty"] = _determine_certainty(r.get("summary", ""), source_type="precedent")
     return results
 
-def get_cba_exception(statute: str, section: str, agreement_name: str) -> Dict[str, Any]:
+def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdiction: str = "SE") -> Dict[str, Any]:
     """
     Checks if a collective bargaining agreement deviates from statutory semi-discretionary rules.
     """
+    if jurisdiction.upper() != "SE":
+        return {"has_exception": False, "status": "unsupported_jurisdiction", "jurisdiction": jurisdiction.upper(), "message": "Kollektivavtalsregler är ännu bara indexerade för Sverige (jurisdiction=SE)."}
     result = db_client.get_cba_exception(statute=statute, section=section, agreement_name=agreement_name)
     if not result:
         return {
@@ -136,10 +198,12 @@ def get_cba_exception(statute: str, section: str, agreement_name: str) -> Dict[s
         "certainty": _determine_certainty(result.get("rule_content", ""), source_type="cba")
     }
 
-def compare_statute_vs_cba(topic: str, agreement_name: str) -> Dict[str, Any]:
+def compare_statute_vs_cba(topic: str, agreement_name: str, jurisdiction: str = "SE") -> Dict[str, Any]:
     """
     Pulls both statutory baseline (e.g. LAS) and matching collective agreement rules to highlight discrepancies.
     """
+    if jurisdiction.upper() != "SE":
+        return {"status": "unsupported_jurisdiction", "jurisdiction": jurisdiction.upper(), "message": "Lag kontra kollektivavtal stöds ännu bara för Sverige (jurisdiction=SE)."}
     return db_client.compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
 
 def calculate_vacation_pay(

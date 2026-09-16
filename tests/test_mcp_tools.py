@@ -4,7 +4,8 @@ from src.mcp_tools.tools import (
     search_labor_law,
     search_case_law,
     get_cba_exception,
-    compare_statute_vs_cba
+    compare_statute_vs_cba,
+    get_legal_coverage,
 )
 from src.db.firebase_client import db_client
 
@@ -49,6 +50,17 @@ def test_compare_statute_vs_cba():
     res = compare_statute_vs_cba(topic="Uppsägningstid", agreement_name="Teknikavtalet")
     assert res["agreement_name"] == "Teknikavtalet"
     assert len(res["cba_rules"]) > 0
+
+
+def test_legal_coverage_makes_country_boundaries_explicit():
+    coverage = get_legal_coverage()
+    assert set(coverage["jurisdictions"]) == {"SE", "DK", "FI"}
+    assert coverage["jurisdictions"]["DK"]["collective_agreements"] is False
+
+
+def test_country_specific_tools_reject_unsupported_jurisdiction():
+    res = get_cba_exception("Funktionærloven", "1", "Dansk aftale", jurisdiction="DK")
+    assert res["status"] == "unsupported_jurisdiction"
 
 def test_calculate_vacation_pay():
     from src.mcp_tools.tools import calculate_vacation_pay

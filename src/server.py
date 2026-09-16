@@ -18,6 +18,7 @@ from src.config import settings
 from src.db.firebase_client import db_client
 from src.db.auth_service import auth_service
 from src.mcp_tools.tools import (
+    get_legal_coverage as _get_legal_coverage,
     lookup_statute as _lookup_statute,
     search_labor_law as _search_labor_law,
     search_case_law as _search_case_law,
@@ -190,6 +191,7 @@ async def handle_key_request(request):
                             status_code=500)
 
 DIRECT_TOOLS_MAP = {
+    "get_legal_coverage": _get_legal_coverage,
     "lookup_statute": _lookup_statute,
     "search_labor_law": _search_labor_law,
     "search_case_law": _search_case_law,
@@ -341,52 +343,62 @@ def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]
     return None
 
 @mcp.tool()
-def lookup_statute(law: str, section: str, chapter: Optional[str] = None, api_key: Optional[str] = None) -> Dict[str, Any]:
+def get_legal_coverage(api_key: Optional[str] = None) -> Dict[str, Any]:
+    """Visar land, språk, officiell källa och vilka specialområden som stöds."""
+    rl_err = _check_rate_limit(api_key)
+    if rl_err:
+        return rl_err
+    return _get_legal_coverage()
+
+@mcp.tool()
+def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
+    """Slå upp en paragraf i ett land: SE (Sverige), DK (Danmark) eller FI (Finland)."""
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return rl_err
     t0 = time.time()
-    res = _lookup_statute(law=law, section=section, chapter=chapter)
+    res = _lookup_statute(law=law, section=section, chapter=chapter, jurisdiction=jurisdiction)
     auth_service.log_access(api_key or "anon", None, "lookup_statute", {"law": law, "section": section}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
-def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+def search_labor_law(query: str, jurisdiction: str = "SE", language: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Sök arbetsrätt i ett land: SE, DK eller FI. Land väljs explicit."""
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return [rl_err]
     t0 = time.time()
-    res = _search_labor_law(query=query, filters=filters, limit=limit)
+    res = _search_labor_law(query=query, jurisdiction=jurisdiction, language=language, filters=filters, limit=limit)
     auth_service.log_access(api_key or "anon", None, "search_labor_law", {"query": query}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
-def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10, jurisdiction: str = "SE", api_key: Optional[str] = None) -> List[Dict[str, Any]]:
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return [rl_err]
     t0 = time.time()
-    res = _search_case_law(query=query, statute_ref=statute_ref, year_from=year_from, limit=limit)
+    res = _search_case_law(query=query, statute_ref=statute_ref, year_from=year_from, limit=limit, jurisdiction=jurisdiction)
     auth_service.log_access(api_key or "anon", None, "search_case_law", {"query": query, "statute_ref": statute_ref}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
-def get_cba_exception(statute: str, section: str, agreement_name: str, api_key: Optional[str] = None) -> Dict[str, Any]:
+def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return rl_err
     t0 = time.time()
-    res = _get_cba_exception(statute=statute, section=section, agreement_name=agreement_name)
+    res = _get_cba_exception(statute=statute, section=section, agreement_name=agreement_name, jurisdiction=jurisdiction)
     auth_service.log_access(api_key or "anon", None, "get_cba_exception", {"statute": statute, "section": section, "agreement": agreement_name}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
-def compare_statute_vs_cba(topic: str, agreement_name: str, api_key: Optional[str] = None) -> Dict[str, Any]:
+def compare_statute_vs_cba(topic: str, agreement_name: str, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return rl_err
     t0 = time.time()
-    res = _compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
+    res = _compare_statute_vs_cba(topic=topic, agreement_name=agreement_name, jurisdiction=jurisdiction)
     auth_service.log_access(api_key or "anon", None, "compare_statute_vs_cba", {"topic": topic, "agreement": agreement_name}, (time.time() - t0)*1000)
     return res
 

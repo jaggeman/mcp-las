@@ -85,7 +85,7 @@ curl.exe -s https://las.novro.se/health
 ```
 
 ```json
-{"status":"ok","build_sha":"98b9878...","build_ref":"main","database_connected":true,"tool_count":20}
+{"status":"ok","build_sha":"98b9878...","build_ref":"main","database_connected":true,"tool_count":21}
 ```
 
 `build_sha` ska vara samma som `git rev-parse origin/main`. Är den äldre, eller

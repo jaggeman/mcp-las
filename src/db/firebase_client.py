@@ -142,16 +142,18 @@ class FirebaseLaborLawDB:
             self._cached_precedents = items
         return items
 
-    def get_statute_section(self, law: str, section: str, chapter: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def get_statute_section(self, law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE") -> Optional[Dict[str, Any]]:
         law_clean = law.strip().upper()
         sec_clean = section.strip().lower().replace("§", "").strip()
+        jurisdiction_clean = jurisdiction.strip().upper()
 
         items = self._get_statute_items()
 
         for s in items:
             short = s.get("statute_short", "").upper()
             sfs = s.get("statute_id", "")
-            if (law_clean in short or law_clean in sfs) and s.get("section_number", "").lower() == sec_clean:
+            stored_jurisdiction = str(s.get("jurisdiction", "SE")).upper()
+            if (law_clean in short or law_clean in sfs) and stored_jurisdiction == jurisdiction_clean and s.get("section_number", "").lower() == sec_clean:
                 if chapter:
                     if str(s.get("chapter")) == str(chapter):
                         return s
