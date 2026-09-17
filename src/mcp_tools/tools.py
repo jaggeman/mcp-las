@@ -899,6 +899,23 @@ from openpyxl.utils import get_column_letter
 # In-memory store för genererade Excel-filer så att de kan laddas ner via HTTP
 GENERATED_EXCEL_FILES: Dict[str, Dict[str, Any]] = {}
 
+_FORMULA_TRIGGER_CHARS = ("=", "+", "-", "@")
+
+
+def _excel_safe_value(value: Any) -> Any:
+    """Neutraliserar CSV/Excel-formelinjektion (CWE-1236) i fritextfält.
+
+    Excel tolkar ett cellvärde som en formel om det börjar med =, +, - eller
+    @, oavsett om det kommer från en verklig formel eller ett namn/titel/
+    enhetsfält i en HR-integration. Ett inledande tecken av det slaget
+    neutraliseras med en apostrof-prefix så att Excel visar det som text —
+    innehållet syns fortfarande, det exekveras bara inte.
+    """
+    text = str(value)
+    if text.startswith(_FORMULA_TRIGGER_CHARS):
+        return "'" + text
+    return value
+
 
 def generate_turordningslista_excel(
     company_name: str = "Företaget AB",
@@ -913,6 +930,9 @@ def generate_turordningslista_excel(
     Inkluderar automatisk ID-generering, beräkning av anställningsdagar med Excel-formler (=DATEDIF),
     sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § vs kollektivavtal).
     """
+    company_name = str(_excel_safe_value(company_name))
+    cba_name = str(_excel_safe_value(cba_name))
+
     target_date = datetime.date.today()
     if as_of_date:
         try:
@@ -1083,10 +1103,10 @@ def generate_turordningslista_excel(
         ws1.row_dimensions[row_idx].height = 22
 
         c1 = ws1.cell(row=row_idx, column=1, value=emp["id"])
-        c2 = ws1.cell(row=row_idx, column=2, value=emp["name"])
-        c3 = ws1.cell(row=row_idx, column=3, value=emp["title"])
-        c4 = ws1.cell(row=row_idx, column=4, value=emp["driftsenhet"])
-        c5 = ws1.cell(row=row_idx, column=5, value=emp["avtalsomrade"])
+        c2 = ws1.cell(row=row_idx, column=2, value=_excel_safe_value(emp["name"]))
+        c3 = ws1.cell(row=row_idx, column=3, value=_excel_safe_value(emp["title"]))
+        c4 = ws1.cell(row=row_idx, column=4, value=_excel_safe_value(emp["driftsenhet"]))
+        c5 = ws1.cell(row=row_idx, column=5, value=_excel_safe_value(emp["avtalsomrade"]))
         c6 = ws1.cell(row=row_idx, column=6, value=emp["start_date"])
 
         # Excel Formel för anställningsdagar: =DATEDIF(F5, TODAY(), "d")
