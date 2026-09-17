@@ -5,22 +5,36 @@ SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi"}
 
 
 def get_legal_coverage() -> Dict[str, Any]:
-    """Beskriver faktisk land- och områdestäckning för MCP-servern."""
+    """Beskriver faktisk land- och områdestäckning för MCP-servern.
+
+    "statutes" och "section_count" läses ur databasen, inte ur koden. Att
+    skriva en fetcher för ett land (Retsinformation, Finlex) bevisar inte att
+    en ingestion någonsin körts mot paygap-prod — de har sedan länge egna
+    parsers utan att en enda paragraf faktiskt indexerats. Ett hårdkodat
+    ``True`` här skulle vara precis den sortens påstående #18 ("17
+    kollektivavtal") och #32 (den tysta ingestionen) redan visat är farligt:
+    det ser ut som täckning tills någon frågar `lookup_statute` och får
+    "ej funnen".
+    """
+    counts = db_client.count_sections_by_jurisdiction()
     return {
         "jurisdictions": {
             "SE": {
-                "country": "Sverige", "language": "sv", "statutes": True,
+                "country": "Sverige", "language": "sv",
+                "statutes": counts.get("SE", 0) > 0, "section_count": counts.get("SE", 0),
                 "case_law": "Arbetsdomstolen", "collective_agreements": True,
                 "calculators": ["notice_period", "vacation", "turnorder", "travel"],
                 "hr_templates": True,
             },
             "DK": {
-                "country": "Danmark", "language": "da", "statutes": True,
+                "country": "Danmark", "language": "da",
+                "statutes": counts.get("DK", 0) > 0, "section_count": counts.get("DK", 0),
                 "case_law": False, "collective_agreements": False,
                 "calculators": [], "hr_templates": False,
             },
             "FI": {
-                "country": "Finland", "language": "fi", "statutes": True,
+                "country": "Finland", "language": "fi",
+                "statutes": counts.get("FI", 0) > 0, "section_count": counts.get("FI", 0),
                 "case_law": False, "collective_agreements": False,
                 "calculators": [], "hr_templates": False,
             },
