@@ -142,6 +142,24 @@ class FirebaseLaborLawDB:
             self._cached_precedents = items
         return items
 
+    def count_sections_by_jurisdiction(self) -> Dict[str, int]:
+        """Hur många ingesterade paragrafer finns per land, faktiskt.
+
+        Anvands av get_legal_coverage sa att verktyget beskriver vad
+        databasen innehaller istallet for vad koden i teorin stodjer -
+        "SE" och "DK" ar bada kodade sedan lange, men bara SE har nagonsin
+        fatt en fullstandig ingestion kord mot paygap-prod.
+
+        Poster utan ett lagrat jurisdiction-falt rakans som SE, samma
+        standardval som get_statute_section redan anvander for aldre
+        poster som ingesterades innan faltet fanns.
+        """
+        counts: Dict[str, int] = {}
+        for s in self._get_statute_items():
+            j = str(s.get("jurisdiction") or "SE").upper()
+            counts[j] = counts.get(j, 0) + 1
+        return counts
+
     def get_statute_section(self, law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE") -> Optional[Dict[str, Any]]:
         law_clean = law.strip().upper()
         sec_clean = section.strip().lower().replace("§", "").strip()
