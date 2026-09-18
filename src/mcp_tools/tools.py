@@ -212,13 +212,29 @@ def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdict
         "certainty": _determine_certainty(result.get("rule_content", ""), source_type="cba")
     }
 
+_INTERNAL_ONLY_FIELDS = ("embedding", "id")
+
+
+def _strip_internal_fields(d: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Tar bort interna lagringsfält (embedding-vektorn, Firestore-doc-id) som
+    en anropare inte har någon användning för. En riktig embeddingprovider
+    (OpenAI/Gemini) ger en vektor på över tusen flyttal per paragraf/regel —
+    utan detta blir compare_statute_vs_cba-svaret nästan enbart embeddings."""
+    if not d:
+        return d
+    return {k: v for k, v in d.items() if k not in _INTERNAL_ONLY_FIELDS}
+
+
 def compare_statute_vs_cba(topic: str, agreement_name: str, jurisdiction: str = "SE") -> Dict[str, Any]:
     """
     Pulls both statutory baseline (e.g. LAS) and matching collective agreement rules to highlight discrepancies.
     """
     if jurisdiction.upper() != "SE":
         return {"status": "unsupported_jurisdiction", "jurisdiction": jurisdiction.upper(), "message": "Lag kontra kollektivavtal stöds ännu bara för Sverige (jurisdiction=SE)."}
-    return db_client.compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
+    result = db_client.compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
+    result["cba_rules"] = [_strip_internal_fields(r) for r in result.get("cba_rules", [])]
+    result["statute_baseline"] = _strip_internal_fields(result.get("statute_baseline"))
+    return result
 
 def calculate_vacation_pay(
     monthly_salary: float,
