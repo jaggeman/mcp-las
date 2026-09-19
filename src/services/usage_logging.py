@@ -83,6 +83,10 @@ def tracked_tool(fn):
             result = fn(*args, **kwargs)
             status = outcome(result)
             return result
+        except Exception:
+            # FastMCP logs tool exceptions as well as returning them. Suppress
+            # the original chain so neither path receives raw user/source data.
+            raise RuntimeError('Tool execution failed') from None
         finally:
             safe_emit(tool=fn.__name__, transport='mcp', jurisdiction=jurisdiction,
                  status=status, duration_ms=(time.perf_counter() - started) * 1000)

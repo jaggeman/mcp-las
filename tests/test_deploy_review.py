@@ -29,7 +29,7 @@ def test_empty_law_is_rejected(monkeypatch):
 
 def test_failed_refresh_never_pretends_database_is_empty(monkeypatch):
     monkeypatch.setattr(db_client, '_cached_statute_sections', [{'active': True}])
-    monkeypatch.setattr(db_client, '_statute_cache_at', 0, raising=False)
+    monkeypatch.setattr(db_client, '_statute_cache_at', time.monotonic() - 61, raising=False)
     def fail(): raise RuntimeError('PRIVATE')
     monkeypatch.setattr(db_client, 'db', SimpleNamespace(collection=lambda _: SimpleNamespace(stream=fail)))
     with pytest.raises(RuntimeError, match='Statute database unavailable'):
@@ -106,3 +106,17 @@ async def test_rest_rejects_non_object_json(monkeypatch):
     async def body(): return ['bad']
     response = await server.execute_tool_direct_rest(SimpleNamespace(method='POST', headers={}, path_params={'tool_name':'get_legal_coverage'}, json=body))
     assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_mcp_errors_never_expose_details(monkeypatch, caplog):
+    from fastmcp import Client
+    monkeypatch.setattr(server, '_check_rate_limit', lambda _: None)
+    monkeypatch.setattr(usage_logging, 'emit', lambda **kw: None)
+    def fail(): raise RuntimeError('SYNTHETIC_PRIVATE_DETAIL')
+    monkeypatch.setattr(server, '_get_legal_coverage', fail)
+    async with Client(server.mcp) as client:
+        result = await client.call_tool('get_legal_coverage', {}, raise_on_error=False)
+    assert result.is_error
+    assert 'SYNTHETIC_PRIVATE_DETAIL' not in str(result.content)
+    assert 'SYNTHETIC_PRIVATE_DETAIL' not in caplog.text

@@ -48,6 +48,7 @@ from src.mcp_tools.tools import (
 
 mcp = FastMCP(
     name=settings.MCP_SERVER_NAME,
+    mask_error_details=True,
     instructions=(
         "Arbetsrätts-MCP för Sverige, Danmark, Finland, Norge och Tyskland. "
         "Välj jurisdiction (SE, DK, FI, NO, DE) för laguppslag och sökning. "
