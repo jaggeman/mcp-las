@@ -1,5 +1,7 @@
 from typing import Optional, Dict, Any, List
 from src.db.firebase_client import db_client
+from src.scrapers.european_labor_fetcher import NORWEGIAN_LAWS, GERMAN_LAWS
+from src.scrapers.boe_fetcher import SPANISH_LAWS
 
 SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi", "NO": "nb", "DE": "de", "ES": "es"}
 
@@ -21,7 +23,7 @@ def get_legal_coverage() -> Dict[str, Any]:
         "jurisdictions": {
             "ES": {
                 "country": "Spanien", "language": "es", "statutes": counts.get("ES", 0) > 0,
-                "section_count": counts.get("ES", 0), "catalog_statutes": 5,
+                "section_count": counts.get("ES", 0), "catalog_statutes": len(SPANISH_LAWS),
                 "case_law": False, "collective_agreements": False,
                 "calculators": [], "hr_templates": False,
             },
@@ -29,13 +31,13 @@ def get_legal_coverage() -> Dict[str, Any]:
                 "country": "Norge", "language": "nb", "statutes": counts.get("NO", 0) > 0,
                 "section_count": counts.get("NO", 0),
                 "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False, "catalog_statutes": 6,
+                "calculators": [], "hr_templates": False, "catalog_statutes": len(NORWEGIAN_LAWS),
             },
             "DE": {
                 "country": "Tyskland", "language": "de", "statutes": counts.get("DE", 0) > 0,
                 "section_count": counts.get("DE", 0),
                 "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False, "catalog_statutes": 8,
+                "calculators": [], "hr_templates": False, "catalog_statutes": len(GERMAN_LAWS),
             },
             "SE": {
                 "country": "Sverige", "language": "sv",

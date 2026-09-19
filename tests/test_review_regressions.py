@@ -93,7 +93,8 @@ def test_fetch_failure_continues_with_other_german_laws(monkeypatch):
         return archive.getvalue()
     monkeypatch.setattr(EuropeanLaborFetcher,'_download',download)
     results=list(EuropeanLaborFetcher.iter_documents('DE'))
-    assert len(results)==8 and isinstance(results[0][1],Exception)
+    from src.scrapers.european_labor_fetcher import GERMAN_LAWS
+    assert len(results)==len(GERMAN_LAWS) and isinstance(results[0][1],Exception)
     assert len(results[-1][1])==1
 
 

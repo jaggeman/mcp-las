@@ -19,6 +19,7 @@ GERMAN_LAWS = (
     ('kschg', 'KSchG'), ('burlg', 'BUrlG'), ('arbzg', 'ArbZG'),
     ('tzbfg', 'TzBfG'), ('agg', 'AGG'), ('arbschg', 'ArbSchG'),
     ('betrvg', 'BetrVG'), ('entgfg', 'EntgFG'),
+    ('muschg_2018', 'MuSchG'), ('beeg', 'BEEG'), ('nachwg', 'NachwG'),
 )
 NORWEGIAN_LAWS = (
     ('2005-06-17-62', 'Arbeidsmiljøloven'),
@@ -27,6 +28,9 @@ NORWEGIAN_LAWS = (
     ('2012-01-27-9', 'Arbeidstvistloven'),
     ('1993-06-04-58', 'Allmenngjøringsloven'),
     ('2017-06-16-67', 'Statsansatteloven'),
+    ('1988-05-06-22', 'Permitteringslønnsloven'),
+    ('1973-12-14-61', 'Lønnsgarantiloven'),
+    ('1989-06-16-65', 'Yrkesskadeforsikringsloven'),
 )
 
 

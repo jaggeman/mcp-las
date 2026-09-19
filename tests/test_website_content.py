@@ -39,14 +39,17 @@ def test_website_documents_automated_source_sync_and_danish_roadmap():
     content = html_path.read_text(encoding="utf-8")
     assert "Automatisk källsynkronisering" in content
     assert "Cloud Run Job" in content
-    assert "Danska lagar" in content or "Nordiska lagar" in content
+    assert "Europeiska lagar" in content
     assert "DA-001" in content
 
 
-def test_website_presents_nordic_labor_law_for_sweden_denmark_finland():
+def test_website_presents_european_labor_law():
     html_path = Path("public/index.html")
     content = html_path.read_text(encoding="utf-8")
-    assert "Nordisk Arbetsrätt" in content
+    assert "Europeisk arbetsrätt" in content
+    assert "European labour law" in content
+    assert "nordisk" not in content.lower()
+    assert "nordic" not in content.lower()
     assert "retsinformation.dk" in content
     assert "opendata.finlex.fi" in content
     assert "Funktionærloven" in content

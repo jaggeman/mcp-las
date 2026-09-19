@@ -73,9 +73,9 @@ Docker-kontexten exkluderar miljöfiler och vanliga nyckel-/credential-filer.
 
 ## Norge, Tyskland och Spanien – laguppslag och sökning
 `lookup_statute` och `search_labor_law` stöder `jurisdiction="NO"` respektive `"DE"`, samt `"ES"` för Spanien.
-Norge: 6 lagar (Arbeidsmiljøloven, Ferieloven, Likestillings- og diskrimineringsloven,
-Arbeidstvistloven, Allmenngjøringsloven och Statsansatteloven). Tyskland: 8 lagar
-(KSchG, BUrlG, ArbZG, TzBfG, AGG, ArbSchG, BetrVG och EntgFG).
+Norge: 9 lagar (Arbeidsmiljøloven, Ferieloven, Likestillings- og diskrimineringsloven,
+Arbeidstvistloven, Allmenngjøringsloven, Statsansatteloven, Permitteringslønnsloven, Lønnsgarantiloven och Yrkesskadeforsikringsloven). Tyskland: 11 lagar
+(KSchG, BUrlG, ArbZG, TzBfG, AGG, ArbSchG, BetrVG, EntgFG, MuSchG, BEEG och NachwG).
 
 Synkronisera med `.venv\Scripts\python.exe scripts/sync_sources.py --norwegian --german --spanish`.
 Kommandot skriver till konfigurerad Firestore och kräver skrivbehörighet.
@@ -83,13 +83,14 @@ Källor: https://api.lovdata.no/om-api-tjenesten/ (Stiftelsen Lovdata, NLOD 2.0)
 och https://www.gesetze-im-internet.de/ (XML-paket per lag).
 Norska paragrafnummer behålls, t.ex. `section="15-7"`; tyska t.ex. `section="1a"`.
 Källspråk är `nb` respektive `de`. Sök på källspråket; översättning garanteras inte.
-Prod synkroniserades 2026-09-19: 385 norska och 330 tyska paragrafer,
-14 lagar totalt, inga rapporterade synkfel. Antalen kan ändras vid senare synk.
+Prod synkroniserades 2026-09-19: 425 norska och 409 tyska paragrafer,
+20 lagar totalt, inga rapporterade synkfel. Antalen kan ändras vid senare synk.
 Katalogen är avgränsad, inte fullständig nationell arbetsrätt. Norska traktatbilagor
 med artikelnummer och tyska bilagor ingår inte i paragrafindexet.
-Spanien: 5 BOE-lagar – Estatuto de los Trabajadores, Prevención de Riesgos Laborales,
-Libertad Sindical, Igualdad efectiva de mujeres y hombres samt Trabajo a distancia.
-265 artiklar importerades 2026-09-19. Källspråk `es`, källa https://www.boe.es/datosabiertos/.
+Spanien: 7 BOE-lagar – Estatuto de los Trabajadores, Prevención de Riesgos Laborales,
+Libertad Sindical, Igualdad efectiva de mujeres y hombres, Trabajo a distancia,
+Ley de Empleo samt Inspección de Trabajo y Seguridad Social.
+370 artiklar importerades 2026-09-19. Källspråk `es`, källa https://www.boe.es/datosabiertos/.
 Ange BOE-ID (t.ex. BOE-A-2015-11430), `jurisdiction="ES"` och artikelnummer (t.ex. `38`).
 Senaste publicerade version som trätt i kraft väljs per numrerad artikel. Framtida
 versioner, upphävda artiklar, bilagor och kompletterande/övergångsbestämmelser ingår inte.

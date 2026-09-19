@@ -15,6 +15,8 @@ SPANISH_LAWS = (
     ('BOE-A-1985-16660', 'Libertad Sindical'),
     ('BOE-A-2007-6115', 'Igualdad efectiva de mujeres y hombres'),
     ('BOE-A-2021-11472', 'Trabajo a distancia'),
+    ('BOE-A-2023-5365', 'Ley de Empleo'),
+    ('BOE-A-2015-8168', 'Inspección de Trabajo y Seguridad Social'),
 )
 
 
