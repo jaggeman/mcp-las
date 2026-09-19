@@ -20,12 +20,14 @@ def get_legal_coverage() -> Dict[str, Any]:
     return {
         "jurisdictions": {
             "NO": {
-                "country": "Norge", "language": "nb", "statutes": True,
+                "country": "Norge", "language": "nb", "statutes": counts.get("NO", 0) > 0,
+                "section_count": counts.get("NO", 0),
                 "case_law": False, "collective_agreements": False,
                 "calculators": [], "hr_templates": False, "catalog_statutes": 6,
             },
             "DE": {
-                "country": "Tyskland", "language": "de", "statutes": True,
+                "country": "Tyskland", "language": "de", "statutes": counts.get("DE", 0) > 0,
+                "section_count": counts.get("DE", 0),
                 "case_law": False, "collective_agreements": False,
                 "calculators": [], "hr_templates": False, "catalog_statutes": 8,
             },

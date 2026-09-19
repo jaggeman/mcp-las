@@ -19,7 +19,11 @@ personuppgifter, API-nycklar, IP-adresser eller klientidentifierare loggas här.
 Varje anrop som når verktygswrappern loggas en gång, även vid nekad åtkomst/fel.
 MCP-schemafel före wrappern räknas inte som verktygsanrop. HTTP-fel loggas separat
 som `las_http_rejected` och ska inte adderas till verktygsantalet.
-Loggar skrivs som JSON till stdout (Cloud Logging) och till Firestore `access_logs`.
+Loggar skrivs som JSON till stdout (Cloud Logging); Firestore `access_logs` skrivs
+via en begränsad bakgrundskö (1000 poster) utan att hålla kvar verktygssvaret.
+Kön är best effort: full kö, instansavslut eller fryst bakgrunds-CPU kan ge
+fördröjda/saknade Firestore-poster. Cloud Logging är den primära loggkällan.
+Svarstiden avser verktygswrappern, inte transporttid eller bakgrundsskrivning.
 Firestore-fel påverkar inte verktygssvaret; stdout finns kvar men rapporten kan då
 underskatta användningen. Händelser samlas först efter deploy, ingen historik återskapas.
 Nya Firestore-loggar får `expires_at` efter 30 dagar. Cloud Logging har separat retention.
@@ -29,7 +33,7 @@ Högst 10000 poster sammanställs; `truncated=true` betyder ofullständig rappor
 Äldre loggformat exkluderas. Antal anrop är inte antal unika användare eller AI-tokenkostnad.
 Cloud Logs Explorer-filter: `resource.type="cloud_run_revision" resource.labels.service_name="mcp-las" jsonPayload.event="las_tool_usage"`.
 Firestore TTL på `expires_at` för `access_logs` och `mcp_rate_limits` har
-beställts i paygap-prod 2026-09-19. Kontrollera att status är ACTIVE före deploy.
+aktiverats i paygap-prod 2026-09-19 och verifierats ACTIVE.
 TTL är asynkron och påverkar inte kvoternas giltighetskontroll.
 Äldre loggar utan utgångstid kräver separat granskning/gallring; de raderas inte av koden.
 CI använder Workload Identity Federation, inte `GCP_SA_KEY`.
@@ -38,7 +42,7 @@ GitHub OIDC konfigurerades 2026-09-19: pool `github-mcp-las`, provider
 1359199704, ägar-ID 209946709, main, push och `.github/workflows/ci.yml`.
 GitHub-variablerna `GCP_WORKLOAD_IDENTITY_PROVIDER` och `GCP_DEPLOY_SERVICE_ACCOUNT`
 är satta. Befintliga `github-deployer@paygap-prod.iam.gserviceaccount.com`
-återanvänds utan utökade projektroller. Första OIDC-körningen återstår efter push.
+återanvänds utan utökade projektroller. OIDC verifierades vid deploy av ddec5ca.
 Den gamla nyckeln har inte återkallats: `sync-sources.yml` använder fortfarande
 `GCP_SA_KEY`. Migrera den separat och verifiera båda flöden innan återkallning.
 Excel-länkar är hemliga bearer-token med 256 bitars slump och högst 10 minuters
@@ -65,7 +69,9 @@ Källspråk är `nb` respektive `de`. Sök på källspråket; översättning gar
 Katalogen är avgränsad, inte fullständig nationell arbetsrätt. Norska traktatbilagor
 med artikelnummer och tyska bilagor ingår inte i paragrafindexet.
 Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast för Sverige.
-`get_legal_coverage` beskriver adapterstöd, inte verifierad produktionsinläsning.
+`get_legal_coverage` anger faktisk paragrafmängd och tillgänglighet per land,
+utifrån databasen. Källfel rapporteras som driftfel, inte som en tom lagdatabas.
+Cacheuppdateringar samordnas inom varje process för att undvika dubbla inläsningar.
 Efter extern synk uppdateras serverns lagcache inom 60 sekunder utan omstart.
 Synken kontrollerar alla skrivningar, fortsätter med nästa lag vid källfel och markerar
 borttagna paragrafer som inaktiva (återställningsbara), inte som gällande sökträffar.

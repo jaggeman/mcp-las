@@ -3,6 +3,7 @@ import sys
 import time
 import logging
 import inspect
+import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -193,7 +194,7 @@ async def handle_key_request(request):
     except Exception:
         # Samma skal som i /api/tools: undantagstexten kan bara projekt-id och
         # sokvagar, och sager anroparen ingenting. Loggas, returneras inte.
-        logging.exception("Fel vid mottagning av nyckelansokan")
+        logging.error("Fel vid mottagning av nyckelansokan")
         return JSONResponse({"success": False, "message": "Kunde inte ta emot ansökan just nu."},
                             status_code=500)
 
@@ -234,7 +235,7 @@ async def list_available_tools_rest(request):
             "error": "API-nyckel krävs. Ansök om en API-nyckel på https://las.novro.se/#key-request."
         }, status_code=401, headers={"Access-Control-Allow-Origin": "*"})
 
-    key_info = auth_service.validate_key(api_key)
+    key_info = await asyncio.to_thread(auth_service.validate_key, api_key)
     if not key_info:
         return JSONResponse({
             "success": False,
@@ -272,6 +273,9 @@ async def execute_tool_direct_rest(request):
         except Exception:
             pass
 
+        if not isinstance(body, dict):
+            return JSONResponse({"error": "JSON måste vara ett objekt."}, status_code=400)
+
         api_key = request.headers.get("X-API-Key")
         if not api_key:
             return JSONResponse({
@@ -279,14 +283,14 @@ async def execute_tool_direct_rest(request):
                 "error": "API-nyckel krävs för att anropa verktyg. Ansök om en personlig nyckel på https://las.novro.se/#key-request eller skicka med 'X-API-Key' i HTTP-headern."
             }, status_code=401, headers={"Access-Control-Allow-Origin": "*"})
 
-        key_info = auth_service.validate_key(api_key)
+        key_info = await asyncio.to_thread(auth_service.validate_key, api_key)
         if not key_info:
             return JSONResponse({
                 "success": False,
                 "error": "Ogiltig eller inaktiv API-nyckel. Kontakta support eller ansök om ny nyckel."
             }, status_code=403, headers={"Access-Control-Allow-Origin": "*"})
 
-        rl_err = _check_rate_limit(api_key)
+        rl_err = await asyncio.to_thread(_check_rate_limit, api_key)
         if rl_err:
             return JSONResponse(rl_err, status_code=429, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -305,13 +309,13 @@ async def execute_tool_direct_rest(request):
 
         t0 = time.time()
         try:
-            result = func(**body)
+            result = await asyncio.to_thread(func, **body)
         except (TypeError, ValueError) as e:
             # Fel typ eller otillatet varde - anroparens fel, inte serverns.
             # Detaljen loggas, men gar inte ut: den har formen
             # "'<=' not supported between instances of 'str' and 'int'", vilket
             # inte hjalper anroparen och rojer interna detaljer.
-            logging.warning("Ogiltiga argument till %s: %s", tool_name, e)
+            logging.warning("Ogiltiga argument till %s", tool_name)
             return JSONResponse({
                 "success": False,
                 "error": "Ett eller flera varden har fel typ eller format.",
@@ -331,7 +335,7 @@ async def execute_tool_direct_rest(request):
         # Genuint serverfel. Meddelandet loggas men returneras aldrig - samma
         # except fangar fel fran Firestore, embedder och natverkslager, vars
         # texter kan innehalla projekt-id och sokvagar.
-        logging.exception("Fel vid anrop av verktyget %s", tool_name)
+        logging.error("Fel vid anrop av verktyget")
         return JSONResponse({
             "success": False,
             "error": "Internt fel vid korning av verktyget."

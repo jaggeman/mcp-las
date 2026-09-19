@@ -3,6 +3,7 @@ import os
 import re
 import logging
 import time
+from threading import RLock
 from typing import List, Dict, Any, Optional
 from src.config import settings
 from src.embeddings.embedder import Embedder
@@ -29,6 +30,7 @@ class FirebaseLaborLawDB:
         # matchar pa strangar, aldrig pa vektor.
         self._local_rules: Dict[str, Any] = {r["id"]: dict(r) for r in CBA_RULES_DATA}
         self._cached_statute_sections: Optional[List[Dict[str, Any]]] = None
+        self._statute_cache_lock = RLock()
         self._cached_precedents: Optional[List[Dict[str, Any]]] = None
         self._init_firebase()
 
@@ -114,6 +116,10 @@ class FirebaseLaborLawDB:
         return False
 
     def _get_statute_items(self) -> List[Dict[str, Any]]:
+        with self._statute_cache_lock:
+            return self._refresh_statute_items()
+
+    def _refresh_statute_items(self) -> List[Dict[str, Any]]:
         if self._cached_statute_sections is not None and time.monotonic() - getattr(self, '_statute_cache_at', 0) < 60:
             return self._cached_statute_sections
         items = []
@@ -122,8 +128,8 @@ class FirebaseLaborLawDB:
                 docs = self.db.collection("statute_sections").stream()
                 items = [d.to_dict() for d in docs]
             except Exception:
-                pass
-        if not items:
+                raise RuntimeError('Statute database unavailable') from None
+        else:
             items = list(self._local_sections.values())
         items = [row for row in items if row.get('active', True)]
         self._cached_statute_sections = items
@@ -185,6 +191,8 @@ class FirebaseLaborLawDB:
         return counts
 
     def get_statute_section(self, law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE") -> Optional[Dict[str, Any]]:
+        if not law.strip() or not section.strip():
+            raise ValueError('Law and section must not be empty')
         law_clean = law.strip().upper()
         sec_clean = section.strip().lower().replace("§", "").strip()
         jurisdiction_clean = jurisdiction.strip().upper()

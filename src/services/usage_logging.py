@@ -3,10 +3,28 @@ import inspect
 import json
 import time
 import uuid
+from queue import Queue, Full
+from threading import Thread
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 from src.db.firebase_client import db_client
+
+_pending = Queue(maxsize=1000)
+
+
+def _store_events():
+    while True:
+        db, event = _pending.get()
+        try:
+            db.collection('access_logs').document(event['event_id']).set(event)
+        except Exception:
+            print(json.dumps({'event': 'las_usage_storage_error', 'severity': 'WARNING'}), flush=True)
+        finally:
+            _pending.task_done()
+
+
+Thread(target=_store_events, daemon=True, name='usage-writer').start()
 
 
 def country(tool, arguments):
@@ -46,11 +64,11 @@ def emit(*, tool, transport, jurisdiction, status, duration_ms):
     print(json.dumps(event), flush=True)
     if db_client.db is not None:
         try:
-            db_client.db.collection('access_logs').document(event['event_id']).set({
+            _pending.put_nowait((db_client.db, {
                 **event, 'expires_at': now + timedelta(days=30),
-            })
-        except Exception:
-            print(json.dumps({'event': 'las_usage_storage_error', 'severity': 'WARNING'}), flush=True)
+            }))
+        except Full:
+            print(json.dumps({'event': 'las_usage_queue_full', 'severity': 'WARNING'}), flush=True)
 
 
 def tracked_tool(fn):
