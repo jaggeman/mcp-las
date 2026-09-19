@@ -1301,8 +1301,15 @@ def generate_turordningslista_excel(
         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |"
     ]
     for emp in table_rows:
+        # markdown_table är en separat returväg från själva .xlsx-filen (se
+        # docstring i tests/test_excel_formula_injection.py) - en mottagare
+        # kopierar ofta raden rakt in i ett kalkylark från chatten, så samma
+        # sanering som cellskrivningen ovan behövs här också.
+        md_name = _excel_safe_value(emp['name'])
+        md_title = _excel_safe_value(emp['title'])
+        md_unit = _excel_safe_value(emp['driftsenhet'])
         md_lines.append(
-            f"| `{emp['id']}` | **{emp['name']}** | {emp['title']} | {emp['driftsenhet']} | {emp['start_date']} | {emp['seniority_days']} dgr | #{emp['rank']} | {emp['status']} |"
+            f"| `{emp['id']}` | **{md_name}** | {md_title} | {md_unit} | {emp['start_date']} | {emp['seniority_days']} dgr | #{emp['rank']} | {emp['status']} |"
         )
 
     return {
