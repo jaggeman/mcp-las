@@ -32,3 +32,9 @@ def test_weekly_sync_uses_oidc_and_includes_no_de():
     assert 'GCP_SYNC_WORKLOAD_IDENTITY_PROVIDER' in workflow
     assert 'gcloud run jobs execute mcp-las-source-sync' in workflow
     assert '--wait' in workflow
+def test_swedish_sync_runs_on_runner_and_foreign_sync_in_frankfurt():
+    from pathlib import Path
+    workflow = Path('.github/workflows/sync-sources.yml').read_text(encoding='utf-8')
+    ci = Path('.github/workflows/ci.yml').read_text(encoding='utf-8')
+    assert 'python scripts/sync_sources.py --swedish' in workflow
+    assert '--args="scripts/sync_sources.py,--norwegian,--german,--spanish"' in ci

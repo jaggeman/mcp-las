@@ -54,10 +54,11 @@ och `mcp-source-sync@paygap-prod.iam.gserviceaccount.com` med endast
 samma repository/ägare, main och `sync-sources.yml` vid schedule/workflow_dispatch.
 GitHub-variabler: `GCP_SYNC_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SYNC_SERVICE_ACCOUNT`.
 Jobbet synkar Sverige, Norge, Tyskland och Spanien måndagar 03:00 UTC, utan överlappande körningar.
-GitHub startar Cloud Run Job `mcp-las-source-sync` i europe-west3 och väntar på resultatet.
+Sverige synkas direkt på GitHub-runnern; Riksdagen-hämtning från Cloud Run misslyckades.
+Norge, Tyskland och Spanien körs i Frankfurt. GitHub startar Cloud Run Job `mcp-las-source-sync` i europe-west3 och väntar på resultatet.
 Direkt hämtning från GitHub fick anslutningstimeout till den tyska källan; Frankfurt fungerar.
 Synkkontot har även `roles/run.jobsExecutor` och `roles/run.viewer` på endast detta jobb.
-CI uppdaterar jobbets image till samma digest som backend och anger alla fyra landsflaggor.
+CI uppdaterar jobbets image till samma digest som backend och anger flaggorna --norwegian --german --spanish.
 Jobbet använder mock-embeddings, 1 CPU/1 GiB, 1800 sekunders timeout och inga automatiska omförsök.
 Ingen workflow använder längre `GCP_SA_KEY`; den gamla nyckeln har inte
 återkallats eftersom eventuella användningar utanför repot inte har inventerats.

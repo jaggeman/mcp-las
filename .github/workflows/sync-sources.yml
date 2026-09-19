@@ -42,5 +42,20 @@ jobs:
       # behövs.
       - uses: google-github-actions/setup-gcloud@v2
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installera synkberoenden
+        run: pip install -r requirements.txt
+
+      - name: Synka svenska lagar
+        env:
+          FIREBASE_PROJECT_ID: paygap-prod
+          EMBEDDING_PROVIDER: mock
+        run: python scripts/sync_sources.py --swedish
+
       - name: Synka lagtext i Frankfurt
+        if: ${{ !cancelled() }}
         run: gcloud run jobs execute mcp-las-source-sync --project=paygap-prod --region=europe-west3 --wait
