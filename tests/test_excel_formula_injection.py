@@ -112,3 +112,45 @@ def test_a_benign_name_is_completely_unaffected():
     }])
     ws = _load_sheet1(res)
     assert ws.cell(row=5, column=2).value == "Anna Andersson"
+
+
+# Den genererade `.xlsx`-filen är inte den enda vägen ut. Verktyget returnerar
+# också en `markdown_table` i samma JSON-svar, "för AI-chatten" (se kod-
+# kommentaren i tools.py) — avsedd att visas i en chatt och sedan kopieras
+# rakt in i ett kalkylark av den mänskliga mottagaren. Sanering vid
+# `ws.cell(..., value=...)`-anropet skyddar bara filen, inte den här strängen:
+# den byggs separat från `table_rows`, som fortfarande innehåller de
+# osanerade fälten. Klistras raden in i Excel/Sheets (radvis, inte som ett
+# enda textblock, vilket är hur ett kopierat HTML-/markdown-tabellklipp
+# normalt hamnar i ett kalkylark) exekveras samma formel där.
+@pytest.mark.parametrize("payload", DANGEROUS_PAYLOADS)
+def test_markdown_table_does_not_leak_a_live_formula_for_employee_name(payload):
+    res = generate_turordningslista_excel(
+        employees=[{
+            "name": payload, "title": "Utvecklare", "driftsenhet": "Sthlm",
+            "start_date": "2020-01-01", "birth_date": "1990-01-01",
+            "has_qualifications": True, "is_exempt": False,
+        }],
+    )
+    for line in res["markdown_table"].splitlines():
+        if payload.lstrip("=+-@") not in line:
+            continue
+        cell = line.split("|")[2].strip("* ")
+        assert not cell.startswith(("=", "+", "-", "@")), (
+            f"markdown_table läcker en levande formel för namnet: {line!r}"
+        )
+
+
+@pytest.mark.parametrize("field", ["title", "driftsenhet"])
+def test_markdown_table_sanitises_title_and_driftsenhet(field):
+    res = generate_turordningslista_excel(
+        employees=[{
+            "name": "Anna Andersson", field: "=1+1",
+            "start_date": "2020-01-01", "birth_date": "1990-01-01",
+            "has_qualifications": True, "is_exempt": False,
+        }],
+    )
+    data_line = next(l for l in res["markdown_table"].splitlines() if "Anna Andersson" in l)
+    col_index = {"title": 3, "driftsenhet": 4}[field]
+    cell = data_line.split("|")[col_index].strip()
+    assert not cell.startswith("="), f"{field} läcker en formel i markdown_table: {cell!r}"
