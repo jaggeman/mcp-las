@@ -24,6 +24,7 @@ if __name__ == "__main__":
     if include_swedish:
         swedish_summary = service.sync_statutes(statutes)
         summary.update({key: swedish_summary[key] for key in ("changed", "skipped", "errors", "items", "status")})
+        summary['items'] = list(swedish_summary['items'])
         summary["swedish"] = swedish_summary
 
     if include_danish:

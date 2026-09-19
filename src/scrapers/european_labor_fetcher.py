@@ -104,6 +104,8 @@ class EuropeanLaborFetcher:
                     continue
                 content = norm.find('textdaten/text/Content')
                 text = '\n'.join(' '.join(p.itertext()).strip() for p in content) if content is not None else ''
+                if re.fullmatch(r'\s*\(?\s*(?:weggefallen|aufgehoben)\s*\)?\s*\.?\s*', text, re.I):
+                    continue
                 title_node = norm.find('metadaten/titel')
                 title = ''.join(title_node.itertext()) if title_node is not None else ''
                 append(match.group(1), title, text)

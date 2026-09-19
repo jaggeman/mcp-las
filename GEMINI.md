@@ -83,7 +83,7 @@ Källor: https://api.lovdata.no/om-api-tjenesten/ (Stiftelsen Lovdata, NLOD 2.0)
 och https://www.gesetze-im-internet.de/ (XML-paket per lag).
 Norska paragrafnummer behålls, t.ex. `section="15-7"`; tyska t.ex. `section="1a"`.
 Källspråk är `nb` respektive `de`. Sök på källspråket; översättning garanteras inte.
-Prod synkroniserades 2026-09-19: 425 norska och 409 tyska paragrafer,
+Prod synkroniserades 2026-09-19: 425 norska och 405 tyska paragrafer,
 20 lagar totalt, inga rapporterade synkfel. Antalen kan ändras vid senare synk.
 Katalogen är avgränsad, inte fullständig nationell arbetsrätt. Norska traktatbilagor
 med artikelnummer och tyska bilagor ingår inte i paragrafindexet.
@@ -102,6 +102,16 @@ Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast fö
 utifrån databasen. Källfel rapporteras som driftfel, inte som en tom lagdatabas.
 Cacheuppdateringar samordnas inom varje process för att undvika dubbla inläsningar.
 Efter extern synk uppdateras serverns lagcache inom 60 sekunder utan omstart.
+Synken publicerar varje lag atomiskt: paragrafer, inaktivering, metadata, synkstatus och
+cache_versions/statutes ingår i samma Firestore-transaktion. Vid fel behålls tidigare lagtext.
+Högst 447 nya paragrafer, 450 skrivningar totalt och 7 MB JSON för nya rader tillåts per lag;
+större lagar nekas utan delpublicering och kräver en separat versionslagringslösning.
+Cacheversionen kontrolleras efter 60 sekunder. Oförändrad version återanvänder cachen;
+full inläsning sker senast efter 300 sekunder även för äldre skrivvägar utan versionsmarkör.
+Sökindex förberäknas per land/språk och cachesnapshot (högst 16 kombinationer).
+Lagtextsökning accepterar 1–2000 tecken och limit 1–50; ogiltiga värden nekas före databasanrop.
+Tyska paragrafer med enbart (weggefallen)/(aufgehoben) indexeras inte. Fyra tidigare
+poster är inaktiverade, inte raderade; Tyskland omfattar därefter 405 indexerade paragrafer.
 Synken kontrollerar alla skrivningar, fortsätter med nästa lag vid källfel och markerar
 borttagna paragrafer som inaktiva (återställningsbara), inte som gällande sökträffar.
 Embedding-provider och modell ingår i synkhashen; providerbyte kräver omindexering av

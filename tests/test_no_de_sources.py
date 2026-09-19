@@ -62,6 +62,7 @@ def test_new_sync_does_not_accept_failed_writes():
     metadata, sections = EuropeanLaborFetcher.parse('DE', {'id':'x','name':'X','url':'https://example.test'}, DE_XML)
     class DB:
         def get_sync_state(self, key): return None
+        def publish_statute(self, *args): return False
         def save_statute(self, row): return True
         def save_statute_section(self, row): return False
         def save_sync_state(self, key, row):
@@ -76,6 +77,8 @@ def test_sync_then_lookup_with_source_and_idempotency(monkeypatch):
     class DB:
         states = {}
         rows = []
+        def publish_statute(self, source_id, metadata, rows, statute_id, country, state):
+            self.rows.extend(rows); self.states[source_id]=state; return True
         def retire_missing_sections(self, statute_id, jurisdiction, ids): return True
         def get_sync_state(self, key): return self.states.get(key)
         def save_statute(self, row): return True
@@ -104,6 +107,9 @@ def test_lookup_reads_beyond_one_thousand_sections(monkeypatch):
         def to_dict(self):
             return {'statute_short':'Test', 'statute_id':'Test', 'section_number':str(self.number), 'jurisdiction':'DE'}
     class Collection:
+        def document(self, id):
+            from types import SimpleNamespace
+            return SimpleNamespace(get=lambda: SimpleNamespace(exists=False))
         def limit(self, n): raise AssertionError('Global truncation hides whole countries')
         def stream(self): return iter(Doc(n) for n in range(1002))
     class DB:

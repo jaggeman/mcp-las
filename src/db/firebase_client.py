@@ -3,6 +3,9 @@ import os
 import re
 import logging
 import time
+import json
+import uuid
+from collections import Counter
 from threading import RLock
 from typing import List, Dict, Any, Optional
 from src.config import settings
@@ -103,6 +106,41 @@ class FirebaseLaborLawDB:
                 pass
         return getattr(self, "_local_sync_state", {}).get(source_id)
 
+    def publish_statute(self, source_id, metadata, rows, statute_id, jurisdiction, state):
+        """Atomically publish one bounded statute, retirement, metadata and state.
+
+        Refuse oversized publications before writing; never split a law into commits.
+        """
+        if not self.db:
+            raise RuntimeError('Database required for publication')
+        from google.cloud.firestore_v1 import transactional
+        from google.cloud.firestore_v1.base_query import FieldFilter
+        if not rows or len(rows) > 447 or len(json.dumps(rows, ensure_ascii=False).encode('utf-8')) > 7_000_000:
+            raise ValueError('Statute exceeds atomic publication limits')
+        collection = self.db.collection('statute_sections')
+        ids = {row['id'] for row in rows}
+        if len(ids) != len(rows):
+            raise ValueError('Duplicate section IDs')
+
+        @transactional
+        def publish(transaction):
+            old = list(transaction.get(collection.where(filter=FieldFilter('statute_id', '==', statute_id))))
+            retired = [doc for doc in old if doc.to_dict().get('jurisdiction', 'SE') == jurisdiction and doc.id not in ids and doc.to_dict().get('active', True)]
+            if len(rows) + len(retired) + 3 > 450:
+                raise ValueError('Statute exceeds atomic publication write limit')
+            for row in rows:
+                transaction.set(collection.document(row['id']), row)
+            for doc in retired:
+                transaction.update(doc.reference, {'active': False})
+            transaction.set(self.db.collection('statutes').document(str(metadata['id']).replace(':', '_')), metadata)
+            transaction.set(self.db.collection('source_sync_state').document(source_id), state)
+            transaction.set(self.db.collection('cache_versions').document('statutes'), {'version': uuid.uuid4().hex})
+
+        publish(self.db.transaction())
+        with self._statute_cache_lock:
+            self._cached_statute_sections = None
+        return True
+
     def save_sync_state(self, source_id: str, state: Dict[str, Any]) -> bool:
         if not hasattr(self, "_local_sync_state"):
             self._local_sync_state = {}
@@ -125,8 +163,17 @@ class FirebaseLaborLawDB:
         items = []
         if self.db:
             try:
+                marker = self.db.collection('cache_versions').document('statutes').get()
+                version = marker.to_dict().get('version') if marker.exists else None
+                if (version is not None and self._cached_statute_sections is not None
+                        and version == getattr(self, '_statute_version', None)
+                        and time.monotonic() - getattr(self, '_statute_full_read_at', 0) < 300):
+                    self._statute_cache_at = time.monotonic()
+                    return self._cached_statute_sections
                 docs = self.db.collection("statute_sections").stream()
                 items = [d.to_dict() for d in docs]
+                self._statute_version = version
+                self._statute_full_read_at = time.monotonic()
             except Exception:
                 raise RuntimeError('Statute database unavailable') from None
         else:
@@ -219,7 +266,43 @@ class FirebaseLaborLawDB:
                 return w[:-len(suffix)]
         return w
 
+    def _prepare_search_row(self, row):
+        tokens = re.findall(r'[^\W_]+', row.get('content', '').lower())
+        stems = [self._stem_sv(w) for w in tokens]
+        title = re.findall(r'[^\W_]+', (row.get('section_title') or '').lower())
+        keywords = re.findall(r'[^\W_]+', ' '.join(row.get('keywords', [])).lower())
+        return tuple(Counter(values) for values in (tokens, stems, title,
+            [self._stem_sv(w) for w in title], keywords, tokens[:25], stems[:25]))
+
+    def _search_index(self, snapshot, filters):
+        country = str(filters.get('jurisdiction') or filters.get('country') or '').upper()
+        language = str(filters.get('language') or '').lower()
+        key = (country, language)
+        with self._statute_cache_lock:
+            if getattr(self, '_search_snapshot', None) is not snapshot:
+                self._search_snapshot, self._search_indexes = snapshot, {}
+            if key not in self._search_indexes:
+                rows = [s for s in snapshot if
+                    (not country or str(s.get('jurisdiction', 'SE')).upper() == country) and
+                    (not language or str(s.get('language', 'sv')).lower() == language)]
+                prepared = {id(s): self._prepare_search_row(s) for s in rows}
+                frequencies = Counter()
+                for s in rows:
+                    counters = prepared[id(s)]
+                    frequencies.update(set(counters[1]) | set(counters[3]) |
+                        {self._stem_sv(w) for w in counters[4]})
+                if len(self._search_indexes) >= 16:
+                    self._search_indexes.clear()
+                self._search_indexes[key] = rows, frequencies, prepared
+            return self._search_indexes[key]
+
     def search_statute_sections(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5) -> List[Dict[str, Any]]:
+        if not isinstance(query, str) or not query.strip() or len(query) > 2000:
+            raise ValueError('Query must contain 1–2000 characters')
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError('Limit must be an integer from 1 to 50')
+        if filters is not None and not isinstance(filters, dict):
+            raise ValueError('Filters must be an object')
         q_lower = query.lower()
         raw_tokens = re.findall(r'[^\W_]+', q_lower)
         from src.embeddings.embedder import SWEDISH_STOPWORDS
@@ -295,19 +378,10 @@ class FirebaseLaborLawDB:
 
         q_emb = Embedder.get_embedding(query + " " + " ".join(expanded_query_terms))
 
-        items = self._get_statute_items()
-
+        items, doc_stem_freqs, prepared = self._search_index(self._get_statute_items(), filters or {})
         if not items:
             return []
-
-        # Corpus stem frequencies for IDF
         N = len(items)
-        doc_stem_freqs: Dict[str, int] = {}
-        for s in items:
-            all_text = (s.get('content', '') + ' ' + (s.get('section_title') or '') + ' ' + ' '.join(s.get('keywords', []))).lower()
-            stems = set(self._stem_sv(w) for w in re.findall(r'[^\W_]+', all_text))
-            for st in stems:
-                doc_stem_freqs[st] = doc_stem_freqs.get(st, 0) + 1
 
         scored_sections = []
         for s in items:
@@ -325,13 +399,7 @@ class FirebaseLaborLawDB:
             sec_chap = str(s.get("chapter", "")).lower().replace(" ", "") if s.get("chapter") else None
             statute_short = s.get("statute_short", "")
 
-            doc_tokens = re.findall(r'[^\W_]+', content.lower())
-            doc_stems = [self._stem_sv(w) for w in doc_tokens]
-            title_tokens = re.findall(r'[^\W_]+', title.lower())
-            title_stems = [self._stem_sv(w) for w in title_tokens]
-            kw_tokens = re.findall(r'[^\W_]+', ' '.join(keywords).lower())
-            first_tokens = doc_tokens[:25]
-            first_stems = doc_stems[:25]
+            doc_tokens, doc_stems, title_tokens, title_stems, kw_tokens, first_tokens, first_stems = prepared[id(s)]
 
             lex_score = 0.0
             title_matches_count = 0
@@ -340,13 +408,13 @@ class FirebaseLaborLawDB:
                 df = doc_stem_freqs.get(w_stem, 1)
                 idf = max(0.5, math.log(1.0 + (N - df + 0.5) / (df + 0.5)))
 
-                c_count = doc_tokens.count(w) + 0.6 * doc_stems.count(w_stem)
-                t_m = (title_tokens.count(w) + 1.2 * title_stems.count(w_stem))
+                c_count = doc_tokens[w] + 0.6 * doc_stems[w_stem]
+                t_m = (title_tokens[w] + 1.2 * title_stems[w_stem])
                 if t_m > 0:
                     title_matches_count += 1
                 t_count = t_m * 10.0
-                k_count = (kw_tokens.count(w) + 1.0 * kw_tokens.count(w)) * 5.0
-                f_count = (first_tokens.count(w) + 1.0 * first_stems.count(w_stem)) * 5.0
+                k_count = (kw_tokens[w] + 1.0 * kw_tokens[w]) * 5.0
+                f_count = (first_tokens[w] + 1.0 * first_stems[w_stem]) * 5.0
 
                 match_val = c_count + t_count + k_count + f_count
                 if match_val > 0:
@@ -354,7 +422,7 @@ class FirebaseLaborLawDB:
 
             if title_matches_count >= 2:
                 lex_score += 20.0
-            elif title_matches_count >= 1 and len(title_tokens) <= 2:
+            elif title_matches_count >= 1 and sum(title_tokens.values()) <= 2:
                 lex_score += 15.0
 
             for i in range(len(meaningful_q) - 1):

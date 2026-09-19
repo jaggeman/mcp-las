@@ -8,6 +8,12 @@ from src.mcp_tools.tools import search_labor_law
 from tests.test_no_de_sources import DE_XML, NO_HTML
 
 class Store:
+    def publish_statute(self, source_id, metadata, rows, statute_id, country, state):
+        if self.fail: return False
+        for row in rows: self.rows[row['id']] = row.copy()
+        self.retire_missing_sections(statute_id, country, {row['id'] for row in rows})
+        self.states[source_id] = state.copy()
+        return True
     def __init__(self): self.states={}; self.rows={}; self.fail=None
     def get_sync_state(self,key): return self.states.get(key)
     def save_statute(self,row): return True
@@ -44,7 +50,8 @@ def test_sync_retires_missing_and_reindexes_provider_change():
 
 def test_failure_does_not_stop_following_law():
     class FailFirst(Store):
-        def save_statute(self,row): return row['id']!='DE:X'
+        def publish_statute(self, source_id, metadata, *args):
+            return False if metadata['id']=='DE:X' else super().publish_statute(source_id, metadata, *args)
     with patch.object(EuropeanLaborFetcher,'iter_documents',return_value=iter([document(),document('Y')])):
         result=SourceSyncService(db=FailFirst(),embedder=Embedding()).sync_european_statutes('DE')
     assert (result['errors'],result['changed'])==(1,1)
@@ -64,6 +71,7 @@ def test_explicit_se_overrides_legacy_filter(monkeypatch):
 def test_cache_expires_and_retired_rows_are_hidden(monkeypatch):
     clock=[100.0]; rows=[{'id':'a','active':True}]
     class Collection:
+        def document(self, id): return SimpleNamespace(get=lambda: SimpleNamespace(exists=False))
         def stream(self): return [SimpleNamespace(to_dict=lambda r=r:r) for r in rows]
     monkeypatch.setattr(db_client,'db',SimpleNamespace(collection=lambda _:Collection()))
     monkeypatch.setattr(db_client,'_cached_statute_sections',None)

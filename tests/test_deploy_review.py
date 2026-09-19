@@ -44,7 +44,7 @@ def test_concurrent_refresh_reads_once(monkeypatch):
         time.sleep(.03)
         return [SimpleNamespace(to_dict=lambda: {'active': True})]
     monkeypatch.setattr(db_client, '_cached_statute_sections', None)
-    monkeypatch.setattr(db_client, 'db', SimpleNamespace(collection=lambda _: SimpleNamespace(stream=stream)))
+    monkeypatch.setattr(db_client, 'db', SimpleNamespace(collection=lambda _: SimpleNamespace(stream=stream, document=lambda _: SimpleNamespace(get=lambda: SimpleNamespace(exists=False)))))
     with ThreadPoolExecutor(4) as pool: list(pool.map(lambda _: db_client._get_statute_items(), range(4)))
     assert len(calls) == 1
 

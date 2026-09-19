@@ -47,7 +47,7 @@ class SourceSyncService:
         metadata.setdefault("jurisdiction", country)
         metadata.setdefault("language", {"SE":"sv","DK":"da","FI":"fi","NO":"nb","DE":"de","ES":"es"}[country])
         model = self.embedder.fingerprint()
-        fingerprint = content_hash(str(metadata) + model + "\n" + "\n".join(s.raw_text for s in sections))
+        fingerprint = content_hash('atomic-v1:' + str(metadata) + model + "\n" + "\n".join(s.raw_text for s in sections))
         previous = self.db.get_sync_state(source_id) or {}
         if previous.get("content_hash") == fingerprint and previous.get("status") == "success":
             if self.db.save_sync_state(source_id, dict(previous, checked_at=datetime.now(timezone.utc).isoformat())) is not True:
@@ -63,19 +63,12 @@ class SourceSyncService:
         if len(ids) != len(rows):
             raise ValueError("Duplicate section IDs")
         statute_id = rows[0].get("statute_id") or metadata.get("statute_id") or metadata["id"]
-        for row in rows:
-            if self.db.save_statute_section(row) is not True:
-                raise RuntimeError(f"Could not save section {row['id']}")
-        if self.db.retire_missing_sections(statute_id, country, ids) is not True:
-            raise RuntimeError("Could not retire stale sections")
         metadata["total_sections"] = len(rows)
-        if self.db.save_statute(metadata) is not True:
-            raise RuntimeError(f"Could not save statute {source_id}")
         state = {"source_id":source_id, "content_hash":fingerprint, "embedding_model":model,
                  "synced_at":datetime.now(timezone.utc).isoformat(), "status":"success",
                  "section_count":len(rows), "source_url":metadata.get("source_url") or metadata.get("document_url")}
-        if self.db.save_sync_state(source_id, state) is not True:
-            raise RuntimeError("Could not persist sync state")
+        if self.db.publish_statute(source_id, metadata, rows, statute_id, country, state) is not True:
+            raise RuntimeError('Could not publish statute')
         return {"source_id":source_id, "status":"changed", "sections":len(rows)}
 
     def _run(self, jobs, country):

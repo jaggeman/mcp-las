@@ -4,6 +4,12 @@ from src.services.sync_service import SourceSyncService, content_hash
 
 
 class FakeDB:
+    def publish_statute(self, source_id, metadata, rows, statute_id, country, state):
+        self.statutes.append(metadata)
+        self.sections.extend(rows)
+        self.states[source_id] = state
+        return True
+
     def __init__(self):
         self.states = {}
         self.statutes = []
