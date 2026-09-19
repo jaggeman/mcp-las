@@ -5,7 +5,18 @@ SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi", "NO": "nb", "DE":
 
 
 def get_legal_coverage() -> Dict[str, Any]:
-    """Beskriver faktisk land- och områdestäckning för MCP-servern."""
+    """Beskriver faktisk land- och områdestäckning för MCP-servern.
+
+    "statutes" och "section_count" läses ur databasen, inte ur koden. Att
+    skriva en fetcher för ett land (Retsinformation, Finlex) bevisar inte att
+    en ingestion någonsin körts mot paygap-prod — de har sedan länge egna
+    parsers utan att en enda paragraf faktiskt indexerats. Ett hårdkodat
+    ``True`` här skulle vara precis den sortens påstående #18 ("17
+    kollektivavtal") och #32 (den tysta ingestionen) redan visat är farligt:
+    det ser ut som täckning tills någon frågar `lookup_statute` och får
+    "ej funnen".
+    """
+    counts = db_client.count_sections_by_jurisdiction()
     return {
         "jurisdictions": {
             "NO": {
@@ -19,18 +30,21 @@ def get_legal_coverage() -> Dict[str, Any]:
                 "calculators": [], "hr_templates": False, "catalog_statutes": 8,
             },
             "SE": {
-                "country": "Sverige", "language": "sv", "statutes": True,
+                "country": "Sverige", "language": "sv",
+                "statutes": counts.get("SE", 0) > 0, "section_count": counts.get("SE", 0),
                 "case_law": "Arbetsdomstolen", "collective_agreements": True,
                 "calculators": ["notice_period", "vacation", "turnorder", "travel"],
                 "hr_templates": True,
             },
             "DK": {
-                "country": "Danmark", "language": "da", "statutes": True,
+                "country": "Danmark", "language": "da",
+                "statutes": counts.get("DK", 0) > 0, "section_count": counts.get("DK", 0),
                 "case_law": False, "collective_agreements": False,
                 "calculators": [], "hr_templates": False,
             },
             "FI": {
-                "country": "Finland", "language": "fi", "statutes": True,
+                "country": "Finland", "language": "fi",
+                "statutes": counts.get("FI", 0) > 0, "section_count": counts.get("FI", 0),
                 "case_law": False, "collective_agreements": False,
                 "calculators": [], "hr_templates": False,
             },
@@ -212,13 +226,29 @@ def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdict
         "certainty": _determine_certainty(result.get("rule_content", ""), source_type="cba")
     }
 
+_INTERNAL_ONLY_FIELDS = ("embedding", "id")
+
+
+def _strip_internal_fields(d: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Tar bort interna lagringsfält (embedding-vektorn, Firestore-doc-id) som
+    en anropare inte har någon användning för. En riktig embeddingprovider
+    (OpenAI/Gemini) ger en vektor på över tusen flyttal per paragraf/regel —
+    utan detta blir compare_statute_vs_cba-svaret nästan enbart embeddings."""
+    if not d:
+        return d
+    return {k: v for k, v in d.items() if k not in _INTERNAL_ONLY_FIELDS}
+
+
 def compare_statute_vs_cba(topic: str, agreement_name: str, jurisdiction: str = "SE") -> Dict[str, Any]:
     """
     Pulls both statutory baseline (e.g. LAS) and matching collective agreement rules to highlight discrepancies.
     """
     if jurisdiction.upper() != "SE":
         return {"status": "unsupported_jurisdiction", "jurisdiction": jurisdiction.upper(), "message": "Lag kontra kollektivavtal stöds ännu bara för Sverige (jurisdiction=SE)."}
-    return db_client.compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
+    result = db_client.compare_statute_vs_cba(topic=topic, agreement_name=agreement_name)
+    result["cba_rules"] = [_strip_internal_fields(r) for r in result.get("cba_rules", [])]
+    result["statute_baseline"] = _strip_internal_fields(result.get("statute_baseline"))
+    return result
 
 def calculate_vacation_pay(
     monthly_salary: float,
@@ -916,6 +946,23 @@ from src.services.download_store import DownloadStore
 
 GENERATED_EXCEL_FILES = DownloadStore()
 
+_FORMULA_TRIGGER_CHARS = ("=", "+", "-", "@")
+
+
+def _excel_safe_value(value: Any) -> Any:
+    """Neutraliserar CSV/Excel-formelinjektion (CWE-1236) i fritextfält.
+
+    Excel tolkar ett cellvärde som en formel om det börjar med =, +, - eller
+    @, oavsett om det kommer från en verklig formel eller ett namn/titel/
+    enhetsfält i en HR-integration. Ett inledande tecken av det slaget
+    neutraliseras med en apostrof-prefix så att Excel visar det som text —
+    innehållet syns fortfarande, det exekveras bara inte.
+    """
+    text = str(value)
+    if text.startswith(_FORMULA_TRIGGER_CHARS):
+        return "'" + text
+    return value
+
 
 def generate_turordningslista_excel(
     company_name: str = "Företaget AB",
@@ -939,6 +986,9 @@ def generate_turordningslista_excel(
         return {"success": False, "error": "Max 1000 anställda, 32 fält per anställd och 2000 tecken per fält."}
     if len(company_name) > 200 or (cba_name and len(cba_name) > 200):
         return {"success": False, "error": "Företagsnamn och avtalsnamn får vara högst 200 tecken."}
+    company_name = str(_excel_safe_value(company_name))
+    cba_name = str(_excel_safe_value(cba_name))
+
     target_date = datetime.date.today()
     if as_of_date:
         try:
@@ -1109,10 +1159,10 @@ def generate_turordningslista_excel(
         ws1.row_dimensions[row_idx].height = 22
 
         c1 = ws1.cell(row=row_idx, column=1, value=emp["id"])
-        c2 = ws1.cell(row=row_idx, column=2, value=emp["name"])
-        c3 = ws1.cell(row=row_idx, column=3, value=emp["title"])
-        c4 = ws1.cell(row=row_idx, column=4, value=emp["driftsenhet"])
-        c5 = ws1.cell(row=row_idx, column=5, value=emp["avtalsomrade"])
+        c2 = ws1.cell(row=row_idx, column=2, value=_excel_safe_value(emp["name"]))
+        c3 = ws1.cell(row=row_idx, column=3, value=_excel_safe_value(emp["title"]))
+        c4 = ws1.cell(row=row_idx, column=4, value=_excel_safe_value(emp["driftsenhet"]))
+        c5 = ws1.cell(row=row_idx, column=5, value=_excel_safe_value(emp["avtalsomrade"]))
         c6 = ws1.cell(row=row_idx, column=6, value=emp["start_date"])
 
         # Excel Formel för anställningsdagar: =DATEDIF(F5, TODAY(), "d")

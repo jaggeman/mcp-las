@@ -41,7 +41,7 @@ def test_excel_strings_are_not_formulas_and_filename_is_safe():
         for cell in row:
             if cell.column != 7:
                 assert cell.data_type != 'f'
-    assert book.active['B5'].value == '=1+1'
+    assert book.active['B5'].value.lstrip("'") == '=1+1'
     assert book.active['G5'].data_type == 'f'
     assert len(result['file_id']) >= 43
     assert result['file_name'].isascii()

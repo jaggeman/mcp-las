@@ -2,6 +2,27 @@
 from src.db.firebase_client import FirebaseLaborLawDB, db_client
 from src.mcp_tools.tools import search_labor_law
 
+
+@pytest.fixture(autouse=True)
+def _seed_las_7():
+    # Sås oberoende av testordning/andra filers fixtures — annars döljer
+    # laddningsordningen (test_mcp_tools.py sås samma statute_id före denna
+    # fil alfabetiskt) att testet inte klarar sig ensamt: körd isolerat
+    # (`pytest tests/test_search_ranking.py`) misslyckas den annars på ett
+    # tomt db_client._local_sections.
+    db_client.save_statute_section({
+        "id": "1982_80_s7",
+        "statute_id": "1982:80",
+        "statute_short": "LAS",
+        "chapter": None,
+        "section_number": "7",
+        "section_title": "Uppsägning från arbetsgivarens sida",
+        "content": "Uppsägning från arbetsgivarens sida ska grundas på sakliga skäl.",
+        "raw_text": "7 § Uppsägning från arbetsgivarens sida ska grundas på sakliga skäl.",
+        "keywords": ["las", "7 §", "uppsägning", "sakliga skäl"],
+    })
+
+
 def test_stemming_swedish_words():
     assert FirebaseLaborLawDB._stem_sv("uppsägningar") == "uppsägn"
     assert FirebaseLaborLawDB._stem_sv("kollektivavtalen") == "kollektivavtal"

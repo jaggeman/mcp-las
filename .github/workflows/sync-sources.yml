@@ -1,0 +1,52 @@
+name: Veckovis synk av lagkällor
+
+# scripts/sync_sources.py har funnits sedan projektets start men körts av
+# ingen - lagtexten fryser vid den dag ingestionen kördes, vilket är farligt
+# eftersom certainty-badgen på varje svar gör inaktuell text aktivt
+# vilseledande snarare än bara ofullständig (se issue #17).
+#
+# Körs bara mot Sverige (--swedish, standardläget utan flaggor) - Danmark
+# och Finland har ingen baseline-ingestion än (get_legal_coverage rapporterar
+# section_count: 0 för DK/FI), så en synk mot dem skulle bara logga tomma
+# körningar utan att skydda något.
+on:
+  schedule:
+    # Måndagar 03:00 UTC - efter att helgens ev. lagändringar hunnit synas
+    # hos Riksdagen, och långt utanför normal arbetstid.
+    - cron: "0 3 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    name: Synka mot Riksdagen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installera beroenden
+        run: pip install -r requirements.txt
+
+      # Samma GCP_SA_KEY som ci.yml:s deploy-jobb redan använder. Utan
+      # FIREBASE_CREDENTIALS_PATH satt faller firebase_client.py tillbaka på
+      # Application Default Credentials, som den här auth-steget skriver ut -
+      # ingen extra hemlighet behövs.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # sync_sources.py skriver en JSON-sammanfattning (changed/skipped/errors)
+      # till stdout och avslutar med kod 1 om status är "error" - en sådan
+      # körning syns som ett rött, misslyckat Actions-jobb och GitHub
+      # e-postar det till den som äger repot per sina standardinställningar.
+      # Det ÄR larmet acceptanskriterierna i #17 efterfrågar, inget extra
+      # behövs.
+      - name: Synka lagtext
+        env:
+          FIREBASE_PROJECT_ID: paygap-prod
+        run: python scripts/sync_sources.py
