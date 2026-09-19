@@ -1,7 +1,56 @@
 # CLAUDE.md - AI Agent & Assistant Guide for MCP-LAS
 
-## Norge och Tyskland – laguppslag och sökning
+## Säkerhet för MCP och Excel-export
 
+Publika MCP-anrop utan nyckel delar en kvot på 60 anrop/minut.
+Angiven API-nyckel måste vara giltig och aktiv för kvoten 300 anrop/minut.
+Ogiltiga nycklar nekas; Firestore-nycklar kräver booleskt `is_active=true`.
+REST accepterar nycklar endast i `X-API-Key`, inte URL eller JSON-body.
+Kvoter delas mellan instanser med Firestore-transaktioner i `mcp_rate_limits`.
+Vid fel i kvotlagringen nekas anrop. Utan databas används en trådsäker lokal
+reserv med högst 10000 klientposter. HTTP har dessutom en gemensam kvot på
+600 anrop/minut före autentisering för API/MCP/SSE.
+HTTP-body begränsas före parsning till 1 MiB (ansökningsformulär: 16 KiB)
+och högst 10 sekunders inläsning. Proxyheaders betros inte; formulärets kvot
+baseras på anslutande nätverksadress, som bakom proxy kan delas av flera användare.
+Användningsloggar (`event=las_tool_usage`) sparar verktyg, MCP/REST, land,
+status, svarstid, tidsstämpel och slumpmässigt event-ID. Inga frågor, resultat,
+personuppgifter, API-nycklar, IP-adresser eller klientidentifierare loggas här.
+Varje anrop som når verktygswrappern loggas en gång, även vid nekad åtkomst/fel.
+MCP-schemafel före wrappern räknas inte som verktygsanrop. HTTP-fel loggas separat
+som `las_http_rejected` och ska inte adderas till verktygsantalet.
+Loggar skrivs som JSON till stdout (Cloud Logging) och till Firestore `access_logs`.
+Firestore-fel påverkar inte verktygssvaret; stdout finns kvar men rapporten kan då
+underskatta användningen. Händelser samlas först efter deploy, ingen historik återskapas.
+Nya Firestore-loggar får `expires_at` efter 30 dagar. Cloud Logging har separat retention.
+Rapport: `.venv\\Scripts\\python.exe -m scripts.usage_report --days 7` (Firestore-läsbehörighet).
+Rapporten visar antal per dag/verktyg/land/transport/status och medel/p95-svarstid.
+Högst 10000 poster sammanställs; `truncated=true` betyder ofullständig rapport.
+Äldre loggformat exkluderas. Antal anrop är inte antal unika användare eller AI-tokenkostnad.
+Cloud Logs Explorer-filter: `resource.type="cloud_run_revision" resource.labels.service_name="mcp-las" jsonPayload.event="las_tool_usage"`.
+Firestore TTL på `expires_at` för `access_logs` och `mcp_rate_limits` har
+beställts i paygap-prod 2026-09-19. Kontrollera att status är ACTIVE före deploy.
+TTL är asynkron och påverkar inte kvoternas giltighetskontroll.
+Äldre loggar utan utgångstid kräver separat granskning/gallring; de raderas inte av koden.
+CI använder Workload Identity Federation, inte `GCP_SA_KEY`.
+GitHub OIDC konfigurerades 2026-09-19: pool `github-mcp-las`, provider
+`github-main` i projekt 453511359123. Villkoren begränsar repository-ID
+1359199704, ägar-ID 209946709, main, push och `.github/workflows/ci.yml`.
+GitHub-variablerna `GCP_WORKLOAD_IDENTITY_PROVIDER` och `GCP_DEPLOY_SERVICE_ACCOUNT`
+är satta. Befintliga `github-deployer@paygap-prod.iam.gserviceaccount.com`
+återanvänds utan utökade projektroller. Första OIDC-körningen återstår efter push.
+Den gamla nyckeln har inte återkallats: `sync-sources.yml` använder fortfarande
+`GCP_SA_KEY`. Migrera den separat och verifiera båda flöden innan återkallning.
+Excel-länkar är hemliga bearer-token med 256 bitars slump och högst 10 minuters
+giltighet. Alla som har länken kan hämta filen; dela eller logga därför inte länkarna.
+Filer rensas automatiskt. Cachen är processlokal: högst 32 filer, 32 MiB totalt
+och 2 MiB per fil. Omstart eller kapacitetsrensning kan göra länkar ogiltiga tidigare;
+vid flera instanser kan en annan instans sakna filen. Base64-exporten finns kvar.
+Export accepterar högst 1000 anställda, 32 fält per anställd och 2000 tecken per fält.
+Användarfält sparas som text, medan serverns DATEDIF-formler behålls.
+Docker-kontexten exkluderar miljöfiler och vanliga nyckel-/credential-filer.
+
+## Norge och Tyskland – laguppslag och sökning
 `lookup_statute` och `search_labor_law` stöder `jurisdiction="NO"` respektive `"DE"`.
 Norge: 6 lagar (Arbeidsmiljøloven, Ferieloven, Likestillings- og diskrimineringsloven,
 Arbeidstvistloven, Allmenngjøringsloven och Statsansatteloven). Tyskland: 8 lagar

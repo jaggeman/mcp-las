@@ -904,14 +904,17 @@ def calculate_redundancy_turnorder_and_exceptions(
 
 import io
 import base64
-import uuid
+import secrets
+import re
 import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 # In-memory store för genererade Excel-filer så att de kan laddas ner via HTTP
-GENERATED_EXCEL_FILES: Dict[str, Dict[str, Any]] = {}
+from src.services.download_store import DownloadStore
+
+GENERATED_EXCEL_FILES = DownloadStore()
 
 
 def generate_turordningslista_excel(
@@ -927,6 +930,15 @@ def generate_turordningslista_excel(
     Inkluderar automatisk ID-generering, beräkning av anställningsdagar med Excel-formler (=DATEDIF),
     sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § vs kollektivavtal).
     """
+    if employees and (len(employees) > 1000 or any(
+        not isinstance(emp, dict) or len(emp) > 32 or any(
+            not isinstance(value, (str, int, float, bool, type(None)))
+            or len(str(value)) > 2000 for value in emp.values()
+        ) for emp in employees
+    )):
+        return {"success": False, "error": "Max 1000 anställda, 32 fält per anställd och 2000 tecken per fält."}
+    if len(company_name) > 200 or (cba_name and len(cba_name) > 200):
+        return {"success": False, "error": "Företagsnamn och avtalsnamn får vara högst 200 tecken."}
     target_date = datetime.date.today()
     if as_of_date:
         try:
@@ -1187,22 +1199,36 @@ def generate_turordningslista_excel(
     ws2.column_dimensions["A"].width = 36
     ws2.column_dimensions["B"].width = 90
 
+    # Only our own tenure calculation is an executable formula. All other
+    # string cells (including invalid dates and notes) are literal text.
+    for sheet in wb.worksheets:
+        for row in sheet.iter_rows():
+            for cell in row:
+                if isinstance(cell.value, str) and not (
+                    sheet is ws1 and cell.column == 7 and cell.row >= 5
+                    and cell.value == f'=DATEDIF(F{cell.row}, TODAY(), "D")'
+                ):
+                    cell.data_type = "s"
+
     # Spara till minne och skapa base64
     excel_stream = io.BytesIO()
     wb.save(excel_stream)
     excel_bytes = excel_stream.getvalue()
     excel_base64 = base64.b64encode(excel_bytes).decode("utf-8")
 
-    file_id = str(uuid.uuid4())[:8]
-    clean_company = company_name.replace(" ", "_").replace("/", "_")
+    file_id = secrets.token_urlsafe(32)
+    clean_company = re.sub(r'[^A-Za-z0-9_-]', '_', company_name)[:80] or 'Foretaget'
     file_name = f"Turordningslista_{clean_company}_{target_date.strftime('%Y%m%d')}.xlsx"
 
     # Spara i global cache för direkt nedladdning via servern
-    GENERATED_EXCEL_FILES[file_id] = {
-        "file_name": file_name,
-        "bytes": excel_bytes,
-        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
-    }
+    try:
+        GENERATED_EXCEL_FILES[file_id] = {
+            "file_name": file_name,
+            "bytes": excel_bytes,
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }
+    except ValueError:
+        return {"success": False, "error": "Excel-filen överstiger 2 MiB. Minska antalet anställda eller fältens längd."}
 
     download_url = f"https://las.novro.se/api/download-turordning?id={file_id}"
 
@@ -1224,6 +1250,7 @@ def generate_turordningslista_excel(
         "file_id": file_id,
         "file_name": file_name,
         "download_url": download_url,
+        "download_expires_in_seconds": GENERATED_EXCEL_FILES.ttl,
         "data_uri_download": f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_base64}",
         "file_base64": excel_base64,
         "file_size_bytes": len(excel_bytes),
@@ -1232,7 +1259,8 @@ def generate_turordningslista_excel(
         "markdown_table": "\n".join(md_lines),
         "instructions_for_ai": (
             f"Excel-filen har genererats och sparats. Erbjuda användaren att ladda ner Excel-filen via länken: "
-            f"[{file_name}]({download_url}) eller bädda in den som fil med nedladdningsknapp."
+            f"[{file_name}]({download_url}) eller bädda in den som fil med nedladdningsknapp. "
+            "Länken är en hemlig åtkomstnyckel, giltig i högst 10 minuter. Dela den inte vidare."
         ),
         "certainty": {
             "score_pct": 100,

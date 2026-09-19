@@ -6,6 +6,7 @@ loop fylla databasen och mejlbomba samma mottagare.
 """
 
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -18,6 +19,7 @@ class FakeRequest:
     def __init__(self, body, ip="203.0.113.7", method="POST"):
         self.method = method
         self.headers = {"x-forwarded-for": ip}
+        self.client = SimpleNamespace(host=ip)
         self._body = body
 
     async def json(self):

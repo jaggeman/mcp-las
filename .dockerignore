@@ -6,3 +6,10 @@ __pycache__/
 *.sqlite
 firebase-credentials.json
 data/
+**/.env
+**/.env.*
+**/*credentials*.json
+**/*service-account*.json
+**/*.pem
+**/*.key
+**/gha-creds-*.json

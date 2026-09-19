@@ -13,6 +13,9 @@ if project_root not in sys.path:
 from typing import Optional, Dict, Any, List
 from starlette.responses import HTMLResponse, JSONResponse, Response
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware import Middleware
+from src.services.request_limits import RequestSizeLimit
+from src.services.usage_logging import tracked_tool, tracked_rest
 from fastmcp import FastMCP
 from src.config import settings
 from src.db.firebase_client import db_client
@@ -113,11 +116,14 @@ async def download_turordning_excel(request):
     if request.method == "OPTIONS":
         return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
     file_id = request.query_params.get("id", "")
-    if not file_id or file_id not in GENERATED_EXCEL_FILES:
+    file_data = GENERATED_EXCEL_FILES.get(file_id) if len(file_id) == 43 else None
+    if file_data is None:
         return JSONResponse({"error": "Filen hittades inte eller har löpt ut. Generera en ny via MCP-verktyget."}, status_code=404)
 
-    file_data = GENERATED_EXCEL_FILES[file_id]
     headers = {
+        "Cache-Control": "no-store",
+        "Referrer-Policy": "no-referrer",
+        "X-Content-Type-Options": "nosniff",
         "Content-Disposition": f"attachment; filename=\"{file_data['file_name']}\"",
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Access-Control-Allow-Origin": "*"
@@ -134,8 +140,7 @@ async def handle_key_request(request):
     # fylla Firestore och samtidigt mejlbomba mottagaren av aviseringarna.
     # Nycklas pa klientens IP - "anon" delas av alla, sa en ensam avsandare
     # skulle annars sla ut formuläret for alla andra.
-    klient_ip = (request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-                 or getattr(getattr(request, "client", None), "host", "")
+    klient_ip = (getattr(getattr(request, "client", None), "host", "")
                  or "anon")
     if not auth_service.check_rate_limit(f"key-request:{klient_ip}",
                                          max_requests=5, window_seconds=600):
@@ -222,7 +227,7 @@ async def list_available_tools_rest(request):
     if request.method == "OPTIONS":
         return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*"})
 
-    api_key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+    api_key = request.headers.get("X-API-Key")
     if not api_key:
         return JSONResponse({
             "success": False,
@@ -244,9 +249,10 @@ async def list_available_tools_rest(request):
     }, headers={"Access-Control-Allow-Origin": "*"})
 
 @mcp.custom_route("/api/tools/{tool_name}", methods=["POST", "OPTIONS"])
+@tracked_rest
 async def execute_tool_direct_rest(request):
     """
-    Kräver giltig API-nyckel (via X-API-Key header eller api_key i body).
+    Kräver giltig API-nyckel via X-API-Key-header.
     Användare utan nyckel nekas med 401 Unauthorized och uppmanas ansöka om nyckel.
     """
     if request.method == "OPTIONS":
@@ -266,7 +272,7 @@ async def execute_tool_direct_rest(request):
         except Exception:
             pass
 
-        api_key = request.headers.get("X-API-Key") or body.pop("api_key", None)
+        api_key = request.headers.get("X-API-Key")
         if not api_key:
             return JSONResponse({
                 "success": False,
@@ -306,8 +312,6 @@ async def execute_tool_direct_rest(request):
             # "'<=' not supported between instances of 'str' and 'int'", vilket
             # inte hjalper anroparen och rojer interna detaljer.
             logging.warning("Ogiltiga argument till %s: %s", tool_name, e)
-            auth_service.log_access(api_key, key_info, tool_name, body,
-                                    (time.time() - t0) * 1000, status="bad_request")
             return JSONResponse({
                 "success": False,
                 "error": "Ett eller flera varden har fel typ eller format.",
@@ -316,7 +320,6 @@ async def execute_tool_direct_rest(request):
 
         duration_ms = (time.time() - t0) * 1000
 
-        auth_service.log_access(api_key, key_info, tool_name, body, duration_ms)
 
         return JSONResponse({
             "success": True,
@@ -335,6 +338,8 @@ async def execute_tool_direct_rest(request):
         }, status_code=500, headers={"Access-Control-Allow-Origin": "*"})
 
 def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    if api_key and (len(api_key) > 512 or not auth_service.validate_key(api_key)):
+        return {"error": "Ogiltig eller inaktiv API-nyckel.", "status": "unauthorized"}
     client_id = api_key if api_key else "anon"
     limit = 300 if api_key else 60
     if not auth_service.check_rate_limit(client_id, max_requests=limit, window_seconds=60):
@@ -345,6 +350,7 @@ def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]
     return None
 
 @mcp.tool()
+@tracked_tool
 def get_legal_coverage(api_key: Optional[str] = None) -> Dict[str, Any]:
     """Visar land, språk, officiell källa och vilka specialområden som stöds."""
     rl_err = _check_rate_limit(api_key)
@@ -353,6 +359,7 @@ def get_legal_coverage(api_key: Optional[str] = None) -> Dict[str, Any]:
     return _get_legal_coverage()
 
 @mcp.tool()
+@tracked_tool
 def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
     """Slå upp en paragraf i SE, DK, FI, NO eller DE. Norge använder t.ex. section='15-7'."""
     rl_err = _check_rate_limit(api_key)
@@ -360,10 +367,10 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisd
         return rl_err
     t0 = time.time()
     res = _lookup_statute(law=law, section=section, chapter=chapter, jurisdiction=jurisdiction)
-    auth_service.log_access(api_key or "anon", None, "lookup_statute", {"law": law, "section": section}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
     """Sök arbetsrätt i SE, DK, FI, NO eller DE. Använd gärna källspråket nb/de för NO/DE."""
     rl_err = _check_rate_limit(api_key)
@@ -371,40 +378,40 @@ def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: O
         return [rl_err]
     t0 = time.time()
     res = _search_labor_law(query=query, jurisdiction=jurisdiction, language=language, filters=filters, limit=limit)
-    auth_service.log_access(api_key or "anon", None, "search_labor_law", {"query": query}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10, jurisdiction: str = "SE", api_key: Optional[str] = None) -> List[Dict[str, Any]]:
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return [rl_err]
     t0 = time.time()
     res = _search_case_law(query=query, statute_ref=statute_ref, year_from=year_from, limit=limit, jurisdiction=jurisdiction)
-    auth_service.log_access(api_key or "anon", None, "search_case_law", {"query": query, "statute_ref": statute_ref}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return rl_err
     t0 = time.time()
     res = _get_cba_exception(statute=statute, section=section, agreement_name=agreement_name, jurisdiction=jurisdiction)
-    auth_service.log_access(api_key or "anon", None, "get_cba_exception", {"statute": statute, "section": section, "agreement": agreement_name}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def compare_statute_vs_cba(topic: str, agreement_name: str, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return rl_err
     t0 = time.time()
     res = _compare_statute_vs_cba(topic=topic, agreement_name=agreement_name, jurisdiction=jurisdiction)
-    auth_service.log_access(api_key or "anon", None, "compare_statute_vs_cba", {"topic": topic, "agreement": agreement_name}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def calculate_notice_period(
     employment_years: float,
     terminated_by: str = "employer",
@@ -429,12 +436,10 @@ def calculate_notice_period(
         agreement_name=agreement_name,
         age=age
     )
-    auth_service.log_access(api_key or "anon", None, "calculate_notice_period",
-                            {"years": employment_years, "by": terminated_by},
-                            (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def calculate_vacation_pay(
     monthly_salary: float,
     variable_salary: float = 0.0,
@@ -456,10 +461,10 @@ def calculate_vacation_pay(
         vacation_days=vacation_days,
         agreement_name=agreement_name
     )
-    auth_service.log_access(api_key or "anon", None, "calculate_vacation_pay", {"monthly_salary": monthly_salary, "days": vacation_days}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def calculate_unpaid_vacation_deduction(
     monthly_salary: float,
     unpaid_days: int = 1,
@@ -481,10 +486,10 @@ def calculate_unpaid_vacation_deduction(
         is_advance_vacation_debt=is_advance_vacation_debt,
         agreement_name=agreement_name
     )
-    auth_service.log_access(api_key or "anon", None, "calculate_unpaid_vacation_deduction", {"monthly_salary": monthly_salary, "unpaid_days": unpaid_days}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def calculate_earned_vacation_days(
     employment_days_in_earning_year: int = 365,
     annual_vacation_right: int = 25,
@@ -506,10 +511,10 @@ def calculate_earned_vacation_days(
         non_qualifying_absence_days=non_qualifying_absence_days,
         earning_year_days=earning_year_days
     )
-    auth_service.log_access(api_key or "anon", None, "calculate_earned_vacation_days", {"employment_days": employment_days_in_earning_year, "right": annual_vacation_right}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def get_employer_certificate_info(api_key: Optional[str] = None) -> Dict[str, Any]:
     """
     Ger information om lagkrav och rutiner för Arbetsgivarintyg för a-kassa (47 § ALF)
@@ -520,10 +525,10 @@ def get_employer_certificate_info(api_key: Optional[str] = None) -> Dict[str, An
         return rl_err
     t0 = time.time()
     res = _get_employer_certificate_info()
-    auth_service.log_access(api_key or "anon", None, "get_employer_certificate_info", {}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def get_rehabilitation_plan_info(api_key: Optional[str] = None) -> Dict[str, Any]:
     """
     Ger lagkrav, tidsfrister och direktlänk till Försäkringskassans mall/blankett (FK 7459 PDF)
@@ -534,10 +539,10 @@ def get_rehabilitation_plan_info(api_key: Optional[str] = None) -> Dict[str, Any
         return rl_err
     t0 = time.time()
     res = _get_rehabilitation_plan_info()
-    auth_service.log_access(api_key or "anon", None, "get_rehabilitation_plan_info", {}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def get_discrimination_act_guide(topic: Optional[str] = None, api_key: Optional[str] = None) -> Dict[str, Any]:
     """
     Vägledning och lagregler från Diskrimineringsombudsmannen (DO) och Diskrimineringslagen (2008:567),
@@ -548,10 +553,10 @@ def get_discrimination_act_guide(topic: Optional[str] = None, api_key: Optional[
         return rl_err
     t0 = time.time()
     res = _get_discrimination_act_guide(topic=topic)
-    auth_service.log_access(api_key or "anon", None, "get_discrimination_act_guide", {"topic": topic}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def check_bank_days_and_deadlines(
     date_str: Optional[str] = None,
     check_salary_payout_for_month: Optional[int] = None,
@@ -571,10 +576,10 @@ def check_bank_days_and_deadlines(
         check_salary_payout_for_month=check_salary_payout_for_month,
         year=year
     )
-    auth_service.log_access(api_key or "anon", None, "check_bank_days_and_deadlines", {"date": date_str, "month": check_salary_payout_for_month}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def calculate_redundancy_turnorder_and_exceptions(
     total_employees_in_unit: Optional[int] = None,
     redundancy_count: Optional[int] = None,
@@ -602,10 +607,10 @@ def calculate_redundancy_turnorder_and_exceptions(
         contract_areas_count=contract_areas_count,
         employees_list=employees_list
     )
-    auth_service.log_access(api_key or "anon", None, "calculate_redundancy_turnorder_and_exceptions", {"total": total_employees_in_unit, "redundant": redundancy_count}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def generate_turordningslista_excel(
     company_name: str = "Företaget AB",
     employees: Optional[List[Dict[str, Any]]] = None,
@@ -632,9 +637,9 @@ def generate_turordningslista_excel(
         single_operating_unit=single_operating_unit,
         as_of_date=as_of_date
     )
-    auth_service.log_access(api_key or "anon", None, "generate_turordningslista_excel", {"company": company_name, "count": len(employees) if employees else 0}, (time.time() - t0)*1000)
     return res
 @mcp.tool()
+@tracked_tool
 def get_hr_document_template(
     template_type: str,
     company_name: Optional[str] = "Arbetsgivaren AB / Organisationen",
@@ -676,10 +681,10 @@ def get_hr_document_template(
         response_deadline=response_deadline,
         date_str=date_str
     )
-    auth_service.log_access(api_key or "anon", None, "get_hr_document_template", {"type": template_type}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def calculate_travel_deduction_and_mileage(
     transport_mode: Optional[str] = "egen_bil",
     distance_km_one_way: float = 25.0,
@@ -711,10 +716,10 @@ def calculate_travel_deduction_and_mileage(
         has_public_transit=has_public_transit,
         marginal_tax_pct=marginal_tax_pct
     )
-    auth_service.log_access(api_key or "anon", None, "calculate_travel_deduction_and_mileage", {"mode": transport_mode, "year": tax_year}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def get_base_amounts_and_indices(
     year: Optional[int] = 2026,
     compare_all_years: bool = False,
@@ -733,10 +738,10 @@ def get_base_amounts_and_indices(
         year=year,
         compare_all_years=compare_all_years
     )
-    auth_service.log_access(api_key or "anon", None, "get_base_amounts_and_indices", {"year": year, "all": compare_all_years}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def search_parliament_and_legislation(
     query: str,
     doc_type: Optional[str] = None,
@@ -758,10 +763,10 @@ def search_parliament_and_legislation(
         limit=limit,
         page=page
     )
-    auth_service.log_access(api_key or "anon", None, "search_parliament_and_legislation", {"query": query, "doc_type": doc_type}, (time.time() - t0)*1000)
     return res
 
 @mcp.tool()
+@tracked_tool
 def get_parliament_document_details(
     dok_id: str,
     api_key: Optional[str] = None
@@ -775,12 +780,13 @@ def get_parliament_document_details(
         return rl_err
     t0 = time.time()
     res = _get_parliament_document_details(dok_id=dok_id)
-    auth_service.log_access(api_key or "anon", None, "get_parliament_document_details", {"dok_id": dok_id}, (time.time() - t0)*1000)
     return res
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     if "PORT" in os.environ:
-        mcp.run(transport="http", host="0.0.0.0", port=port)
+        mcp.run(transport="http", host="0.0.0.0", port=port,
+                middleware=[Middleware(RequestSizeLimit)],
+                uvicorn_config={"proxy_headers": False})
     else:
         mcp.run()
