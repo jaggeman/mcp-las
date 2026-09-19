@@ -45,9 +45,11 @@ from src.mcp_tools.tools import (
 mcp = FastMCP(
     name=settings.MCP_SERVER_NAME,
     instructions=(
-        "Nordisk arbetsrätts-MCP för Sverige, Danmark och Finland för AI-agenter och Claude. "
-        "Svenska, danska och finska lagar hålls separerade med jurisdiction-filter (SE, DK, FI) och officiella källor. "
-        "Sverige använder Riksdagen/Arbetsdomstolen, Danmark Retsinformation och Finland Finlex. "
+        "Arbetsrätts-MCP för Sverige, Danmark, Finland, Norge och Tyskland. "
+        "Välj jurisdiction (SE, DK, FI, NO, DE) för laguppslag och sökning. "
+        "Källor: Riksdagen, Retsinformation, Finlex, Lovdata och Gesetze im Internet. "
+        "get_legal_coverage beskriver adapterstöd; data måste synkroniseras före uppslag. "
+        "Specialverktyg för beräkningar, praxis, kollektivavtal och mallar gäller endast Sverige. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
         "HR-dokumentmallar (omplaceringsutredning 7 § LAS, omplaceringserbjudande, varsel 30 § LAS, uppsägningsbesked), "
         "turordningsregler, Excel-export av turordningslista vid arbetsbrist (Unionen & 22 § LAS), "
@@ -352,7 +354,7 @@ def get_legal_coverage(api_key: Optional[str] = None) -> Dict[str, Any]:
 
 @mcp.tool()
 def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
-    """Slå upp en paragraf i ett land: SE (Sverige), DK (Danmark) eller FI (Finland)."""
+    """Slå upp en paragraf i SE, DK, FI, NO eller DE. Norge använder t.ex. section='15-7'."""
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return rl_err
@@ -362,8 +364,8 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisd
     return res
 
 @mcp.tool()
-def search_labor_law(query: str, jurisdiction: str = "SE", language: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Sök arbetsrätt i ett land: SE, DK eller FI. Land väljs explicit."""
+def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Sök arbetsrätt i SE, DK, FI, NO eller DE. Använd gärna källspråket nb/de för NO/DE."""
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return [rl_err]
@@ -631,6 +633,7 @@ def generate_turordningslista_excel(
         as_of_date=as_of_date
     )
     auth_service.log_access(api_key or "anon", None, "generate_turordningslista_excel", {"company": company_name, "count": len(employees) if employees else 0}, (time.time() - t0)*1000)
+    return res
 @mcp.tool()
 def get_hr_document_template(
     template_type: str,

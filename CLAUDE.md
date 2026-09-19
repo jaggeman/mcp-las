@@ -1,5 +1,30 @@
 # CLAUDE.md - AI Agent & Assistant Guide for MCP-LAS
 
+## Norge och Tyskland – laguppslag och sökning
+
+`lookup_statute` och `search_labor_law` stöder `jurisdiction="NO"` respektive `"DE"`.
+Norge: 6 lagar (Arbeidsmiljøloven, Ferieloven, Likestillings- og diskrimineringsloven,
+Arbeidstvistloven, Allmenngjøringsloven och Statsansatteloven). Tyskland: 8 lagar
+(KSchG, BUrlG, ArbZG, TzBfG, AGG, ArbSchG, BetrVG och EntgFG).
+
+Synkronisera med `.venv\Scripts\python.exe scripts/sync_sources.py --norwegian --german`.
+Kommandot skriver till konfigurerad Firestore och kräver skrivbehörighet.
+Källor: https://api.lovdata.no/om-api-tjenesten/ (Stiftelsen Lovdata, NLOD 2.0)
+och https://www.gesetze-im-internet.de/ (XML-paket per lag).
+Norska paragrafnummer behålls, t.ex. `section="15-7"`; tyska t.ex. `section="1a"`.
+Källspråk är `nb` respektive `de`. Sök på källspråket; översättning garanteras inte.
+Katalogen är avgränsad, inte fullständig nationell arbetsrätt. Norska traktatbilagor
+med artikelnummer och tyska bilagor ingår inte i paragrafindexet.
+Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast för Sverige.
+`get_legal_coverage` beskriver adapterstöd, inte verifierad produktionsinläsning.
+Efter extern synk uppdateras serverns lagcache inom 60 sekunder utan omstart.
+Synken kontrollerar alla skrivningar, fortsätter med nästa lag vid källfel och markerar
+borttagna paragrafer som inaktiva (återställningsbara), inte som gällande sökträffar.
+Embedding-provider och modell ingår i synkhashen; providerbyte kräver omindexering av
+hela korpusen. `EMBEDDING_PROVIDER=mock` använder alltid lokal beräkning även om API-nycklar
+finns. OpenAI/Gemini ger fel vid saknad nyckel eller API-fel, utan tyst byte till mock.
+
+
 Detta dokument beskriver arkitektur, driftsättning, miljövariabler och MCP-konfiguration för **MCP-LAS** under Novro (`las.novro.se`).
 
 ---

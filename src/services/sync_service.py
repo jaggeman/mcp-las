@@ -31,156 +31,103 @@ def content_hash(value: str) -> str:
 
 
 class SourceSyncService:
-    """Fetch, fingerprint and index statutes without rewriting unchanged data."""
+    """Independent source updates, with confirmed writes and recoverable retirement."""
 
-    def __init__(self, db: Any = db_client, fetcher: Any = RiksdagenFetcher, embedder: Any = Embedder, danish_fetcher: Any = RetsinformationFetcher, finnish_fetcher: Any = FinlexFetcher):
-        self.db = db
-        self.fetcher = fetcher
-        self.embedder = embedder
-        self.danish_fetcher = danish_fetcher
-        self.finnish_fetcher = finnish_fetcher
+    def __init__(self, db=db_client, fetcher=RiksdagenFetcher, embedder=Embedder,
+                 danish_fetcher=RetsinformationFetcher, finnish_fetcher=FinlexFetcher):
+        self.db, self.fetcher, self.embedder = db, fetcher, embedder
+        self.danish_fetcher, self.finnish_fetcher = danish_fetcher, finnish_fetcher
 
-    def sync_statutes(self, statutes: Iterable[str] = DEFAULT_STATUTES) -> Dict[str, Any]:
-        result: Dict[str, Any] = {"changed": 0, "skipped": 0, "errors": 0, "items": []}
+    def _sync_one(self, source_id, metadata, sections, country):
+        if isinstance(sections, Exception):
+            raise sections
+        if not sections:
+            raise ValueError("Empty source; refusing to replace existing statute")
+        metadata = dict(metadata)
+        metadata.setdefault("jurisdiction", country)
+        metadata.setdefault("language", {"SE":"sv","DK":"da","FI":"fi","NO":"nb","DE":"de"}[country])
+        model = self.embedder.fingerprint()
+        fingerprint = content_hash(str(metadata) + model + "\n" + "\n".join(s.raw_text for s in sections))
+        previous = self.db.get_sync_state(source_id) or {}
+        if previous.get("content_hash") == fingerprint and previous.get("status") == "success":
+            if self.db.save_sync_state(source_id, dict(previous, checked_at=datetime.now(timezone.utc).isoformat())) is not True:
+                raise RuntimeError("Could not persist sync check")
+            return {"source_id":source_id, "status":"skipped"}
+        rows = []
+        for section in sections:
+            row = section.model_dump()
+            row.update({k:metadata[k] for k in ("jurisdiction","language","source","source_url","license","attribution") if k in metadata})
+            row.update(active=True, embedding_model=model, embedding=self.embedder.get_embedding(section.raw_text))
+            rows.append(row)
+        ids = {r["id"] for r in rows}
+        if len(ids) != len(rows):
+            raise ValueError("Duplicate section IDs")
+        statute_id = rows[0].get("statute_id") or metadata.get("statute_id") or metadata["id"]
+        for row in rows:
+            if self.db.save_statute_section(row) is not True:
+                raise RuntimeError(f"Could not save section {row['id']}")
+        if self.db.retire_missing_sections(statute_id, country, ids) is not True:
+            raise RuntimeError("Could not retire stale sections")
+        metadata["total_sections"] = len(rows)
+        if self.db.save_statute(metadata) is not True:
+            raise RuntimeError(f"Could not save statute {source_id}")
+        state = {"source_id":source_id, "content_hash":fingerprint, "embedding_model":model,
+                 "synced_at":datetime.now(timezone.utc).isoformat(), "status":"success",
+                 "section_count":len(rows), "source_url":metadata.get("source_url") or metadata.get("document_url")}
+        if self.db.save_sync_state(source_id, state) is not True:
+            raise RuntimeError("Could not persist sync state")
+        return {"source_id":source_id, "status":"changed", "sections":len(rows)}
 
-        for sfs_number in statutes:
-            source_id = f"statute:{sfs_number}"
-            try:
-                metadata, sections = self.fetcher.get_statute(sfs_number)
-                fingerprint_input = metadata.model_dump_json() if hasattr(metadata, "model_dump_json") else str(metadata.model_dump())
-                fingerprint_input += "\n" + "\n".join(section.raw_text for section in sections)
-                fingerprint = content_hash(fingerprint_input)
-                previous = self.db.get_sync_state(source_id) or {}
-
-                if previous.get("content_hash") == fingerprint and previous.get("status") == "success":
-                    result["skipped"] += 1
-                    result["items"].append({"source_id": source_id, "status": "skipped"})
-                    continue
-
-                self.db.save_statute(metadata.model_dump())
-                for section in sections:
-                    section_data = section.model_dump()
-                    section_data["embedding"] = self.embedder.get_embedding(section.raw_text)
-                    self.db.save_statute_section(section_data)
-
-                state = {
-                    "source_id": source_id,
-                    "content_hash": fingerprint,
-                    "source_url": metadata.document_url,
-                    "section_count": len(sections),
-                    "synced_at": datetime.now(timezone.utc).isoformat(),
-                    "status": "success",
-                }
-                self.db.save_sync_state(source_id, state)
-                result["changed"] += 1
-                result["items"].append({"source_id": source_id, "status": "changed", "sections": len(sections)})
-            except Exception as exc:
-                result["errors"] += 1
-                result["items"].append({"source_id": source_id, "status": "error", "error": str(exc)})
-                self.db.save_sync_state(source_id, {
-                    "source_id": source_id,
-                    "synced_at": datetime.now(timezone.utc).isoformat(),
-                    "status": "error",
-                    "error": str(exc),
-                })
-
+    def _run(self, jobs, country):
+        result = {"changed":0,"skipped":0,"errors":0,"items":[]}
+        try:
+            for source_id, loader in jobs:
+                try:
+                    metadata, sections = loader()
+                    item = self._sync_one(source_id, metadata, sections, country)
+                    result[item["status"]] += 1
+                    result["items"].append(item)
+                except Exception as exc:
+                    result["errors"] += 1
+                    result["items"].append({"source_id":source_id,"status":"error","error":str(exc)})
+                    self.db.save_sync_state(source_id, {"source_id":source_id,"status":"error",
+                        "error":str(exc),"synced_at":datetime.now(timezone.utc).isoformat()})
+        except Exception as exc:
+            result["errors"] += 1
+            result["items"].append({"source_id":country,"status":"error","error":str(exc)})
         result["status"] = "error" if result["errors"] else "success"
         return result
 
-    def sync_danish_documents(self, documents: Iterable[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Harvest and index changed Danish laws from Retsinformation."""
-        result: Dict[str, Any] = {"changed": 0, "skipped": 0, "errors": 0, "items": []}
-        source_documents = documents if documents is not None else self.danish_fetcher.get_changed_laws()
+    def sync_statutes(self, statutes=DEFAULT_STATUTES):
+        def load(sfs):
+            metadata, sections = self.fetcher.get_statute(sfs)
+            return metadata.model_dump(), sections
+        return self._run(((f"statute:{sfs}",lambda sfs=sfs:load(sfs)) for sfs in statutes),"SE")
 
-        for document in source_documents:
-            document_id = document.get("documentId") or document.get("document_id") or document.get("id") or document.get("akn_uri")
-            source_id = f"danish:{document_id}"
-            try:
-                metadata, sections = self.danish_fetcher.get_document(document)
-                fingerprint_input = str(metadata) + "\n" + "\n".join(section.raw_text for section in sections)
-                fingerprint = content_hash(fingerprint_input)
-                previous = self.db.get_sync_state(source_id) or {}
-                if previous.get("content_hash") == fingerprint and previous.get("status") == "success":
-                    result["skipped"] += 1
-                    result["items"].append({"source_id": source_id, "status": "skipped"})
-                    continue
+    def sync_european_statutes(self, jurisdiction):
+        from src.scrapers.european_labor_fetcher import EuropeanLaborFetcher
+        def jobs():
+            for meta, sections in EuropeanLaborFetcher.iter_documents(jurisdiction):
+                yield meta["id"], lambda m=meta,s=sections:(m,s)
+        return self._run(jobs(),jurisdiction)
 
-                self.db.save_statute(metadata)
-                for section in sections:
-                    section_data = section.model_dump()
-                    section_data.update({"jurisdiction": "DK", "language": "da"})
-                    section_data["embedding"] = self.embedder.get_embedding(section.raw_text)
-                    self.db.save_statute_section(section_data)
+    def _sync_foreign(self, documents, fetcher, country):
+        def jobs():
+            sources = documents if documents is not None else fetcher.get_changed_laws()
+            for document in sources:
+                doc_id = document.get("id") or document.get("documentId") or document.get("document_id") or document.get("akn_uri")
+                prefix = "finnish" if country=="FI" else "danish"
+                try:
+                    metadata, sections = fetcher.get_document(document)
+                    if country=="FI":
+                        doc_id = str(metadata.get("statute_id") or doc_id).replace("/","_")
+                    yield f"{prefix}:{doc_id}", lambda m=metadata,s=sections:(m,s)
+                except Exception as exc:
+                    yield f"{prefix}:{str(doc_id).replace('/','_')}", lambda e=exc:({},e)
+        return self._run(jobs(),country)
 
-                self.db.save_sync_state(source_id, {
-                    "source_id": source_id,
-                    "content_hash": fingerprint,
-                    "source_url": metadata.get("source_url"),
-                    "section_count": len(sections),
-                    "synced_at": datetime.now(timezone.utc).isoformat(),
-                    "status": "success",
-                })
-                result["changed"] += 1
-                result["items"].append({"source_id": source_id, "status": "changed", "sections": len(sections)})
-            except Exception as exc:
-                result["errors"] += 1
-                result["items"].append({"source_id": source_id, "status": "error", "error": str(exc)})
-                self.db.save_sync_state(source_id, {
-                    "source_id": source_id,
-                    "synced_at": datetime.now(timezone.utc).isoformat(),
-                    "status": "error",
-                    "error": str(exc),
-                })
+    def sync_danish_documents(self, documents=None):
+        return self._sync_foreign(documents,self.danish_fetcher,"DK")
 
-        result["status"] = "error" if result["errors"] else "success"
-        return result
-
-    def sync_finnish_documents(self, documents: Iterable[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Harvest and index Finnish laws from Finlex open data."""
-        result: Dict[str, Any] = {"changed": 0, "skipped": 0, "errors": 0, "items": []}
-        source_documents = documents if documents is not None else self.finnish_fetcher.get_changed_laws()
-
-        for document in source_documents:
-            document_id = document.get("id") or document.get("documentId") or document.get("document_id") or document.get("akn_uri")
-            source_id = f"finnish:{document_id}"
-            try:
-                metadata, sections = self.finnish_fetcher.get_document(document)
-                safe_document_id = str(metadata.get("statute_id") or document_id).replace("/", "_")
-                source_id = f"finnish:{safe_document_id}"
-                fingerprint_input = str(metadata) + "\n" + "\n".join(section.raw_text for section in sections)
-                fingerprint = content_hash(fingerprint_input)
-                previous = self.db.get_sync_state(source_id) or {}
-                if previous.get("content_hash") == fingerprint and previous.get("status") == "success":
-                    result["skipped"] += 1
-                    result["items"].append({"source_id": source_id, "status": "skipped"})
-                    continue
-
-                self.db.save_statute(metadata)
-                for section in sections:
-                    section_data = section.model_dump()
-                    section_data.update({"jurisdiction": "FI", "language": metadata.get("language", "fi")})
-                    section_data["embedding"] = self.embedder.get_embedding(section.raw_text)
-                    self.db.save_statute_section(section_data)
-
-                self.db.save_sync_state(source_id, {
-                    "source_id": source_id,
-                    "content_hash": fingerprint,
-                    "source_url": metadata.get("source_url"),
-                    "section_count": len(sections),
-                    "synced_at": datetime.now(timezone.utc).isoformat(),
-                    "status": "success",
-                })
-                result["changed"] += 1
-                result["items"].append({"source_id": source_id, "status": "changed", "sections": len(sections)})
-            except Exception as exc:
-                result["errors"] += 1
-                result["items"].append({"source_id": source_id, "status": "error", "error": str(exc)})
-                self.db.save_sync_state(source_id, {
-                    "source_id": source_id,
-                    "synced_at": datetime.now(timezone.utc).isoformat(),
-                    "status": "error",
-                    "error": str(exc),
-                })
-
-        result["status"] = "error" if result["errors"] else "success"
-        return result
+    def sync_finnish_documents(self, documents=None):
+        return self._sync_foreign(documents,self.finnish_fetcher,"FI")

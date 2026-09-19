@@ -2,6 +2,7 @@ import math
 import os
 import re
 import logging
+import time
 from typing import List, Dict, Any, Optional
 from src.config import settings
 from src.embeddings.embedder import Embedder
@@ -100,31 +101,54 @@ class FirebaseLaborLawDB:
                 pass
         return getattr(self, "_local_sync_state", {}).get(source_id)
 
-    def save_sync_state(self, source_id: str, state: Dict[str, Any]) -> None:
+    def save_sync_state(self, source_id: str, state: Dict[str, Any]) -> bool:
         if not hasattr(self, "_local_sync_state"):
             self._local_sync_state = {}
-        self._local_sync_state[source_id] = dict(state)
         if self.db:
             try:
                 self.db.collection("source_sync_state").document(source_id).set(state)
+                self._local_sync_state[source_id] = dict(state)
+                return True
             except Exception:
-                pass
+                logger.exception('Could not persist sync state %s', source_id)
+        return False
 
     def _get_statute_items(self) -> List[Dict[str, Any]]:
-        if self._cached_statute_sections is not None:
+        if self._cached_statute_sections is not None and time.monotonic() - getattr(self, '_statute_cache_at', 0) < 60:
             return self._cached_statute_sections
         items = []
         if self.db:
             try:
-                docs = self.db.collection("statute_sections").limit(1000).stream()
+                docs = self.db.collection("statute_sections").stream()
                 items = [d.to_dict() for d in docs]
             except Exception:
                 pass
         if not items:
             items = list(self._local_sections.values())
-        if items:
-            self._cached_statute_sections = items
+        items = [row for row in items if row.get('active', True)]
+        self._cached_statute_sections = items
+        self._statute_cache_at = time.monotonic()
         return items
+
+    def retire_missing_sections(self, statute_id, jurisdiction, active_ids):
+        """Retain old records for recovery, but exclude them from active queries."""
+        if not self.db or not active_ids:
+            return False
+        try:
+            from google.cloud.firestore_v1.base_query import FieldFilter
+            docs = self.db.collection('statute_sections').where(filter=FieldFilter('statute_id', '==', statute_id)).stream()
+            for doc in docs:
+                row = doc.to_dict()
+                if row.get('jurisdiction', 'SE') == jurisdiction and doc.id not in active_ids:
+                    doc.reference.update({'active': False})
+            for row in self._local_sections.values():
+                if row.get('statute_id') == statute_id and row.get('jurisdiction','SE') == jurisdiction and row['id'] not in active_ids:
+                    row['active'] = False
+            self._cached_statute_sections = None
+            return True
+        except Exception:
+            logger.exception('Could not retire stale sections for %s/%s', jurisdiction, statute_id)
+            return False
 
     def _get_precedent_items(self) -> List[Dict[str, Any]]:
         if self._cached_precedents is not None:
@@ -151,7 +175,7 @@ class FirebaseLaborLawDB:
 
         for s in items:
             short = s.get("statute_short", "").upper()
-            sfs = s.get("statute_id", "")
+            sfs = s.get("statute_id", "").upper()
             stored_jurisdiction = str(s.get("jurisdiction", "SE")).upper()
             if (law_clean in short or law_clean in sfs) and stored_jurisdiction == jurisdiction_clean and s.get("section_number", "").lower() == sec_clean:
                 if chapter:
@@ -171,7 +195,7 @@ class FirebaseLaborLawDB:
 
     def search_statute_sections(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5) -> List[Dict[str, Any]]:
         q_lower = query.lower()
-        raw_tokens = re.findall(r'[a-zåäö0-9]+', q_lower)
+        raw_tokens = re.findall(r'[^\W_]+', q_lower)
         from src.embeddings.embedder import SWEDISH_STOPWORDS
         meaningful_q = [w for w in raw_tokens if w not in SWEDISH_STOPWORDS and len(w) >= 2]
         if not meaningful_q:
@@ -255,7 +279,7 @@ class FirebaseLaborLawDB:
         doc_stem_freqs: Dict[str, int] = {}
         for s in items:
             all_text = (s.get('content', '') + ' ' + (s.get('section_title') or '') + ' ' + ' '.join(s.get('keywords', []))).lower()
-            stems = set(self._stem_sv(w) for w in re.findall(r'[a-zåäö0-9]+', all_text))
+            stems = set(self._stem_sv(w) for w in re.findall(r'[^\W_]+', all_text))
             for st in stems:
                 doc_stem_freqs[st] = doc_stem_freqs.get(st, 0) + 1
 
@@ -275,11 +299,11 @@ class FirebaseLaborLawDB:
             sec_chap = str(s.get("chapter", "")).lower().replace(" ", "") if s.get("chapter") else None
             statute_short = s.get("statute_short", "")
 
-            doc_tokens = re.findall(r'[a-zåäö0-9]+', content.lower())
+            doc_tokens = re.findall(r'[^\W_]+', content.lower())
             doc_stems = [self._stem_sv(w) for w in doc_tokens]
-            title_tokens = re.findall(r'[a-zåäö0-9]+', title.lower())
+            title_tokens = re.findall(r'[^\W_]+', title.lower())
             title_stems = [self._stem_sv(w) for w in title_tokens]
-            kw_tokens = re.findall(r'[a-zåäö0-9]+', ' '.join(keywords).lower())
+            kw_tokens = re.findall(r'[^\W_]+', ' '.join(keywords).lower())
             first_tokens = doc_tokens[:25]
             first_stems = doc_stems[:25]
 
@@ -354,7 +378,11 @@ class FirebaseLaborLawDB:
                     "content": s.get("content"),
                     "keywords": s.get("keywords"),
                     "jurisdiction": s.get("jurisdiction", "SE"),
-                    "language": s.get("language", "sv")
+                    "language": s.get("language", "sv"),
+                    "source": s.get("source"),
+                    "source_url": s.get("source_url"),
+                    "license": s.get("license"),
+                    "attribution": s.get("attribution"),
                 })
 
         scored_sections.sort(key=lambda x: x["score"], reverse=True)

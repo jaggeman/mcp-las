@@ -1,13 +1,23 @@
 from typing import Optional, Dict, Any, List
 from src.db.firebase_client import db_client
 
-SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi"}
+SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi", "NO": "nb", "DE": "de"}
 
 
 def get_legal_coverage() -> Dict[str, Any]:
     """Beskriver faktisk land- och områdestäckning för MCP-servern."""
     return {
         "jurisdictions": {
+            "NO": {
+                "country": "Norge", "language": "nb", "statutes": True,
+                "case_law": False, "collective_agreements": False,
+                "calculators": [], "hr_templates": False, "catalog_statutes": 6,
+            },
+            "DE": {
+                "country": "Tyskland", "language": "de", "statutes": True,
+                "case_law": False, "collective_agreements": False,
+                "calculators": [], "hr_templates": False, "catalog_statutes": 8,
+            },
             "SE": {
                 "country": "Sverige", "language": "sv", "statutes": True,
                 "case_law": "Arbetsdomstolen", "collective_agreements": True,
@@ -25,8 +35,9 @@ def get_legal_coverage() -> Dict[str, Any]:
                 "calculators": [], "hr_templates": False,
             },
         },
-        "selection_rule": "Ange jurisdiction=SE, DK eller FI i lookup_statute och search_labor_law.",
-        "sources": {"SE": "Riksdagen", "DK": "Retsinformation", "FI": "Finlex"},
+        "selection_rule": "Ange jurisdiction=SE, DK, FI, NO eller DE i lookup_statute och search_labor_law.",
+        "coverage_note": "Adapterstöd och avgränsade lagkataloger. Tillgängliga paragrafer beror på genomförd synk; inte fullständig rättslig täckning.",
+        "sources": {"SE": "Riksdagen", "DK": "Retsinformation", "FI": "Finlex", "NO": "Lovdata", "DE": "Gesetze im Internet"},
     }
 
 def _determine_certainty(text: str, source_type: str = "statute") -> Dict[str, Any]:
@@ -96,7 +107,7 @@ def _normalize_jurisdiction(jurisdiction: str) -> str:
 def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE") -> Dict[str, Any]:
     """
     Exact retrieval of a legal paragraph. ``jurisdiction`` is required conceptually
-    and must be SE (Sweden), DK (Denmark), or FI (Finland); it defaults to SE for
+    and must be SE, DK, FI, NO or DE; it defaults to SE for
     backwards compatibility. Returns source and language metadata as well.
     """
     try:
@@ -133,18 +144,21 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisd
         "jurisdiction": result.get("jurisdiction", jurisdiction),
         "language": result.get("language", SUPPORTED_JURISDICTIONS[jurisdiction]),
         "source": result.get("source") or result.get("source_url"),
+        "source_url": result.get("source_url"),
+        "license": result.get("license"),
+        "attribution": result.get("attribution"),
         "certainty": certainty
     }
 
-def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5, jurisdiction: str = "SE", language: Optional[str] = None) -> List[Dict[str, Any]]:
+def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5, jurisdiction: Optional[str] = None, language: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Hybrid search across labor-law provisions in one jurisdiction. Use SE, DK, or
-    FI explicitly; the legacy ``filters`` argument remains supported.
+    FI, NO or DE explicitly; the legacy ``filters`` argument remains supported.
     """
     legacy_jurisdiction = (filters or {}).get("jurisdiction") or (filters or {}).get("country")
     # Preserve clients using the original filters={"jurisdiction": "DK"}
-    # shape. An explicitly supplied non-SE value always takes precedence.
-    requested_jurisdiction = legacy_jurisdiction if jurisdiction == "SE" and legacy_jurisdiction else jurisdiction
+    # shape. Any explicit country, including SE, takes precedence.
+    requested_jurisdiction = jurisdiction if jurisdiction is not None else (legacy_jurisdiction or "SE")
     try:
         jurisdiction = _normalize_jurisdiction(requested_jurisdiction)
     except ValueError as exc:

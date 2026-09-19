@@ -34,15 +34,22 @@ class Embedder:
     """
 
     @classmethod
+    def fingerprint(cls):
+        provider = settings.EMBEDDING_PROVIDER.lower()
+        return {'mock':'mock:unicode-ngram-v2:1536', 'openai':'openai:text-embedding-3-small:1536',
+                'gemini':'gemini:text-embedding-004:768'}[provider]
+
+    @classmethod
     def get_embedding(cls, text: str) -> List[float]:
         provider = settings.EMBEDDING_PROVIDER.lower()
 
-        if (provider == "openai" or (provider == "mock" and settings.OPENAI_API_KEY)) and settings.OPENAI_API_KEY:
+        if provider == "openai" and settings.OPENAI_API_KEY:
             return cls._embed_openai(text)
-        elif (provider == "gemini" or (provider == "mock" and settings.GEMINI_API_KEY)) and settings.GEMINI_API_KEY:
+        elif provider == "gemini" and settings.GEMINI_API_KEY:
             return cls._embed_gemini(text)
-        else:
+        elif provider == "mock":
             return cls._embed_mock(text)
+        raise ValueError('Unsupported embedding provider or missing API key')
 
     @classmethod
     def _embed_openai(cls, text: str) -> List[float]:
@@ -56,13 +63,12 @@ class Embedder:
             )
             return res.data[0].embedding
         except Exception as e:
-            logger.warning(f"OpenAI embedding error: {e}, falling back to offline embedder.")
-            return cls._embed_mock(text)
+            raise RuntimeError('OpenAI embedding failed') from e
 
     @classmethod
     def _embed_gemini(cls, text: str) -> List[float]:
         if not settings.GEMINI_API_KEY:
-            return cls._embed_mock(text)
+            raise ValueError('Missing Gemini API key')
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={settings.GEMINI_API_KEY}"
             clean_input = text.replace("\n", " ")[:2048]
@@ -74,11 +80,9 @@ class Embedder:
                 data = resp.json()
                 return data["embedding"]["values"]
             else:
-                logger.warning(f"Gemini API returned status {resp.status_code}: {resp.text}")
-                return cls._embed_mock(text)
+                raise RuntimeError(f'Gemini embedding returned HTTP {resp.status_code}')
         except Exception as e:
-            logger.warning(f"Gemini embedding error: {e}, falling back to offline embedder.")
-            return cls._embed_mock(text)
+            raise RuntimeError('Gemini embedding failed') from e
 
     @classmethod
     def _embed_mock(cls, text: str, dim: int = 1536) -> List[float]:
@@ -86,7 +90,7 @@ class Embedder:
         High-quality deterministic offline semantic embedding.
         Strips stopwords and creates n-gram hashed vectors without position decay bias.
         """
-        words = re.findall(r'[a-zåäö0-9]+', text.lower())
+        words = re.findall(r'[^\W_]+', text.lower())
         meaningful = [w for w in words if w not in SWEDISH_STOPWORDS and len(w) >= 2]
         if not meaningful:
             meaningful = words
@@ -110,6 +114,8 @@ class Embedder:
 
     @staticmethod
     def cosine_similarity(v1: List[float], v2: List[float]) -> float:
+        if len(v1) != len(v2):
+            return 0.0
         a = np.array(v1)
         b = np.array(v2)
         norm_a = np.linalg.norm(a)

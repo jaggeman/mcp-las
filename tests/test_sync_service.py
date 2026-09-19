@@ -14,12 +14,18 @@ class FakeDB:
 
     def save_sync_state(self, source_id, state):
         self.states[source_id] = state
+        return True
 
     def save_statute(self, metadata):
         self.statutes.append(metadata)
+        return True
 
     def save_statute_section(self, section):
         self.sections.append(section)
+        return True
+
+    def retire_missing_sections(self, statute_id, jurisdiction, ids):
+        return True
 
 
 class FakeFetcher:
