@@ -92,12 +92,37 @@ jobs:
       # på main?". Utan den krävdes deployloggar och revisionslistor för att
       # avgöra saken, och två parallella driftsättningar av samma tjänst gick
       # inte att skilja åt utifrån alls.
+      # --service-account är inte valfritt här. Utan flaggan kör tjänsten som
+      # projektets default compute service account, som i GCP:s standard-
+      # uppsättning har Editor på HELA paygap-prod - alltså läs- och
+      # skrivbehörighet till Novros anställningsuppgifter, löner och
+      # lönekartläggningar, i samma Firestore-databas. MCP-LAS rör aldrig de
+      # collections i kod, men med den rollen FÅR den det, och en bugg eller en
+      # komprometterad nyckel räcker då för att nå dem. Kontot nedan har bara
+      # åtkomst till LAS egna collections. Se avsnittet om separation i
+      # CLAUDE.md innan du ändrar något här.
+      # Utan variabeln blir --service-account tom och deployen faller på ett
+      # svårläst gcloud-fel. Att i stället hoppa över flaggan vore värre: då
+      # skulle tjänsten tyst starta om som default compute-kontot med Editor
+      # på hela projektet, alltså exakt det den här ändringen finns för att
+      # förhindra. Fall hellre tidigt med ett besked som går att agera på.
+      - name: Kontrollera att runtime-kontot är konfigurerat
+        run: |
+          if [ -z "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}" ]; then
+            echo "GCP_RUNTIME_SERVICE_ACCOUNT saknas."
+            echo "Kör scripts/setup_runtime_service_account.sh och sätt sedan:"
+            echo "  gh variable set GCP_RUNTIME_SERVICE_ACCOUNT --body mcp-las-runtime@paygap-prod.iam.gserviceaccount.com"
+            echo "Se avsnittet om separation mellan MCP-LAS och Novro i CLAUDE.md."
+            exit 1
+          fi
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy mcp-las \
             --source . \
             --project=paygap-prod \
             --region=europe-west3 \
+            --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }} \
             --allow-unauthenticated \
             --max-instances=5 \
             --concurrency=40 \
