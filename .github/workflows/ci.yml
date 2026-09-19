@@ -127,6 +127,12 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Uppdatera synkjobbets image
+        run: |
+          REVISION=$(gcloud run services describe mcp-las --project=paygap-prod --region=europe-west3 --format='value(status.latestReadyRevisionName)')
+          IMAGE=$(gcloud run revisions describe "$REVISION" --project=paygap-prod --region=europe-west3 --format='value(status.imageDigest)')
+          gcloud run jobs update mcp-las-source-sync --project=paygap-prod --region=europe-west3 --image="$IMAGE" --args="scripts/sync_sources.py,--swedish,--norwegian,--german,--spanish"
+
       # mcp-novro (las.novro.se) ar den etablerade, produktionsbarande siten -
       # anvandare har den redan i sin claude_desktop_config.json. Den far ALDRIG
       # sta och falla for att ett tillaggsalias inte ar klart.

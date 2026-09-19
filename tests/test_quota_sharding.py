@@ -30,4 +30,5 @@ def test_weekly_sync_uses_oidc_and_includes_no_de():
     assert 'credentials_json:' not in workflow
     assert 'id-token: write' in workflow
     assert 'GCP_SYNC_WORKLOAD_IDENTITY_PROVIDER' in workflow
-    assert '--swedish --norwegian --german' in workflow
+    assert 'gcloud run jobs execute mcp-las-source-sync' in workflow
+    assert '--wait' in workflow

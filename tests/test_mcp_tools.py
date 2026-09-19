@@ -54,7 +54,7 @@ def test_compare_statute_vs_cba():
 
 def test_legal_coverage_makes_country_boundaries_explicit():
     coverage = get_legal_coverage()
-    assert set(coverage["jurisdictions"]) == {"SE", "DK", "FI", "NO", "DE"}
+    assert set(coverage["jurisdictions"]) == {"SE", "DK", "FI", "NO", "DE", "ES"}
     assert coverage["jurisdictions"]["DK"]["collective_agreements"] is False
 
 

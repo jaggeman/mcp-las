@@ -5,7 +5,7 @@ name: Veckovis synk av lagkällor
 # eftersom certainty-badgen på varje svar gör inaktuell text aktivt
 # vilseledande snarare än bara ofullständig (se issue #17).
 #
-# Sverige, Norge och Tyskland. Danmark/Finland ändras inte av detta jobb.
+# Sverige, Norge, Tyskland och Spanien. Danmark/Finland ändras inte av detta jobb.
 on:
   schedule:
     # Måndagar 03:00 UTC - efter att helgens ev. lagändringar hunnit synas
@@ -15,7 +15,7 @@ on:
 
 jobs:
   sync:
-    name: Synka Sverige, Norge och Tyskland
+    name: Synka Sverige, Norge, Tyskland och Spanien
     permissions:
       contents: read
       id-token: write
@@ -27,15 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: Installera beroenden
-        run: pip install -r requirements.txt
-
-      # Separat OIDC-identitet med endast databasbehörighet, inga deployroller.
+      # Separat OIDC-identitet med databas- och jobbkörningsbehörighet, inga deployroller.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -48,8 +40,7 @@ jobs:
       # e-postar det till den som äger repot per sina standardinställningar.
       # Det ÄR larmet acceptanskriterierna i #17 efterfrågar, inget extra
       # behövs.
-      - name: Synka lagtext
-        env:
-          FIREBASE_PROJECT_ID: paygap-prod
-          EMBEDDING_PROVIDER: mock
-        run: python scripts/sync_sources.py --swedish --norwegian --german
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Synka lagtext i Frankfurt
+        run: gcloud run jobs execute mcp-las-source-sync --project=paygap-prod --region=europe-west3 --wait

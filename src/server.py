@@ -50,9 +50,9 @@ mcp = FastMCP(
     name=settings.MCP_SERVER_NAME,
     mask_error_details=True,
     instructions=(
-        "Arbetsrätts-MCP för Sverige, Danmark, Finland, Norge och Tyskland. "
-        "Välj jurisdiction (SE, DK, FI, NO, DE) för laguppslag och sökning. "
-        "Källor: Riksdagen, Retsinformation, Finlex, Lovdata och Gesetze im Internet. "
+        "Arbetsrätts-MCP för Sverige, Danmark, Finland, Norge, Tyskland och Spanien. "
+        "Välj jurisdiction (SE, DK, FI, NO, DE, ES) för laguppslag och sökning. "
+        "Källor: Riksdagen, Retsinformation, Finlex, Lovdata, Gesetze im Internet och BOE. "
         "get_legal_coverage beskriver adapterstöd; data måste synkroniseras före uppslag. "
         "Specialverktyg för beräkningar, praxis, kollektivavtal och mallar gäller endast Sverige. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
@@ -366,7 +366,7 @@ def get_legal_coverage(api_key: Optional[str] = None) -> Dict[str, Any]:
 @mcp.tool()
 @tracked_tool
 def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
-    """Slå upp en paragraf i SE, DK, FI, NO eller DE. Norge använder t.ex. section='15-7'."""
+    """Slå upp en paragraf i SE, DK, FI, NO, DE eller ES. Spanien använder artikelnummer, t.ex. section='20 bis'."""
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return rl_err

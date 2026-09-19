@@ -36,7 +36,7 @@ def country(tool, arguments):
         value = filters.get('jurisdiction') if isinstance(filters, dict) else None
     if value is None:
         return 'SE'
-    return value.upper() if isinstance(value, str) and value.upper() in {'SE', 'DK', 'FI', 'NO', 'DE'} else 'unknown'
+    return value.upper() if isinstance(value, str) and value.upper() in {'SE', 'DK', 'FI', 'NO', 'DE', 'ES'} else 'unknown'
 
 
 def outcome(result):

@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any, List
 from src.db.firebase_client import db_client
 
-SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi", "NO": "nb", "DE": "de"}
+SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi", "NO": "nb", "DE": "de", "ES": "es"}
 
 
 def get_legal_coverage() -> Dict[str, Any]:
@@ -19,6 +19,12 @@ def get_legal_coverage() -> Dict[str, Any]:
     counts = db_client.count_sections_by_jurisdiction()
     return {
         "jurisdictions": {
+            "ES": {
+                "country": "Spanien", "language": "es", "statutes": counts.get("ES", 0) > 0,
+                "section_count": counts.get("ES", 0), "catalog_statutes": 5,
+                "case_law": False, "collective_agreements": False,
+                "calculators": [], "hr_templates": False,
+            },
             "NO": {
                 "country": "Norge", "language": "nb", "statutes": counts.get("NO", 0) > 0,
                 "section_count": counts.get("NO", 0),
@@ -51,9 +57,9 @@ def get_legal_coverage() -> Dict[str, Any]:
                 "calculators": [], "hr_templates": False,
             },
         },
-        "selection_rule": "Ange jurisdiction=SE, DK, FI, NO eller DE i lookup_statute och search_labor_law.",
+        "selection_rule": "Ange jurisdiction=SE, DK, FI, NO, DE eller ES i lookup_statute och search_labor_law.",
         "coverage_note": "Adapterstöd och avgränsade lagkataloger. Tillgängliga paragrafer beror på genomförd synk; inte fullständig rättslig täckning.",
-        "sources": {"SE": "Riksdagen", "DK": "Retsinformation", "FI": "Finlex", "NO": "Lovdata", "DE": "Gesetze im Internet"},
+        "sources": {"SE": "Riksdagen", "DK": "Retsinformation", "FI": "Finlex", "NO": "Lovdata", "DE": "Gesetze im Internet", "ES": "BOE"},
     }
 
 def _determine_certainty(text: str, source_type: str = "statute") -> Dict[str, Any]:
@@ -123,7 +129,7 @@ def _normalize_jurisdiction(jurisdiction: str) -> str:
 def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE") -> Dict[str, Any]:
     """
     Exact retrieval of a legal paragraph. ``jurisdiction`` is required conceptually
-    and must be SE, DK, FI, NO or DE; it defaults to SE for
+    and must be SE, DK, FI, NO, DE or ES; it defaults to SE for
     backwards compatibility. Returns source and language metadata as well.
     """
     try:
@@ -168,8 +174,8 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisd
 
 def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5, jurisdiction: Optional[str] = None, language: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Hybrid search across labor-law provisions in one jurisdiction. Use SE, DK, or
-    FI, NO or DE explicitly; the legacy ``filters`` argument remains supported.
+    Hybrid search across labor-law provisions in one jurisdiction. Use SE, DK,
+    FI, NO, DE or ES explicitly; the legacy ``filters`` argument remains supported.
     """
     legacy_jurisdiction = (filters or {}).get("jurisdiction") or (filters or {}).get("country")
     # Preserve clients using the original filters={"jurisdiction": "DK"}

@@ -53,7 +53,12 @@ och `mcp-source-sync@paygap-prod.iam.gserviceaccount.com` med endast
 `roles/datastore.user` på projektet, utan deployroller. Villkoren tillåter endast
 samma repository/ägare, main och `sync-sources.yml` vid schedule/workflow_dispatch.
 GitHub-variabler: `GCP_SYNC_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SYNC_SERVICE_ACCOUNT`.
-Jobbet synkar Sverige, Norge och Tyskland måndagar 03:00 UTC, utan överlappande körningar.
+Jobbet synkar Sverige, Norge, Tyskland och Spanien måndagar 03:00 UTC, utan överlappande körningar.
+GitHub startar Cloud Run Job `mcp-las-source-sync` i europe-west3 och väntar på resultatet.
+Direkt hämtning från GitHub fick anslutningstimeout till den tyska källan; Frankfurt fungerar.
+Synkkontot har även `roles/run.jobsExecutor` och `roles/run.viewer` på endast detta jobb.
+CI uppdaterar jobbets image till samma digest som backend och anger alla fyra landsflaggor.
+Jobbet använder mock-embeddings, 1 CPU/1 GiB, 1800 sekunders timeout och inga automatiska omförsök.
 Ingen workflow använder längre `GCP_SA_KEY`; den gamla nyckeln har inte
 återkallats eftersom eventuella användningar utanför repot inte har inventerats.
 Excel-länkar är hemliga bearer-token med 256 bitars slump och högst 10 minuters
@@ -65,13 +70,13 @@ Export accepterar högst 1000 anställda, 32 fält per anställd och 2000 tecken
 Användarfält sparas som text, medan serverns DATEDIF-formler behålls.
 Docker-kontexten exkluderar miljöfiler och vanliga nyckel-/credential-filer.
 
-## Norge och Tyskland – laguppslag och sökning
-`lookup_statute` och `search_labor_law` stöder `jurisdiction="NO"` respektive `"DE"`.
+## Norge, Tyskland och Spanien – laguppslag och sökning
+`lookup_statute` och `search_labor_law` stöder `jurisdiction="NO"` respektive `"DE"`, samt `"ES"` för Spanien.
 Norge: 6 lagar (Arbeidsmiljøloven, Ferieloven, Likestillings- og diskrimineringsloven,
 Arbeidstvistloven, Allmenngjøringsloven och Statsansatteloven). Tyskland: 8 lagar
 (KSchG, BUrlG, ArbZG, TzBfG, AGG, ArbSchG, BetrVG och EntgFG).
 
-Synkronisera med `.venv\Scripts\python.exe scripts/sync_sources.py --norwegian --german`.
+Synkronisera med `.venv\Scripts\python.exe scripts/sync_sources.py --norwegian --german --spanish`.
 Kommandot skriver till konfigurerad Firestore och kräver skrivbehörighet.
 Källor: https://api.lovdata.no/om-api-tjenesten/ (Stiftelsen Lovdata, NLOD 2.0)
 och https://www.gesetze-im-internet.de/ (XML-paket per lag).
@@ -81,6 +86,15 @@ Prod synkroniserades 2026-09-19: 385 norska och 330 tyska paragrafer,
 14 lagar totalt, inga rapporterade synkfel. Antalen kan ändras vid senare synk.
 Katalogen är avgränsad, inte fullständig nationell arbetsrätt. Norska traktatbilagor
 med artikelnummer och tyska bilagor ingår inte i paragrafindexet.
+Spanien: 5 BOE-lagar – Estatuto de los Trabajadores, Prevención de Riesgos Laborales,
+Libertad Sindical, Igualdad efectiva de mujeres y hombres samt Trabajo a distancia.
+265 artiklar importerades 2026-09-19. Källspråk `es`, källa https://www.boe.es/datosabiertos/.
+Ange BOE-ID (t.ex. BOE-A-2015-11430), `jurisdiction="ES"` och artikelnummer (t.ex. `38`).
+Senaste publicerade version som trätt i kraft väljs per numrerad artikel. Framtida
+versioner, upphävda artiklar, bilagor och kompletterande/övergångsbestämmelser ingår inte.
+Konsoliderade BOE-texter är informativa, utan officiell rättslig giltighet; kontrollera originalet.
+Danmark och Finland har adaptrar men inga indexerade paragrafer vid denna verifiering.
+Webbgränssnittet är svenska/engelska; lagarnas källspråk är inte gränssnittsöversättningar.
 Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast för Sverige.
 `get_legal_coverage` anger faktisk paragrafmängd och tillgänglighet per land,
 utifrån databasen. Källfel rapporteras som driftfel, inte som en tom lagdatabas.

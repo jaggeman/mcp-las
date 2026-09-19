@@ -45,7 +45,7 @@ class SourceSyncService:
             raise ValueError("Empty source; refusing to replace existing statute")
         metadata = dict(metadata)
         metadata.setdefault("jurisdiction", country)
-        metadata.setdefault("language", {"SE":"sv","DK":"da","FI":"fi","NO":"nb","DE":"de"}[country])
+        metadata.setdefault("language", {"SE":"sv","DK":"da","FI":"fi","NO":"nb","DE":"de","ES":"es"}[country])
         model = self.embedder.fingerprint()
         fingerprint = content_hash(str(metadata) + model + "\n" + "\n".join(s.raw_text for s in sections))
         previous = self.db.get_sync_state(source_id) or {}
@@ -110,6 +110,13 @@ class SourceSyncService:
             for meta, sections in EuropeanLaborFetcher.iter_documents(jurisdiction):
                 yield meta["id"], lambda m=meta,s=sections:(m,s)
         return self._run(jobs(),jurisdiction)
+
+    def sync_spanish_statutes(self):
+        from src.scrapers.boe_fetcher import BoeFetcher
+        def jobs():
+            for meta, sections in BoeFetcher.iter_documents():
+                yield meta['id'], lambda m=meta, s=sections: (m, s)
+        return self._run(jobs(), 'ES')
 
     def _sync_foreign(self, documents, fetcher, country):
         def jobs():
