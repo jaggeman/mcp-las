@@ -53,7 +53,7 @@ mcp = FastMCP(
         "Arbetsrätts-MCP för Sverige, Danmark, Finland, Norge, Tyskland och Spanien. "
         "Välj jurisdiction (SE, DK, FI, NO, DE, ES) för laguppslag och sökning. "
         "Källor: Riksdagen, Retsinformation, Finlex, Lovdata, Gesetze im Internet och BOE. "
-        "get_legal_coverage beskriver adapterstöd; data måste synkroniseras före uppslag. "
+        "get_legal_coverage visar faktisk datatäckning per land; kontrollera den före uppslag. "
         "Specialverktyg för beräkningar, praxis, kollektivavtal och mallar gäller endast Sverige. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
         "HR-dokumentmallar (omplaceringsutredning 7 § LAS, omplaceringserbjudande, varsel 30 § LAS, uppsägningsbesked), "
@@ -377,7 +377,7 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisd
 @mcp.tool()
 @tracked_tool
 def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Sök arbetsrätt i SE, DK, FI, NO eller DE. Använd gärna källspråket nb/de för NO/DE."""
+    """Sök arbetsrätt i SE, DK, FI, NO, DE eller ES. Använd källspråket nb/de/es för NO/DE/ES."""
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return [rl_err]
