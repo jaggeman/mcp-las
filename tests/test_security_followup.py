@@ -12,7 +12,7 @@ def test_activation_is_explicit(monkeypatch, metadata):
     doc = SimpleNamespace(exists=True, to_dict=lambda: metadata)
     monkeypatch.setattr(server.db_client, 'db', SimpleNamespace(collection=lambda _: SimpleNamespace(document=lambda _: SimpleNamespace(get=lambda: doc))))
     monkeypatch.setattr(server.settings, 'MASTER_ADMIN_KEY', None)
-    assert AuthService.validate_key('synthetic') is None
+    assert AuthService().validate_key('synthetic') is None
 
 
 def test_logs_do_not_store_inputs_or_key_parts(monkeypatch):

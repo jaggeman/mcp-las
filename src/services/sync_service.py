@@ -22,6 +22,7 @@ DEFAULT_STATUTES = (
     "1995:584",   # Foraldraledighetslagen
     "1974:981",   # Studieledighetslagen
     "1997:1293",  # Ledighet for att bedriva naringsverksamhet
+    "1970:215",   # Arbetsgivares kvittningsratt
 )
 
 

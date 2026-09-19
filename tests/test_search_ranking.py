@@ -4,12 +4,15 @@ from src.mcp_tools.tools import search_labor_law
 
 
 @pytest.fixture(autouse=True)
-def _seed_las_7():
+def _seed_las_7(monkeypatch):
     # Sås oberoende av testordning/andra filers fixtures — annars döljer
     # laddningsordningen (test_mcp_tools.py sås samma statute_id före denna
     # fil alfabetiskt) att testet inte klarar sig ensamt: körd isolerat
     # (`pytest tests/test_search_ranking.py`) misslyckas den annars på ett
     # tomt db_client._local_sections.
+    monkeypatch.setattr(db_client, "db", None)
+    db_client._local_sections = {}
+    db_client._cached_statute_sections_by_country = {}
     db_client.save_statute_section({
         "id": "1982_80_s7",
         "statute_id": "1982:80",
@@ -21,6 +24,9 @@ def _seed_las_7():
         "raw_text": "7 § Uppsägning från arbetsgivarens sida ska grundas på sakliga skäl.",
         "keywords": ["las", "7 §", "uppsägning", "sakliga skäl"],
     })
+    yield
+    db_client._local_sections = {}
+    db_client._cached_statute_sections_by_country = {}
 
 
 def test_stemming_swedish_words():

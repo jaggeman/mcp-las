@@ -792,6 +792,6 @@ if __name__ == "__main__":
     if "PORT" in os.environ:
         mcp.run(transport="http", host="0.0.0.0", port=port,
                 middleware=[Middleware(RequestSizeLimit)],
-                uvicorn_config={"proxy_headers": False})
+                uvicorn_config={"proxy_headers": False, "access_log": False})
     else:
         mcp.run()

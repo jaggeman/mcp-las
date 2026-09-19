@@ -99,7 +99,9 @@ jobs:
             --project=paygap-prod \
             --region=europe-west3 \
             --allow-unauthenticated \
-            --update-env-vars=BUILD_SHA=${{ github.sha }},BUILD_REF=${{ github.ref_name }}
+            --max-instances=5 \
+            --concurrency=40 \
+            --update-env-vars=BUILD_SHA=${{ github.sha }},BUILD_REF=${{ github.ref_name }},STORE_USAGE_IN_FIRESTORE=false
 
       # Deployen ovan rapporterar "serving 100 percent of traffic" även när
       # trafiken redan låg på en äldre revision, så verifiera mot tjänsten

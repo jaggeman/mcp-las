@@ -21,12 +21,17 @@ from src.db.firebase_client import db_client
 
 
 @pytest.fixture(autouse=True)
-def _clean_cache():
+def _clean_cache(monkeypatch):
     """Varje test styr sitt eget innehåll i statute_sections."""
+    monkeypatch.setattr(db_client, "db", None)
     db_client._cached_statute_sections = None
+    db_client._cached_statute_sections_by_country = {}
+    db_client._coverage_cache = None
     db_client._local_sections = {}
     yield
     db_client._cached_statute_sections = None
+    db_client._cached_statute_sections_by_country = {}
+    db_client._coverage_cache = None
     db_client._local_sections = {}
 
 

@@ -89,6 +89,7 @@ def test_slow_usage_storage_does_not_delay_tool(monkeypatch):
         release.wait(timeout=2)
     db = SimpleNamespace(collection=lambda _: SimpleNamespace(document=lambda _: SimpleNamespace(set=write)))
     monkeypatch.setattr(usage_logging.db_client, 'db', db)
+    monkeypatch.setattr(usage_logging.settings, 'STORE_USAGE_IN_FIRESTORE', True)
     @usage_logging.tracked_tool
     def sample(): return {'ok': True}
     try:

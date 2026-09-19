@@ -5,6 +5,8 @@
 Publika MCP-anrop utan nyckel delar en kvot på 60 anrop/minut.
 Angiven API-nyckel måste vara giltig och aktiv för kvoten 300 anrop/minut.
 Ogiltiga nycklar nekas; Firestore-nycklar kräver booleskt `is_active=true`.
+Giltiga nyckeluppslag cachelagras processlokalt i högst 30 sekunder och 1000 poster;
+en återkallad nyckel kan därför fortsätta fungera i högst 30 sekunder på en varm instans.
 REST accepterar nycklar endast i `X-API-Key`, inte URL eller JSON-body.
 Kvoter delas mellan instanser med Firestore-transaktioner i `mcp_rate_limits`.
 Vid fel i kvotlagringen nekas anrop. Utan databas används en trådsäker lokal
@@ -32,7 +34,10 @@ Svarstiden avser verktygswrappern, inte transporttid eller bakgrundsskrivning.
 Firestore-fel påverkar inte verktygssvaret; stdout finns kvar men rapporten kan då
 underskatta användningen. Händelser samlas först efter deploy, ingen historik återskapas.
 Nya Firestore-loggar får `expires_at` efter 30 dagar. Cloud Logging har separat retention.
-Rapport: `.venv\\Scripts\\python.exe -m scripts.usage_report --days 7` (Firestore-läsbehörighet).
+Rapport: `.venv\\Scripts\\python.exe -m scripts.usage_report --days 7` läser Cloud Logging
+via `gcloud` och kräver loggläsbehörighet. `--source firestore` finns endast för äldre data.
+`STORE_USAGE_IN_FIRESTORE=false` är standard och sätts av CI för att undvika en extra
+Firestore-skrivning per anrop; aktivera bara den duplicerade kopian när den uttryckligen behövs.
 Rapporten visar antal per dag/verktyg/land/transport/status och medel/p95-svarstid.
 Högst 10000 poster sammanställs; `truncated=true` betyder ofullständig rapport.
 Äldre loggformat exkluderas. Antal anrop är inte antal unika användare eller AI-tokenkostnad.
@@ -70,6 +75,8 @@ vid flera instanser kan en annan instans sakna filen. Base64-exporten finns kvar
 Export accepterar högst 1000 anställda, 32 fält per anställd och 2000 tecken per fält.
 Användarfält sparas som text, medan serverns DATEDIF-formler behålls.
 Docker-kontexten exkluderar miljöfiler och vanliga nyckel-/credential-filer.
+Cloud Run begränsas av CI till 5 instanser och concurrency 40. Uvicorns accesslogg är
+avstängd eftersom Cloud Run redan skapar en requestlogg för varje HTTP-anrop.
 
 ## Norge, Tyskland och Spanien – laguppslag och sökning
 `lookup_statute` och `search_labor_law` stöder `jurisdiction="NO"` respektive `"DE"`, samt `"ES"` för Spanien.
@@ -102,6 +109,8 @@ Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast fö
 utifrån databasen. Källfel rapporteras som driftfel, inte som en tom lagdatabas.
 Cacheuppdateringar samordnas inom varje process för att undvika dubbla inläsningar.
 Efter extern synk uppdateras serverns lagcache inom 60 sekunder utan omstart.
+Laguppslag läser och cachelagrar endast efterfrågat land; täckningsantal hämtas med
+Firestore-aggregat i stället för att läsa hela lagkorpusen.
 Synken publicerar varje lag atomiskt: paragrafer, inaktivering, metadata, synkstatus och
 cache_versions/statutes ingår i samma Firestore-transaktion. Vid fel behålls tidigare lagtext.
 Högst 447 nya paragrafer, 450 skrivningar totalt och 7 MB JSON för nya rader tillåts per lag;
@@ -234,7 +243,7 @@ GEMINI_API_KEY=
 ## 🧪 TDD & Säkerhetskrav
 
 - Kör enhetstester: `.venv\Scripts\pytest.exe tests/ -v` (alla 57 tester måste passera).
-- Verifiera lagparagrafer: `.venv\Scripts\python.exe check_coverage.py` (100% täckning över 477 paragrafer).
+- Verifiera lagparagrafer: `.venv\Scripts\python.exe check_coverage.py` (100% täckning över aktuell svensk kärnkatalog).
 - Säkerhet: Non-root user `appuser` UID 10001, sliding-window rate limiting, konstanttids API-nyckeljämförelse (`hmac.compare_digest`).
 - **Dokumentations- & Instruktionssynkronisering (Strikthet)**: Om ändringar görs i infrastruktur, driftsättningskommandon, miljövariabler, domäner/endpoints eller regler i någon av filerna (`CODEX.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` eller `README.md`), **måste samtliga dessa 5 filer uppdateras samtidigt** så att alla AI-agenter och modeller alltid är 100% i synk.
 

@@ -45,7 +45,9 @@ def evaluate_single_benchmark(item: Dict[str, Any]) -> Dict[str, Any]:
             clean_st = exp_st.replace("§", "").strip()
             parts = clean_st.split()
             if len(parts) >= 2:
-                law = parts[0]
+                # Benchmark references commonly use "SFS 1970:215 1 §".
+                # "SFS" is a prefix, not a law identifier.
+                law = parts[1] if parts[0].lower() == "sfs" and len(parts) >= 3 else parts[0]
                 sec = parts[-1]
                 chap = None
                 if len(parts) >= 4 and "kap" in parts[1].lower():
@@ -102,7 +104,8 @@ def evaluate_single_benchmark(item: Dict[str, Any]) -> Dict[str, Any]:
         matched_statutes = 0
         for exp in expected_statutes:
             parts = exp.replace("§", "").split()
-            law_name = parts[0].lower()
+            law_name = (parts[1] if parts and parts[0].lower() == "sfs" and len(parts) >= 3
+                        else parts[0]).lower()
             section_num = parts[-1].strip() if len(parts) > 1 else ""
             if (law_name in combined_corpus and (not section_num or section_num in combined_corpus)) or exp.lower() in combined_corpus:
                 matched_statutes += 1

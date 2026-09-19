@@ -3,6 +3,8 @@ from src.scrapers.boe_fetcher import SPANISH_LAWS
 
 
 def test_new_catalogue_entries_and_unique_identifiers():
+    from src.services.sync_service import DEFAULT_STATUTES
+    assert '1970:215' in DEFAULT_STATUTES
     assert {'MuSchG', 'BEEG', 'NachwG'} <= {name for _, name in GERMAN_LAWS}
     assert {'1988-05-06-22', '1973-12-14-61', '1989-06-16-65'} <= dict(NORWEGIAN_LAWS).keys()
     assert {'BOE-A-2023-5365', 'BOE-A-2015-8168'} <= dict(SPANISH_LAWS).keys()

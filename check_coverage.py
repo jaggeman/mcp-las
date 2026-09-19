@@ -19,6 +19,7 @@ LAWS_TO_CHECK = [
     ('1995:584', 'Föräldraledighetslagen', 20),
     ('1974:981', 'Studieledighetslagen', 10),
     ('1997:1293', 'Näringsverksamhetsledighetslagen', 10),
+    ('1970:215', 'Kvittningslagen', 8),
 ]
 
 CRITICAL_SECTIONS = [
@@ -40,6 +41,7 @@ CRITICAL_SECTIONS = [
     ('1982:673', 'Arbetstidslagen', '13', 'dygnsvila'),
     ('1982:673', 'Arbetstidslagen', '14', 'veckovila'),
     ('1976:580', 'MBL', '11', 'förhandla'),
+    ('1970:215', 'Kvittningslagen', '1', 'göra avdrag'),
 ]
 
 def _rejection_log(sfs):

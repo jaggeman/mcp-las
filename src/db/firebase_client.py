@@ -5,7 +5,7 @@ import logging
 import time
 import json
 import uuid
-from collections import Counter
+from collections import Counter, OrderedDict
 from threading import RLock
 from typing import List, Dict, Any, Optional
 from src.config import settings
@@ -33,6 +33,12 @@ class FirebaseLaborLawDB:
         # matchar pa strangar, aldrig pa vektor.
         self._local_rules: Dict[str, Any] = {r["id"]: dict(r) for r in CBA_RULES_DATA}
         self._cached_statute_sections: Optional[List[Dict[str, Any]]] = None
+        self._cached_statute_sections_by_country = {}
+        self._country_cache_at = {}
+        self._country_cache_version = {}
+        self._country_full_read_at = {}
+        self._coverage_cache = None
+        self._coverage_cache_at = 0
         self._statute_cache_lock = RLock()
         self._cached_precedents: Optional[List[Dict[str, Any]]] = None
         self._init_firebase()
@@ -77,11 +83,18 @@ class FirebaseLaborLawDB:
             return False
 
     def save_statute_section(self, section: Dict[str, Any]):
+        section.setdefault("jurisdiction", "SE")
+        section.setdefault("language", "sv")
         doc_id = section.get("id")
         if not section.get("embedding"):
             section["embedding"] = Embedder.get_embedding(section.get("raw_text", ""))
         self._local_sections[doc_id] = section
-        self._cached_statute_sections = None
+        with self._statute_cache_lock:
+            self._cached_statute_sections = None
+            self._cached_statute_sections_by_country = {}
+            self._country_cache_at = {}
+            self._coverage_cache = None
+            self._search_indexes = OrderedDict()
         if not self.db:
             # Ingen databas: raden finns bara i minnet och forsvinner med
             # processen. Returnera det, sa anroparen inte rapporterar succe.
@@ -139,6 +152,9 @@ class FirebaseLaborLawDB:
         publish(self.db.transaction())
         with self._statute_cache_lock:
             self._cached_statute_sections = None
+            self._cached_statute_sections_by_country = {}
+            self._country_cache_at = {}
+            self._coverage_cache = None
         return True
 
     def save_sync_state(self, source_id: str, state: Dict[str, Any]) -> bool:
@@ -153,9 +169,51 @@ class FirebaseLaborLawDB:
                 logger.exception('Could not persist sync state %s', source_id)
         return False
 
-    def _get_statute_items(self) -> List[Dict[str, Any]]:
+    def _get_statute_items(self, jurisdiction=None) -> List[Dict[str, Any]]:
         with self._statute_cache_lock:
+            if jurisdiction:
+                return self._refresh_country_items(str(jurisdiction).upper())
             return self._refresh_statute_items()
+
+    def _statute_version_marker(self):
+        marker = self.db.collection('cache_versions').document('statutes').get()
+        return marker.to_dict().get('version') if marker.exists else None
+
+    def _refresh_country_items(self, jurisdiction):
+        now = time.monotonic()
+        cache = getattr(self, '_cached_statute_sections_by_country', {})
+        cache_at = getattr(self, '_country_cache_at', {})
+        if jurisdiction in cache and now - cache_at.get(jurisdiction, 0) < 60:
+            return cache[jurisdiction]
+        if self.db:
+            try:
+                version = self._statute_version_marker()
+                versions = getattr(self, '_country_cache_version', {})
+                full_at = getattr(self, '_country_full_read_at', {})
+                if (jurisdiction in cache and version is not None
+                        and version == versions.get(jurisdiction)
+                        and now - full_at.get(jurisdiction, 0) < 300):
+                    cache_at[jurisdiction] = now
+                    return cache[jurisdiction]
+                from google.cloud.firestore_v1.base_query import FieldFilter
+                query = self.db.collection('statute_sections').where(
+                    filter=FieldFilter('jurisdiction', '==', jurisdiction))
+                items = [doc.to_dict() for doc in query.stream()]
+                versions[jurisdiction] = version
+                full_at[jurisdiction] = now
+                self._country_cache_version = versions
+                self._country_full_read_at = full_at
+            except Exception:
+                raise RuntimeError('Statute database unavailable') from None
+        else:
+            items = [row for row in self._local_sections.values()
+                     if str(row.get('jurisdiction', 'SE')).upper() == jurisdiction]
+        items = [row for row in items if row.get('active', True)]
+        cache[jurisdiction] = items
+        cache_at[jurisdiction] = now
+        self._cached_statute_sections_by_country = cache
+        self._country_cache_at = cache_at
+        return items
 
     def _refresh_statute_items(self) -> List[Dict[str, Any]]:
         if self._cached_statute_sections is not None and time.monotonic() - getattr(self, '_statute_cache_at', 0) < 60:
@@ -163,8 +221,7 @@ class FirebaseLaborLawDB:
         items = []
         if self.db:
             try:
-                marker = self.db.collection('cache_versions').document('statutes').get()
-                version = marker.to_dict().get('version') if marker.exists else None
+                version = self._statute_version_marker()
                 if (version is not None and self._cached_statute_sections is not None
                         and version == getattr(self, '_statute_version', None)
                         and time.monotonic() - getattr(self, '_statute_full_read_at', 0) < 300):
@@ -198,6 +255,10 @@ class FirebaseLaborLawDB:
                 if row.get('statute_id') == statute_id and row.get('jurisdiction','SE') == jurisdiction and row['id'] not in active_ids:
                     row['active'] = False
             self._cached_statute_sections = None
+            self._cached_statute_sections_by_country = {}
+            self._country_cache_at = {}
+            self._coverage_cache = None
+            self._search_indexes = OrderedDict()
             return True
         except Exception:
             logger.exception('Could not retire stale sections for %s/%s', jurisdiction, statute_id)
@@ -231,11 +292,34 @@ class FirebaseLaborLawDB:
         standardval som get_statute_section redan anvander for aldre
         poster som ingesterades innan faltet fanns.
         """
+        if self.db:
+            now = time.monotonic()
+            coverage_cache = getattr(self, '_coverage_cache', None)
+            coverage_cache_at = getattr(self, '_coverage_cache_at', 0)
+            if coverage_cache is not None and now - coverage_cache_at < 60:
+                return dict(coverage_cache)
+            try:
+                counts = {country: self._aggregate_country_count(country)
+                          for country in ('SE', 'DK', 'FI', 'NO', 'DE', 'ES')}
+                counts = {country: count for country, count in counts.items() if count}
+                self._coverage_cache, self._coverage_cache_at = counts, now
+                return dict(counts)
+            except Exception:
+                raise RuntimeError('Statute database unavailable') from None
         counts: Dict[str, int] = {}
         for s in self._get_statute_items():
             j = str(s.get("jurisdiction") or "SE").upper()
             counts[j] = counts.get(j, 0) + 1
         return counts
+
+    def _aggregate_country_count(self, country):
+        from google.cloud.firestore_v1.base_query import FieldFilter
+        query = self.db.collection('statute_sections').where(
+            filter=FieldFilter('jurisdiction', '==', country))
+        total = query.count(alias='total').get()[0][0].value
+        inactive = query.where(filter=FieldFilter('active', '==', False))
+        retired = inactive.count(alias='total').get()[0][0].value
+        return int(total - retired)
 
     def get_statute_section(self, law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE") -> Optional[Dict[str, Any]]:
         if not law.strip() or not section.strip():
@@ -244,7 +328,7 @@ class FirebaseLaborLawDB:
         sec_clean = section.strip().lower().replace("§", "").strip()
         jurisdiction_clean = jurisdiction.strip().upper()
 
-        items = self._get_statute_items()
+        items = self._get_statute_items(jurisdiction_clean)
 
         for s in items:
             short = s.get("statute_short", "").upper()
@@ -277,11 +361,16 @@ class FirebaseLaborLawDB:
     def _search_index(self, snapshot, filters):
         country = str(filters.get('jurisdiction') or filters.get('country') or '').upper()
         language = str(filters.get('language') or '').lower()
-        key = (country, language)
+        key = (id(snapshot), country, language)
         with self._statute_cache_lock:
-            if getattr(self, '_search_snapshot', None) is not snapshot:
-                self._search_snapshot, self._search_indexes = snapshot, {}
-            if key not in self._search_indexes:
+            indexes = getattr(self, '_search_indexes', None)
+            if not isinstance(indexes, OrderedDict):
+                indexes = OrderedDict(indexes or {})
+                self._search_indexes = indexes
+            entry = indexes.get(key)
+            # Keeping the snapshot in the entry prevents Python from reusing an
+            # object id and also lets several country caches remain warm.
+            if entry is None or entry[0] is not snapshot:
                 rows = [s for s in snapshot if
                     (not country or str(s.get('jurisdiction', 'SE')).upper() == country) and
                     (not language or str(s.get('language', 'sv')).lower() == language)]
@@ -291,10 +380,14 @@ class FirebaseLaborLawDB:
                     counters = prepared[id(s)]
                     frequencies.update(set(counters[1]) | set(counters[3]) |
                         {self._stem_sv(w) for w in counters[4]})
-                if len(self._search_indexes) >= 16:
-                    self._search_indexes.clear()
-                self._search_indexes[key] = rows, frequencies, prepared
-            return self._search_indexes[key]
+                indexes[key] = snapshot, rows, frequencies, prepared
+                indexes.move_to_end(key)
+                while len(indexes) > 16:
+                    indexes.popitem(last=False)
+            else:
+                indexes.move_to_end(key)
+            _, rows, frequencies, prepared = indexes[key]
+            return rows, frequencies, prepared
 
     def search_statute_sections(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5) -> List[Dict[str, Any]]:
         if not isinstance(query, str) or not query.strip() or len(query) > 2000:
@@ -378,7 +471,9 @@ class FirebaseLaborLawDB:
 
         q_emb = Embedder.get_embedding(query + " " + " ".join(expanded_query_terms))
 
-        items, doc_stem_freqs, prepared = self._search_index(self._get_statute_items(), filters or {})
+        requested_country = (filters or {}).get('jurisdiction') or (filters or {}).get('country')
+        items, doc_stem_freqs, prepared = self._search_index(
+            self._get_statute_items(requested_country), filters or {})
         if not items:
             return []
         N = len(items)

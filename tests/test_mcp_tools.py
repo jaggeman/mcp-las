@@ -10,8 +10,11 @@ from src.mcp_tools.tools import (
 from src.db.firebase_client import db_client
 
 @pytest.fixture(autouse=True)
-def setup_test_data():
+def setup_test_data(monkeypatch):
     # Ensure test section is in db
+    monkeypatch.setattr(db_client, "db", None)
+    db_client._local_sections = {}
+    db_client._cached_statute_sections_by_country = {}
     db_client.save_statute_section({
         "id": "1982_80_s7",
         "statute_id": "1982:80",
@@ -23,6 +26,9 @@ def setup_test_data():
         "raw_text": "7 § Uppsägning från arbetsgivarens sida ska grundas på sakliga skäl.",
         "keywords": ["las", "7 §", "uppsägning", "sakliga skäl"]
     })
+    yield
+    db_client._local_sections = {}
+    db_client._cached_statute_sections_by_country = {}
 
 def test_lookup_statute():
     res = lookup_statute(law="LAS", section="7")

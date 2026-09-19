@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 from src.db.firebase_client import db_client
+from src.config import settings
 
 _pending = Queue(maxsize=1000)
 
@@ -62,7 +63,7 @@ def emit(*, tool, transport, jurisdiction, status, duration_ms):
     # Cloud Run ingests JSON stdout as structured jsonPayload. It also works
     # without Firestore; no external logging credentials or configuration.
     print(json.dumps(event), flush=True)
-    if db_client.db is not None:
+    if settings.STORE_USAGE_IN_FIRESTORE and db_client.db is not None:
         try:
             _pending.put_nowait((db_client.db, {
                 **event, 'expires_at': now + timedelta(days=30),

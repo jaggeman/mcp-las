@@ -34,7 +34,7 @@ def test_summary_does_not_mutate_country_items():
 
 def test_search_reuses_country_index(monkeypatch):
     rows=[{'id':'a','jurisdiction':'ES','content':'vacaciones','keywords':[]}, {'id':'b','jurisdiction':'DE','content':'Urlaub','keywords':[]}]
-    monkeypatch.setattr(db_client,'_get_statute_items',lambda: rows)
+    monkeypatch.setattr(db_client,'_get_statute_items',lambda *args: rows)
     db_client.search_statute_sections('vacaciones',{'jurisdiction':'ES'})
     with patch.object(db_client,'_prepare_search_row',side_effect=AssertionError('index rebuilt')):
         assert db_client.search_statute_sections('vacaciones',{'jurisdiction':'ES'})
@@ -102,7 +102,7 @@ def test_cache_checks_version_without_reloading_unchanged_corpus(monkeypatch):
 
 def test_country_filter_applied_before_tokenization(monkeypatch):
     rows=[{'id':'a','jurisdiction':'ES','content':'vacaciones','keywords':[]}, {'id':'b','jurisdiction':'DE','content':'Urlaub','keywords':[]}]
-    monkeypatch.setattr(db_client,'_get_statute_items',lambda:rows)
+    monkeypatch.setattr(db_client,'_get_statute_items',lambda *args:rows)
     with patch.object(db_client,'_prepare_search_row',wraps=db_client._prepare_search_row) as prepare:
         db_client.search_statute_sections('vacaciones',{'jurisdiction':'ES'})
     assert prepare.call_count==1

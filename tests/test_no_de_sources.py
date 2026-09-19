@@ -51,7 +51,7 @@ def test_country_lookup_and_search_are_isolated(monkeypatch, country):
              'content':'Urlaub varsling', 'keywords':[], 'jurisdiction':c, 'language':lang,
              'source':'official', 'source_url':'https://example.test'}
             for c,lang in [('SE','sv'), ('NO','nb'), ('DE','de')]]
-    monkeypatch.setattr(db_client, '_get_statute_items', lambda: rows)
+    monkeypatch.setattr(db_client, '_get_statute_items', lambda *args: rows)
     assert lookup_statute('Test','1',jurisdiction=country)['jurisdiction'] == country
     results = search_labor_law('Urlaub varsling',jurisdiction=country)
     assert results and all(r['jurisdiction']==country for r in results)
@@ -89,13 +89,13 @@ def test_sync_then_lookup_with_source_and_idempotency(monkeypatch):
     with patch.object(EuropeanLaborFetcher, 'iter_documents', side_effect=lambda _: iter([(metadata,sections)])):
         assert service.sync_european_statutes('DE')['changed'] == 1
         assert service.sync_european_statutes('DE')['skipped'] == 1
-    monkeypatch.setattr(db_client,'_get_statute_items',lambda: db.rows)
+    monkeypatch.setattr(db_client,'_get_statute_items',lambda *args: db.rows)
     result = lookup_statute('kschg','1a',jurisdiction='DE')
     assert result['found'] and result['source_url']=='https://example.test'
 
 
 def test_search_preserves_german_and_norwegian_letters(monkeypatch):
-    monkeypatch.setattr(db_client,'_get_statute_items',lambda: [
+    monkeypatch.setattr(db_client,'_get_statute_items',lambda *args: [
         {'statute_short':'X', 'statute_id':'x', 'section_number':'1', 'content':'ø', 'jurisdiction':'NO', 'keywords':[]},
     ])
     assert search_labor_law('ø',jurisdiction='NO')
@@ -111,6 +111,7 @@ def test_lookup_reads_beyond_one_thousand_sections(monkeypatch):
             from types import SimpleNamespace
             return SimpleNamespace(get=lambda: SimpleNamespace(exists=False))
         def limit(self, n): raise AssertionError('Global truncation hides whole countries')
+        def where(self, **kwargs): return self
         def stream(self): return iter(Doc(n) for n in range(1002))
     class DB:
         def collection(self, name): return Collection()

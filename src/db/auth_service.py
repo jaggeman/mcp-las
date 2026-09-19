@@ -5,7 +5,7 @@ import logging
 from threading import RLock
 from src.config import settings
 import time
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List
 from src.db.firebase_client import db_client
@@ -19,6 +19,9 @@ class AuthService:
         self._deadlines = {}
         self._lock = RLock()
         self._next_cleanup = 0
+        self._key_cache = OrderedDict()
+        self._key_cache_ttl = 30
+        self._key_cache_max = 1000
 
     def check_rate_limit(self, client_id: str = "anon", max_requests: int = 60, window_seconds: int = 60) -> bool:
         """
@@ -78,27 +81,39 @@ class AuthService:
             logging.error('Rate limit storage unavailable; request denied')
             return False
 
-    @staticmethod
-    def validate_key(api_key: str) -> Optional[Dict[str, Any]]:
+    def validate_key(self, api_key: str) -> Optional[Dict[str, Any]]:
         if not isinstance(api_key, str) or not api_key or len(api_key) > 512 or '/' in api_key:
             return None
             
+        master_key = settings.MASTER_ADMIN_KEY
+        if master_key and hmac.compare_digest(api_key.encode('utf-8'), master_key.encode('utf-8')):
+            return {"name": "Master Admin", "is_active": True}
+
+        cache_key = hashlib.sha256(api_key.encode('utf-8')).hexdigest()
+        now = time.monotonic()
+        with self._lock:
+            cached = self._key_cache.get(cache_key)
+            if cached and cached[0] > now:
+                self._key_cache.move_to_end(cache_key)
+                return dict(cached[1])
+            if cached:
+                self._key_cache.pop(cache_key, None)
+
         if db_client.db:
             try:
                 doc = db_client.db.collection("api_keys").document(api_key).get()
                 if doc.exists:
                     data = doc.to_dict()
                     if data.get("is_active") is True:
+                        with self._lock:
+                            self._key_cache[cache_key] = (now + self._key_cache_ttl, dict(data))
+                            self._key_cache.move_to_end(cache_key)
+                            while len(self._key_cache) > self._key_cache_max:
+                                self._key_cache.popitem(last=False)
                         return data
             except Exception:
                 logging.error('API key lookup failed')
                 
-        # Master-vagen ar avstangd om MASTER_ADMIN_KEY inte ar satt i miljon.
-        # Fail closed: ingen nyckel konfigurerad => ingen master-atkomst.
-        master_key = settings.MASTER_ADMIN_KEY
-        if master_key and hmac.compare_digest(api_key.encode('utf-8'), master_key.encode('utf-8')):
-            return {"name": "Master Admin", "is_active": True}
-            
         return None
 
     @staticmethod

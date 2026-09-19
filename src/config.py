@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # Far ALDRIG ha ett defaultvarde i koden - repot ar publikt.
     MASTER_ADMIN_KEY: Optional[str] = None
 
+    # Cloud Logging is the primary usage source. Enable only when an explicit
+    # duplicate per-call Firestore archive is worth the extra write cost.
+    STORE_USAGE_IN_FIRESTORE: bool = False
+
     MCP_SERVER_NAME: str = "mcp-las"
     MCP_SERVER_PORT: int = 8000
 

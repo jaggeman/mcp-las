@@ -15,6 +15,7 @@ En anropare har ingen användning för embeddingen, och för ett verkligt svar
 svaret flera tiotusentals tecken nästan enbart embeddings — precis det
 sidofynd som noterades i issue #5 men aldrig åtgärdades.
 """
+import pytest
 from src.db.firebase_client import db_client
 from src.mcp_tools.tools import compare_statute_vs_cba
 
@@ -29,7 +30,21 @@ def _contains_embedding_key(value) -> bool:
     return False
 
 
-def test_compare_statute_vs_cba_does_not_leak_embeddings():
+@pytest.fixture
+def isolated_db(monkeypatch):
+    old_sections, old_rules = db_client._local_sections, db_client._local_rules
+    monkeypatch.setattr(db_client, "db", None)
+    db_client._local_sections = {}
+    db_client._local_rules = {}
+    db_client._cached_statute_sections_by_country = {}
+    yield
+    db_client._local_sections, db_client._local_rules = old_sections, old_rules
+    db_client._cached_statute_sections = None
+    db_client._cached_statute_sections_by_country = {}
+    db_client._search_indexes = {}
+
+
+def test_compare_statute_vs_cba_does_not_leak_embeddings(isolated_db):
     db_client.save_statute_section({
         "id": "1982_80_s99_embedding_test",
         "statute_id": "1982:80",

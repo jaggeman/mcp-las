@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -75,3 +76,22 @@ def test_usage_summary():
     assert report['by_day']['2026-09-19'] == 2
     assert report['latency_ms']['average'] == 20
     assert report['legacy_rows_excluded'] == 1
+
+
+def test_cloud_usage_reader_extracts_json_payload(monkeypatch):
+    from scripts.usage_report import read_cloud_events
+    completed = SimpleNamespace(stdout=json.dumps([
+        {'jsonPayload': {'event': 'las_tool_usage', 'tool_called': 'lookup_statute'}},
+        {'textPayload': 'not a structured event'},
+    ]))
+    run = lambda command, **kwargs: (calls.append((command, kwargs)) or completed)
+    calls = []
+    monkeypatch.setattr('scripts.usage_report.subprocess.run', run)
+    monkeypatch.setattr('scripts.usage_report.shutil.which', lambda _: 'gcloud')
+    now = datetime.now(timezone.utc)
+    rows = read_cloud_events('paygap-prod', now, now)
+    assert rows[0]['tool_called'] == 'lookup_statute'
+    assert rows[1] == {}
+    assert calls[0][0][0:3] == ['gcloud', 'logging', 'read']
+    assert '--project=paygap-prod' in calls[0][0]
+    assert calls[0][1] == {'check': True, 'capture_output': True, 'text': True}
