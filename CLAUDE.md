@@ -9,7 +9,12 @@ REST accepterar nycklar endast i `X-API-Key`, inte URL eller JSON-body.
 Kvoter delas mellan instanser med Firestore-transaktioner i `mcp_rate_limits`.
 Vid fel i kvotlagringen nekas anrop. Utan databas används en trådsäker lokal
 reserv med högst 10000 klientposter. HTTP har dessutom en gemensam kvot på
-600 anrop/minut före autentisering för API/MCP/SSE.
+600 anrop/minut före autentisering för API/MCP/SSE. I Firestore fördelas
+HTTP-kvoten över 16 servervalda slumpmässiga delkvoter (37 eller 38 anrop),
+vars summa är 600. Full delkvot nekas utan lån från andra delar; vid ojämn
+fördelning kan 429 komma innan det gemensamma taket nåtts. Detta undviker
+att alla HTTP-anrop konkurrerar om ett enda dokument. Under byte från äldre
+revision kan gamla/nya kvoter samexistera i högst ett kvotfönster.
 HTTP-body begränsas före parsning till 1 MiB (ansökningsformulär: 16 KiB)
 och högst 10 sekunders inläsning. Proxyheaders betros inte; formulärets kvot
 baseras på anslutande nätverksadress, som bakom proxy kan delas av flera användare.
@@ -43,8 +48,14 @@ GitHub OIDC konfigurerades 2026-09-19: pool `github-mcp-las`, provider
 GitHub-variablerna `GCP_WORKLOAD_IDENTITY_PROVIDER` och `GCP_DEPLOY_SERVICE_ACCOUNT`
 är satta. Befintliga `github-deployer@paygap-prod.iam.gserviceaccount.com`
 återanvänds utan utökade projektroller. OIDC verifierades vid deploy av ddec5ca.
-Den gamla nyckeln har inte återkallats: `sync-sources.yml` använder fortfarande
-`GCP_SA_KEY`. Migrera den separat och verifiera båda flöden innan återkallning.
+Veckosynken använder separat OIDC-pool `github-mcp-sync`, provider `github-sync`,
+och `mcp-source-sync@paygap-prod.iam.gserviceaccount.com` med endast
+`roles/datastore.user` på projektet, utan deployroller. Villkoren tillåter endast
+samma repository/ägare, main och `sync-sources.yml` vid schedule/workflow_dispatch.
+GitHub-variabler: `GCP_SYNC_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SYNC_SERVICE_ACCOUNT`.
+Jobbet synkar Sverige, Norge och Tyskland måndagar 03:00 UTC, utan överlappande körningar.
+Ingen workflow använder längre `GCP_SA_KEY`; den gamla nyckeln har inte
+återkallats eftersom eventuella användningar utanför repot inte har inventerats.
 Excel-länkar är hemliga bearer-token med 256 bitars slump och högst 10 minuters
 giltighet. Alla som har länken kan hämta filen; dela eller logga därför inte länkarna.
 Filer rensas automatiskt. Cachen är processlokal: högst 32 filer, 32 MiB totalt
@@ -66,6 +77,8 @@ Källor: https://api.lovdata.no/om-api-tjenesten/ (Stiftelsen Lovdata, NLOD 2.0)
 och https://www.gesetze-im-internet.de/ (XML-paket per lag).
 Norska paragrafnummer behålls, t.ex. `section="15-7"`; tyska t.ex. `section="1a"`.
 Källspråk är `nb` respektive `de`. Sök på källspråket; översättning garanteras inte.
+Prod synkroniserades 2026-09-19: 385 norska och 330 tyska paragrafer,
+14 lagar totalt, inga rapporterade synkfel. Antalen kan ändras vid senare synk.
 Katalogen är avgränsad, inte fullständig nationell arbetsrätt. Norska traktatbilagor
 med artikelnummer och tyska bilagor ingår inte i paragrafindexet.
 Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast för Sverige.

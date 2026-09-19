@@ -5,10 +5,7 @@ name: Veckovis synk av lagkällor
 # eftersom certainty-badgen på varje svar gör inaktuell text aktivt
 # vilseledande snarare än bara ofullständig (se issue #17).
 #
-# Körs bara mot Sverige (--swedish, standardläget utan flaggor) - Danmark
-# och Finland har ingen baseline-ingestion än (get_legal_coverage rapporterar
-# section_count: 0 för DK/FI), så en synk mot dem skulle bara logga tomma
-# körningar utan att skydda något.
+# Sverige, Norge och Tyskland. Danmark/Finland ändras inte av detta jobb.
 on:
   schedule:
     # Måndagar 03:00 UTC - efter att helgens ev. lagändringar hunnit synas
@@ -18,8 +15,15 @@ on:
 
 jobs:
   sync:
-    name: Synka mot Riksdagen
+    name: Synka Sverige, Norge och Tyskland
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: legal-source-sync-prod
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
 
@@ -31,14 +35,12 @@ jobs:
       - name: Installera beroenden
         run: pip install -r requirements.txt
 
-      # Samma GCP_SA_KEY som ci.yml:s deploy-jobb redan använder. Utan
-      # FIREBASE_CREDENTIALS_PATH satt faller firebase_client.py tillbaka på
-      # Application Default Credentials, som den här auth-steget skriver ut -
-      # ingen extra hemlighet behövs.
+      # Separat OIDC-identitet med endast databasbehörighet, inga deployroller.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ vars.GCP_SYNC_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SYNC_SERVICE_ACCOUNT }}
 
       # sync_sources.py skriver en JSON-sammanfattning (changed/skipped/errors)
       # till stdout och avslutar med kod 1 om status är "error" - en sådan
@@ -49,4 +51,5 @@ jobs:
       - name: Synka lagtext
         env:
           FIREBASE_PROJECT_ID: paygap-prod
-        run: python scripts/sync_sources.py
+          EMBEDDING_PROVIDER: mock
+        run: python scripts/sync_sources.py --swedish --norwegian --german

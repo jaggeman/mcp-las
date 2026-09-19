@@ -1,5 +1,6 @@
 import hmac
 import hashlib
+import secrets
 import logging
 from threading import RLock
 from src.config import settings
@@ -25,6 +26,14 @@ class AuthService:
         Returnerar True om anropet tillåts, False om gränsen är nådd.
         """
         if db_client.db is not None:
+            if client_id == 'mcp:http-preauth':
+                # Fixed partitions preserve the aggregate upper bound without
+                # serializing every request on a single Firestore document.
+                # A full randomly selected partition fails closed; no borrowing.
+                partitions = min(16, max_requests)
+                shard = secrets.randbelow(partitions)
+                capacity = max_requests // partitions + (shard < max_requests % partitions)
+                return self._distributed_limit(f'{client_id}:v2:{shard}', capacity, window_seconds)
             return self._distributed_limit(client_id, max_requests, window_seconds)
         now = time.monotonic()
         with self._lock:
