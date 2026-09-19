@@ -92,12 +92,22 @@ jobs:
       # på main?". Utan den krävdes deployloggar och revisionslistor för att
       # avgöra saken, och två parallella driftsättningar av samma tjänst gick
       # inte att skilja åt utifrån alls.
+      # --service-account är inte valfritt här. Utan flaggan kör tjänsten som
+      # projektets default compute service account, som i GCP:s standard-
+      # uppsättning har Editor på HELA paygap-prod - alltså läs- och
+      # skrivbehörighet till Novros anställningsuppgifter, löner och
+      # lönekartläggningar, i samma Firestore-databas. MCP-LAS rör aldrig de
+      # collections i kod, men med den rollen FÅR den det, och en bugg eller en
+      # komprometterad nyckel räcker då för att nå dem. Kontot nedan har bara
+      # åtkomst till LAS egna collections. Se avsnittet om separation i
+      # CLAUDE.md innan du ändrar något här.
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy mcp-las \
             --source . \
             --project=paygap-prod \
             --region=europe-west3 \
+            --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }} \
             --allow-unauthenticated \
             --max-instances=5 \
             --concurrency=40 \

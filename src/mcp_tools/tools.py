@@ -787,13 +787,16 @@ def calculate_redundancy_turnorder_and_exceptions(
     has_collective_bargaining_agreement: bool = True,
     single_operating_unit_only: bool = False,
     merged_operating_units_in_municipality: bool = False,
-    contract_areas_count: int = 1,
-    employees_list: Optional[List[Dict[str, Any]]] = None
+    contract_areas_count: int = 1
 ) -> Dict[str, Any]:
     """
     Beräknar turordning och undantag vid uppsägning på grund av arbetsbrist enligt
     Unionens kollektivavtalsregler och Lagen om anställningsskydd (LAS 3 §, 7 §, 22 § och 25-27 §§).
     Källa: https://www.unionen.se/rad-och-stod/regler-turordning-vid-uppsagning
+
+    Verktyget räknar på antal, inte på personer: det tar aldrig emot en lista
+    över anställda. Själva turordningen (sist in först ut, högre ålder vid lika
+    anställningstid) sorteras lokalt av den som har uppgifterna.
     """
     # 1. Undantagsberäkningar (Exemption calculations)
     las_max_exemptions = 3
@@ -862,33 +865,6 @@ def calculate_redundancy_turnorder_and_exceptions(
             "is_applicable": False
         }
 
-    # 2. Turordningslista sortering om anställda skickats med
-    processed_employees = None
-    if employees_list and isinstance(employees_list, list):
-        # Sortera: Flest anställningsdagar först (sist in = minst dagar = sägs upp först)
-        # Vid lika anställningstid: Äldre före yngre (störst age först)
-        sorted_emps = sorted(
-            employees_list,
-            key=lambda x: (x.get("seniority_days", 0), x.get("age", 0)),
-            reverse=True
-        )
-        processed_employees = []
-        for rank, emp in enumerate(sorted_emps, start=1):
-            processed_employees.append({
-                "rank_seniority": rank,
-                "name": emp.get("name", f"Anställd {rank}"),
-                "seniority_days": emp.get("seniority_days", 0),
-                "age": emp.get("age", 0),
-                "has_qualifications": emp.get("has_qualifications", True),
-                "is_exempt": emp.get("is_exempt", False),
-                "protection_status": (
-                    "⭐ Undantagen från turordning (Behåller tjänst)" if emp.get("is_exempt") else
-                    "⚠️ Saknar tillräckliga kvalifikationer (Kan gå före i uppsägning)" if not emp.get("has_qualifications", True) else
-                    "🛡️ Skyddad genom turordning (Längre anställningstid)" if rank <= (len(sorted_emps) - (redundancy_count or 0)) else
-                    "🚨 Risk för uppsägning (Kortast anställningstid)"
-                )
-            })
-
     result = {
         "source": "Unionen & Lagen om anställningsskydd (LAS 3 §, 7 §, 22 §, 25-27 §§)",
         "source_url": "https://www.unionen.se/rad-och-stod/regler-turordning-vid-uppsagning",
@@ -931,7 +907,11 @@ def calculate_redundancy_turnorder_and_exceptions(
                 "Utan kollektivavtal gäller strikt 22 § LAS med max 3 undantagna arbetstagare."
             )
         },
-        "sorted_turordningslista": processed_employees,
+        "sorting_rule": (
+            "Sortera lokalt: längst sammanlagd anställningstid först, och vid lika "
+            "anställningstid går högre ålder före (22 § LAS). Servern tar inte emot "
+            "personuppgifter och gör därför ingen sortering åt dig."
+        ),
         "certainty": {
             "score_pct": 95,
             "badge": "🟢 Hög (95%) — Unionens officiella turordningsregler & LAS (1982:80)",
@@ -959,6 +939,20 @@ GENERATED_EXCEL_FILES = DownloadStore()
 _FORMULA_TRIGGER_CHARS = ("=", "+", "-", "@")
 
 
+def _tenure_formula(row: int) -> str:
+    """Verktygets enda avsiktliga Excel-formel: anställningsdagar ur kolumn F.
+
+    IF-höljet gör att oanvända rader i mallen visas tomma i stället för
+    #VALUE!, vilket en naken DATEDIF ger så länge datumcellen står tom.
+
+    Definieras på ett enda ställe med flit: strängen måste vara byte-identisk
+    med den i saneringspasset längre ned, som tvingar varje ANNAN strängcell
+    till literal text. Glider de isär blir verktygets egen formel tyst
+    nedgraderad till text, och mallen slutar räkna.
+    """
+    return f'=IF(F{row}="","",DATEDIF(F{row},TODAY(),"D"))'
+
+
 def _excel_safe_value(value: Any) -> Any:
     """Neutraliserar CSV/Excel-formelinjektion (CWE-1236) i fritextfält.
 
@@ -976,24 +970,24 @@ def _excel_safe_value(value: Any) -> Any:
 
 def generate_turordningslista_excel(
     company_name: str = "Företaget AB",
-    employees: Optional[List[Dict[str, Any]]] = None,
+    row_count: int = 20,
     redundancy_count: Optional[int] = 0,
+    total_employees_in_unit: Optional[int] = None,
     cba_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
-    single_operating_unit: bool = False,
     as_of_date: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Skapar och formaterar en professionell Excel-arbetsbok (.xlsx) för turordningslista vid arbetsbrist.
-    Inkluderar automatisk ID-generering, beräkning av anställningsdagar med Excel-formler (=DATEDIF),
-    sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § vs kollektivavtal).
+    Skapar en TOM Excel-mall (.xlsx) för turordningslista vid arbetsbrist, med
+    kolumnrubriker, förifyllda =DATEDIF-formler för anställningsdagar och en
+    flik med undantagsreglerna (LAS 22 § vs kollektivavtal).
+
+    Verktyget tar aldrig emot personuppgifter. Mallen fylls i lokalt av den som
+    upprättar listan; sorteringen (sist in först ut, högre ålder vid lika
+    anställningstid) görs i kalkylarket eller av den anropande assistenten på
+    data som aldrig lämnar användarens egen miljö.
     """
-    if employees and (len(employees) > 1000 or any(
-        not isinstance(emp, dict) or len(emp) > 32 or any(
-            not isinstance(value, (str, int, float, bool, type(None)))
-            or len(str(value)) > 2000 for value in emp.values()
-        ) for emp in employees
-    )):
-        return {"success": False, "error": "Max 1000 anställda, 32 fält per anställd och 2000 tecken per fält."}
+    if not isinstance(row_count, int) or isinstance(row_count, bool) or not 1 <= row_count <= 1000:
+        return {"success": False, "error": "row_count måste vara ett heltal mellan 1 och 1000."}
     if len(company_name) > 200 or (cba_name and len(cba_name) > 200):
         return {"success": False, "error": "Företagsnamn och avtalsnamn får vara högst 200 tecken."}
     company_name = str(_excel_safe_value(company_name))
@@ -1006,97 +1000,8 @@ def generate_turordningslista_excel(
         except Exception:
             pass
 
-    if not employees:
-        # Skapa realistiskt exempel om inga anställda skickades med
-        employees = [
-            {"name": "Anna Lindqvist", "title": "Senior Projektledare", "driftsenhet": "Huvudkontor Stockholm", "avtalsomrade": "Tjänstemän", "start_date": "2015-03-01", "birth_date": "1980-05-12", "has_qualifications": True, "is_exempt": False, "notes": "Tillsvidare"},
-            {"name": "Erik Johansson", "title": "Systemutvecklare", "driftsenhet": "Huvudkontor Stockholm", "avtalsomrade": "Tjänstemän", "start_date": "2019-09-15", "birth_date": "1988-11-23", "has_qualifications": True, "is_exempt": True, "notes": "Nyckelkompetens arkitektur (Undantagen)"},
-            {"name": "Maria Nilsson", "title": "Marknadskoordinator", "driftsenhet": "Huvudkontor Stockholm", "avtalsomrade": "Tjänstemän", "start_date": "2021-02-01", "birth_date": "1992-04-03", "has_qualifications": True, "is_exempt": False, "notes": "Tillsvidare"},
-            {"name": "Johan Berg", "title": "Junior Utvecklare", "driftsenhet": "Huvudkontor Stockholm", "avtalsomrade": "Tjänstemän", "start_date": "2023-08-15", "birth_date": "1997-01-19", "has_qualifications": True, "is_exempt": False, "notes": "Tillsvidare"},
-            {"name": "Sara Karlsson", "title": "Ekonomiassistent", "driftsenhet": "Huvudkontor Stockholm", "avtalsomrade": "Tjänstemän", "start_date": "2023-08-15", "birth_date": "1994-07-30", "has_qualifications": True, "is_exempt": False, "notes": "Samma startdatum som Johan, men äldre"}
-        ]
-
-    # Beräkna anställningsdagar och ålder
-    parsed_employees = []
-    for idx, emp in enumerate(employees, start=1):
-        name = emp.get("name", f"Anställd {idx}")
-        title = emp.get("title", "Tjänsteman")
-        unit = emp.get("driftsenhet", "Driftsenhet 1")
-        cba_area = emp.get("avtalsomrade", "Tjänstemän")
-        start_date_str = emp.get("start_date", "2022-01-01")
-        birth_date_str = emp.get("birth_date", "1990-01-01")
-        has_qual = emp.get("has_qualifications", True)
-        is_exempt = emp.get("is_exempt", False)
-        notes = emp.get("notes", "")
-
-        try:
-            s_date = datetime.datetime.strptime(str(start_date_str), "%Y-%m-%d").date()
-            seniority_days = (target_date - s_date).days
-        except Exception:
-            seniority_days = emp.get("seniority_days", 365)
-            start_date_str = "2023-01-01"
-
-        try:
-            b_date = datetime.datetime.strptime(str(birth_date_str), "%Y-%m-%d").date()
-            age = (target_date - b_date).days // 365
-        except Exception:
-            age = emp.get("age", 30)
-
-        years = seniority_days // 365
-        months = (seniority_days % 365) // 30
-        tenure_text = f"{years} år, {months} mån"
-
-        parsed_employees.append({
-            "orig_index": idx,
-            "name": name,
-            "title": title,
-            "driftsenhet": unit,
-            "avtalsomrade": cba_area,
-            "start_date": str(start_date_str),
-            "seniority_days": seniority_days,
-            "tenure_text": tenure_text,
-            "birth_date": str(birth_date_str),
-            "age": age,
-            "has_qualifications": has_qual,
-            "is_exempt": is_exempt,
-            "notes": notes
-        })
-
-    # Sortera enligt LAS & Kollektivavtal:
-    # 1. Mest anställningstid först (störst seniority_days)
-    # 2. Vid lika anställningstid: Äldre före yngre (störst age)
-    sorted_employees = sorted(
-        parsed_employees,
-        key=lambda x: (x["seniority_days"], x["age"]),
-        reverse=True
-    )
-
-    total_count = len(sorted_employees)
     red_count = redundancy_count or 0
-    cutoff_rank = total_count - red_count
-
-    # Tilldela ID och status
-    table_rows = []
-    for rank, emp in enumerate(sorted_employees, start=1):
-        emp_id = f"EMP-{rank:03d}"
-        if emp["is_exempt"]:
-            status = "⭐ Undantagen (Behåller tjänst)"
-            status_code = "EXEMPT"
-        elif not emp["has_qualifications"]:
-            status = "⚠️ Saknar tillräckliga kvalifikationer"
-            status_code = "NO_QUAL"
-        elif rank <= cutoff_rank:
-            status = "🛡️ Skyddad enligt turordning"
-            status_code = "PROTECTED"
-        else:
-            status = "🚨 Risk för uppsägning (Kortast anställningstid)"
-            status_code = "AT_RISK"
-
-        emp["id"] = emp_id
-        emp["rank"] = rank
-        emp["status"] = status
-        emp["status_code"] = status_code
-        table_rows.append(emp)
+    total_count = total_employees_in_unit or 0
 
     # Skapa Excel-fil med openpyxl
     wb = Workbook()
@@ -1133,7 +1038,10 @@ def generate_turordningslista_excel(
     ws1.row_dimensions[1].height = 35
 
     ws1.merge_cells("A2:M2")
-    ws1["A2"] = f"Upprättad: {target_date.strftime('%Y-%m-%d')} | Lagstöd: LAS 3 §, 7 §, 22 § & Kollektivavtal: {cba_name} | Berörda vid arbetsbrist: {red_count} av {total_count}"
+    # Antalen skrivs bara ut när de faktiskt angetts - annars vore "0 av 0" ett
+    # påstående om en personalstyrka verktyget inte känner till.
+    omfattning = f" | Berörda vid arbetsbrist: {red_count} av {total_count}" if total_count else ""
+    ws1["A2"] = f"Upprättad: {target_date.strftime('%Y-%m-%d')} | Lagstöd: LAS 3 §, 7 §, 22 § & Kollektivavtal: {cba_name}{omfattning}"
     ws1["A2"].font = font_subtitle
     ws1["A2"].fill = fill_header_banner
     ws1["A2"].alignment = Alignment(horizontal="center", vertical="center")
@@ -1164,52 +1072,21 @@ def generate_turordningslista_excel(
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border = thin_border
 
-    # Rader med anställda
-    for row_idx, emp in enumerate(table_rows, start=5):
+    # Tomma, förformaterade rader att fylla i lokalt. Endast löpnummer och
+    # dagformeln skrivs; allt personrelaterat lämnas blankt med flit.
+    for row_idx in range(5, 5 + row_count):
         ws1.row_dimensions[row_idx].height = 22
 
-        c1 = ws1.cell(row=row_idx, column=1, value=emp["id"])
-        c2 = ws1.cell(row=row_idx, column=2, value=_excel_safe_value(emp["name"]))
-        c3 = ws1.cell(row=row_idx, column=3, value=_excel_safe_value(emp["title"]))
-        c4 = ws1.cell(row=row_idx, column=4, value=_excel_safe_value(emp["driftsenhet"]))
-        c5 = ws1.cell(row=row_idx, column=5, value=_excel_safe_value(emp["avtalsomrade"]))
-        c6 = ws1.cell(row=row_idx, column=6, value=emp["start_date"])
+        ws1.cell(row=row_idx, column=1, value=f"EMP-{row_idx - 4:03d}")
 
-        # Excel Formel för anställningsdagar: =DATEDIF(F5, TODAY(), "d")
-        formula_days = f'=DATEDIF(F{row_idx}, TODAY(), "D")'
-        c7 = ws1.cell(row=row_idx, column=7, value=formula_days)
+        ws1.cell(row=row_idx, column=7, value=_tenure_formula(row_idx))
 
-        c8 = ws1.cell(row=row_idx, column=8, value=emp["tenure_text"])
-        c9 = ws1.cell(row=row_idx, column=9, value=emp["birth_date"])
-        c10 = ws1.cell(row=row_idx, column=10, value="Ja" if emp["has_qualifications"] else "Nej")
-        c11 = ws1.cell(row=row_idx, column=11, value="Ja (Undantagen)" if emp["is_exempt"] else "Nej")
-        c12 = ws1.cell(row=row_idx, column=12, value=emp["rank"])
-        c13 = ws1.cell(row=row_idx, column=13, value=emp["status"])
-
-        # Formatering och färgkodning per status
         for col_i in range(1, 14):
             cell = ws1.cell(row=row_idx, column=col_i)
             cell.border = thin_border
             cell.alignment = Alignment(vertical="center", horizontal="center" if col_i in [1, 6, 7, 8, 9, 10, 11, 12] else "left")
 
-            if emp["status_code"] == "EXEMPT":
-                if col_i in [11, 13]:
-                    cell.fill = fill_exempt
-                    cell.font = Font(name="Calibri", size=10, bold=True, color="854D0E")
-            elif emp["status_code"] == "AT_RISK":
-                if col_i == 13:
-                    cell.fill = fill_risk
-                    cell.font = Font(name="Calibri", size=10, bold=True, color="991B1B")
-            elif emp["status_code"] == "NO_QUAL":
-                if col_i in [10, 13]:
-                    cell.fill = fill_no_qual
-                    cell.font = Font(name="Calibri", size=10, bold=True, color="C2410C")
-            elif emp["status_code"] == "PROTECTED":
-                if col_i == 13:
-                    cell.fill = fill_protected
-                    cell.font = Font(name="Calibri", size=10, bold=True, color="166534")
-
-    # Auto-anpassa kolumnbredder
+    # Auto-anpassa kolumnbredder efter rubrikerna (raderna är tomma)
     for col in ws1.columns:
         max_len = max(len(str(cell.value or '')) for cell in col)
         col_letter = get_column_letter(col[0].column)
@@ -1238,7 +1115,10 @@ def generate_turordningslista_excel(
         ("7. Kollektivavtal Alternativ 1", "Arbetsgivaren kan vid berörd driftsenhet och avtalsområde undanta 3 arbetstagare."),
         ("8. Kollektivavtal Alternativ 2", "Vid endast 1 driftsenhet i hela företaget kan arbetsgivaren undanta totalt 4 arbetstagare gemensamt."),
         ("9. Kollektivavtal Alternativ 3", "Vid sammanslagna driftsenheter på samma ort medges 3 undantag + 1 extra per avtalsområde."),
-        ("10. Kollektivavtal Alternativ 4 (Procentregeln)", f"Undanta 15 % av de uppsagda ({int(red_count * 0.15)} st), dock max 10 % av enhetens personal ({int(total_count * 0.10)} st).")
+        ("10. Kollektivavtal Alternativ 4 (Procentregeln)",
+         f"Undanta 15 % av de uppsagda ({int(red_count * 0.15)} st), dock max 10 % av enhetens personal ({int(total_count * 0.10)} st)."
+         if total_count else
+         "Undanta 15 % av de uppsagda, dock högst 10 % av enhetens personal. Ange redundancy_count och total_employees_in_unit för att få talen uträknade.")
     ]
 
     ws2.cell(row=3, column=1, value="Regel / Område").font = font_col_header
@@ -1266,7 +1146,7 @@ def generate_turordningslista_excel(
             for cell in row:
                 if isinstance(cell.value, str) and not (
                     sheet is ws1 and cell.column == 7 and cell.row >= 5
-                    and cell.value == f'=DATEDIF(F{cell.row}, TODAY(), "D")'
+                    and cell.value == _tenure_formula(cell.row)
                 ):
                     cell.data_type = "s"
 
@@ -1294,22 +1174,15 @@ def generate_turordningslista_excel(
 
     # Skapa markdown-tabell för AI-chatten
     md_lines = [
-        f"### 📋 Turordningslista vid Arbetsbrist — {company_name}",
-        f"*Upprättad: {target_date.strftime('%Y-%m-%d')} | Kollektivavtal: {cba_name} | Varsel: {red_count} av {total_count} anställda*",
+        f"### 📋 Tom turordningsmall vid Arbetsbrist — {company_name}",
+        f"*Upprättad: {target_date.strftime('%Y-%m-%d')} | Kollektivavtal: {cba_name} | Mallen fylls i lokalt — servern tar inte emot personuppgifter*",
         "",
         "| ID | Namn | Befattning | Driftsenhet | Anställd sedan | Dagar (Formel) | Rang | Utfall / Status |",
         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |"
     ]
-    for emp in table_rows:
-        # markdown_table är en separat returväg från själva .xlsx-filen (se
-        # docstring i tests/test_excel_formula_injection.py) - en mottagare
-        # kopierar ofta raden rakt in i ett kalkylark från chatten, så samma
-        # sanering som cellskrivningen ovan behövs här också.
-        md_name = _excel_safe_value(emp['name'])
-        md_title = _excel_safe_value(emp['title'])
-        md_unit = _excel_safe_value(emp['driftsenhet'])
+    for row_number in range(1, row_count + 1):
         md_lines.append(
-            f"| `{emp['id']}` | **{md_name}** | {md_title} | {md_unit} | {emp['start_date']} | {emp['seniority_days']} dgr | #{emp['rank']} | {emp['status']} |"
+            f"| `EMP-{row_number:03d}` |  |  |  |  | *(formel)* |  |  |"
         )
 
     return {
@@ -1321,13 +1194,17 @@ def generate_turordningslista_excel(
         "data_uri_download": f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_base64}",
         "file_base64": excel_base64,
         "file_size_bytes": len(excel_bytes),
-        "total_employees": total_count,
+        "template_rows": row_count,
         "redundancy_count": red_count,
         "markdown_table": "\n".join(md_lines),
         "instructions_for_ai": (
-            f"Excel-filen har genererats och sparats. Erbjuda användaren att ladda ner Excel-filen via länken: "
+            f"En TOM turordningsmall har genererats. Erbjud användaren att ladda ner den via länken: "
             f"[{file_name}]({download_url}) eller bädda in den som fil med nedladdningsknapp. "
-            "Länken är en hemlig åtkomstnyckel, giltig i högst 10 minuter. Dela den inte vidare."
+            "Länken är en hemlig åtkomstnyckel, giltig i högst 10 minuter. Dela den inte vidare. "
+            "Mallen fylls i lokalt av användaren. Skicka aldrig namn, personnummer, födelsedatum "
+            "eller andra personuppgifter till det här verktyget - det tar inte emot sådana, och "
+            "turordningen (sist in först ut, högre ålder vid lika anställningstid) ska räknas ut "
+            "i kalkylarket eller av dig lokalt på data som stannar hos användaren."
         ),
         "certainty": {
             "score_pct": 100,
@@ -1340,8 +1217,6 @@ def generate_turordningslista_excel(
 def get_hr_document_template(
     template_type: str,
     company_name: Optional[str] = "Arbetsgivaren AB / Organisationen",
-    employee_name: Optional[str] = "[Arbetstagarens Förnamn Efternamn]",
-    personal_identity_number: Optional[str] = "[ÅÅÅÅMMDD-XXXX]",
     job_title: Optional[str] = "[Nuvarande Befattning]",
     workplace_location: Optional[str] = "[Driftsenhet / Arbetsställe]",
     reason_type: Optional[str] = "arbetsbrist",
@@ -1359,11 +1234,17 @@ def get_hr_document_template(
     3. 'varsel_personliga_skal' (Varsel till facklig organisation enligt 30 § LAS)
     4. 'underrattelse_personliga_skal' (Underrättelse till arbetstagaren enligt 30 § LAS)
     5. 'uppsagningsbesked_arbetsbrist' (Uppsägningsbesked vid arbetsbrist med företrädesrätt 8 § & 25 § LAS)
+
+    Mallarna levereras med platshållare för arbetstagarens namn och personnummer.
+    Verktyget tar inte emot de uppgifterna - de fylls i lokalt i det färdiga
+    dokumentet, aldrig via ett anrop till servern.
     """
     today = date_str or datetime.date.today().strftime("%Y-%m-%d")
     c_name = company_name or "Arbetsgivaren AB / Organisationen"
-    e_name = employee_name or "[Arbetstagarens Förnamn Efternamn]"
-    p_num = personal_identity_number or "[ÅÅÅÅMMDD-XXXX]"
+    # Alltid platshållare: mallen levereras tom och fylls i lokalt. Namn och
+    # personnummer ska aldrig skickas till servern (se test_no_personal_data.py).
+    e_name = "[Arbetstagarens Förnamn Efternamn]"
+    p_num = "[ÅÅÅÅMMDD-XXXX]"
     j_title = job_title or "[Nuvarande Befattning]"
     w_loc = workplace_location or "[Driftsenhet / Arbetsställe]"
     u_name = union_name or "[Lokal arbetstagarorganisation]"

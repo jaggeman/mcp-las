@@ -592,12 +592,12 @@ def calculate_redundancy_turnorder_and_exceptions(
     single_operating_unit_only: bool = False,
     merged_operating_units_in_municipality: bool = False,
     contract_areas_count: int = 1,
-    employees_list: Optional[List[Dict[str, Any]]] = None,
     api_key: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Beräknar turordningslista och undantag vid arbetsbrist (undantagsregler 1-4, procentregeln 15%/10%, LAS 22 § vs kollektivavtal)
+    Beräknar undantagsregler vid arbetsbrist (undantagsregler 1-4, procentregeln 15%/10%, LAS 22 § vs kollektivavtal)
     samt krav på omplaceringsutredning (7 § LAS) och anställningstid (3 § LAS).
+    Räknar på antal, aldrig på personer: verktyget tar inte emot uppgifter om anställda.
     """
     rl_err = _check_rate_limit(api_key)
     if rl_err:
@@ -609,8 +609,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         has_collective_bargaining_agreement=has_collective_bargaining_agreement,
         single_operating_unit_only=single_operating_unit_only,
         merged_operating_units_in_municipality=merged_operating_units_in_municipality,
-        contract_areas_count=contract_areas_count,
-        employees_list=employees_list
+        contract_areas_count=contract_areas_count
     )
     return res
 
@@ -618,17 +617,19 @@ def calculate_redundancy_turnorder_and_exceptions(
 @tracked_tool
 def generate_turordningslista_excel(
     company_name: str = "Företaget AB",
-    employees: Optional[List[Dict[str, Any]]] = None,
+    row_count: int = 20,
     redundancy_count: Optional[int] = 0,
+    total_employees_in_unit: Optional[int] = None,
     cba_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
-    single_operating_unit: bool = False,
     as_of_date: Optional[str] = None,
     api_key: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Skapar och genererar en nedladdningsbar Excel-fil (.xlsx) med formaterad turordningslista vid arbetsbrist.
-    Inkluderar ID-kolumn (EMP-001...), beräkning av anställningsdagar via Excel-formler (=DATEDIF),
-    sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § och kollektivavtal).
+    Skapar en nedladdningsbar TOM Excel-mall (.xlsx) för turordningslista vid arbetsbrist.
+    Innehåller ID-kolumn (EMP-001...), kolumnrubriker, förifyllda =DATEDIF-formler för
+    anställningsdagar och en flik med undantagsreglerna (LAS 22 § och kollektivavtal).
+    Mallen fylls i lokalt: verktyget tar inte emot namn, personnummer eller andra
+    personuppgifter, och sorterar därför inte turordningen åt dig.
     """
     rl_err = _check_rate_limit(api_key)
     if rl_err:
@@ -636,10 +637,10 @@ def generate_turordningslista_excel(
     t0 = time.time()
     res = _generate_turordningslista_excel(
         company_name=company_name,
-        employees=employees,
+        row_count=row_count,
         redundancy_count=redundancy_count,
+        total_employees_in_unit=total_employees_in_unit,
         cba_name=cba_name,
-        single_operating_unit=single_operating_unit,
         as_of_date=as_of_date
     )
     return res
@@ -648,8 +649,6 @@ def generate_turordningslista_excel(
 def get_hr_document_template(
     template_type: str,
     company_name: Optional[str] = "Arbetsgivaren AB / Organisationen",
-    employee_name: Optional[str] = "[Arbetstagarens Förnamn Efternamn]",
-    personal_identity_number: Optional[str] = "[ÅÅÅÅMMDD-XXXX]",
     job_title: Optional[str] = "[Nuvarande Befattning]",
     workplace_location: Optional[str] = "[Driftsenhet / Arbetsställe]",
     reason_type: Optional[str] = "arbetsbrist",
@@ -667,6 +666,9 @@ def get_hr_document_template(
     3. 'varsel_personliga_skal' (Varsel till facklig organisation enligt 30 § LAS)
     4. 'underrattelse_personliga_skal' (Underrättelse till arbetstagaren enligt 30 § LAS)
     5. 'uppsagningsbesked_arbetsbrist' (Uppsägningsbesked vid arbetsbrist med företrädesrätt 8 § & 25 § LAS)
+
+    Mallen levereras med platshållare för arbetstagarens namn och personnummer.
+    Verktyget tar inte emot de uppgifterna - de fylls i lokalt i dokumentet.
     """
     rl_err = _check_rate_limit(api_key)
     if rl_err:
@@ -675,8 +677,6 @@ def get_hr_document_template(
     res = _get_hr_document_template(
         template_type=template_type,
         company_name=company_name,
-        employee_name=employee_name,
-        personal_identity_number=personal_identity_number,
         job_title=job_title,
         workplace_location=workplace_location,
         reason_type=reason_type,

@@ -32,16 +32,14 @@ def test_valid_and_anonymous_mcp_limits(monkeypatch):
 
 
 def test_excel_strings_are_not_formulas_and_filename_is_safe():
-    result = tools.generate_turordningslista_excel(company_name='Bad\r\n"/公司', employees=[{
-        'name': '=1+1', 'title': '=2+2', 'driftsenhet': '=3+3',
-        'avtalsomrade': '=4+4', 'birth_date': '=5+5', 'notes': '=6+6',
-    }])
+    # Mallen tar inte emot personuppgifter langre; foretagsnamnet ar det enda
+    # anvandarstyrda faltet som hamnar i arbetsboken.
+    result = tools.generate_turordningslista_excel(company_name='Bad\r\n"/公司', row_count=3)
     book = load_workbook(io.BytesIO(base64.b64decode(result['file_base64'])))
     for row in book.active.iter_rows(min_row=5):
         for cell in row:
             if cell.column != 7:
                 assert cell.data_type != 'f'
-    assert book.active['B5'].value.lstrip("'") == '=1+1'
     assert book.active['G5'].data_type == 'f'
     assert len(result['file_id']) >= 43
     assert result['file_name'].isascii()
@@ -71,8 +69,8 @@ def test_excel_store_expiration_capacity_and_size(monkeypatch):
 
 
 def test_excel_rejects_large_inputs():
-    assert tools.generate_turordningslista_excel(employees=[{}] * 1001)['success'] is False
-    assert tools.generate_turordningslista_excel(employees=[{'name': 'a' * 2001}])['success'] is False
+    assert tools.generate_turordningslista_excel(row_count=1001)['success'] is False
+    assert tools.generate_turordningslista_excel(company_name='a' * 201)['success'] is False
 
 
 def test_download_expiry_returns_404(monkeypatch):
