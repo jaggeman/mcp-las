@@ -72,8 +72,10 @@ giltighet. Alla som har länken kan hämta filen; dela eller logga därför inte
 Filer rensas automatiskt. Cachen är processlokal: högst 32 filer, 32 MiB totalt
 och 2 MiB per fil. Omstart eller kapacitetsrensning kan göra länkar ogiltiga tidigare;
 vid flera instanser kan en annan instans sakna filen. Base64-exporten finns kvar.
-Export accepterar högst 1000 anställda, 32 fält per anställd och 2000 tecken per fält.
-Användarfält sparas som text, medan serverns DATEDIF-formler behålls.
+Exporten tar inte emot anställda alls: den genererar en tom mall med 1-1000 rader
+(`row_count`). Företags- och avtalsnamn får vara högst 200 tecken. Användarfält
+sparas som text, medan serverns egen DATEDIF-formel behålls som formel.
+Se avsnittet om separation mellan MCP-LAS och Novro.
 Docker-kontexten exkluderar miljöfiler och vanliga nyckel-/credential-filer.
 Cloud Run begränsas av CI till 5 instanser och concurrency 40. Uvicorns accesslogg är
 avstängd eftersom Cloud Run redan skapar en requestlogg för varje HTTP-anrop.
