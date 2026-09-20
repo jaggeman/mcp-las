@@ -152,23 +152,12 @@ def test_calculate_redundancy_turnorder_and_exceptions():
     assert res["exemption_rules"]["cba_exemption_alternatives"]["alternativ_1"]["allowed_exemptions"] == 3
     assert res["exemption_rules"]["cba_exemption_alternatives"]["alternativ_4_procentregel"]["allowed_exemptions"] == 3
 
-    # 2. Test sorting employees list
-    employees = [
-        {"name": "Alice", "seniority_days": 1500, "age": 40, "has_qualifications": True},
-        {"name": "Bob", "seniority_days": 300, "age": 28, "has_qualifications": True},
-        {"name": "Charlie", "seniority_days": 300, "age": 35, "has_qualifications": True}, # older than Bob -> prioritized
-        {"name": "Diana", "seniority_days": 800, "age": 30, "is_exempt": True} # exempt
-    ]
-    res_sort = calculate_redundancy_turnorder_and_exceptions(
-        redundancy_count=1,
-        employees_list=employees
-    )
-    sorted_list = res_sort["sorted_turordningslista"]
-    assert sorted_list[0]["name"] == "Alice"
-    assert sorted_list[1]["name"] == "Diana"
-    assert sorted_list[2]["name"] == "Charlie"  # Same seniority as Bob but older (35 > 28)
-    assert sorted_list[3]["name"] == "Bob"
-    assert "Risk för uppsägning" in sorted_list[3]["protection_status"]
+    # 2. Verktyget sorterar inte längre någon personallista - det tar inte emot
+    # personuppgifter alls. I stället beskriver det regeln så att den som har
+    # uppgifterna kan sortera lokalt.
+    res_rule = calculate_redundancy_turnorder_and_exceptions(redundancy_count=1)
+    assert "22 § LAS" in res_rule["sorting_rule"]
+    assert "sorted_turordningslista" not in res_rule
 
 def test_no_placeholder_values_leak_into_legal_text():
     """Inget svar far innehalla "None" i text en anvandare laser.
@@ -211,20 +200,17 @@ def test_generate_turordningslista_excel():
     res = generate_turordningslista_excel(
         company_name="Nordic Tech AB",
         redundancy_count=2,
-        employees=[
-            {"name": "Karin", "title": "Lead Dev", "driftsenhet": "Sthlm", "start_date": "2018-01-01", "birth_date": "1985-02-10", "has_qualifications": True, "is_exempt": True},
-            {"name": "Olof", "title": "Dev", "driftsenhet": "Sthlm", "start_date": "2020-05-01", "birth_date": "1990-08-15", "has_qualifications": True, "is_exempt": False},
-            {"name": "Elin", "title": "Junior Dev", "driftsenhet": "Sthlm", "start_date": "2023-01-10", "birth_date": "1996-12-01", "has_qualifications": True, "is_exempt": False}
-        ]
+        total_employees_in_unit=3,
+        row_count=3
     )
-    
+
     assert res["success"] is True
     assert "download_url" in res
     assert res["file_name"].startswith("Turordningslista_Nordic_Tech_AB")
     assert len(res["file_base64"]) > 500
     assert res["file_id"] in GENERATED_EXCEL_FILES
+    assert res["template_rows"] == 3
     assert "EMP-001" in res["markdown_table"]
-    assert "Karin" in res["markdown_table"]
 
 def test_get_hr_document_template():
     from src.mcp_tools.tools import get_hr_document_template
@@ -233,31 +219,27 @@ def test_get_hr_document_template():
     res_utredning = get_hr_document_template(
         template_type="omplaceringsutredning",
         company_name="Region Stockholm",
-        employee_name="Anna Svensson",
-        personal_identity_number="19850512-1234",
         job_title="Sjuksköterska",
         reason_type="arbetsbrist"
     )
     assert "7 § andra stycket" in res_utredning["legal_basis"]
-    assert "Anna Svensson" in res_utredning["document_template_text"]
+    assert "[Arbetstagarens Förnamn Efternamn]" in res_utredning["document_template_text"]
     assert "Region Stockholm" in res_utredning["document_template_text"]
     assert len(res_utredning["statutory_required_elements"]) > 3
 
     # 2. Omplaceringserbjudande
     res_offer = get_hr_document_template(
         template_type="omplaceringserbjudande",
-        employee_name="Erik Johansson",
         offered_position_title="Verksamhetsutvecklare"
     )
     assert "OMPLACERINGSERBJUDANDE" in res_offer["document_template_text"]
     assert "Tackar JA" in res_offer["document_template_text"]
     assert "Tackar NEJ" in res_offer["document_template_text"]
-    assert "Erik Johansson" in res_offer["document_template_text"]
+    assert "[Arbetstagarens Förnamn Efternamn]" in res_offer["document_template_text"]
 
     # 3. Varsel personliga skäl
     res_varsel = get_hr_document_template(
         template_type="varsel_personliga_skal",
-        employee_name="Johan Berg",
         union_name="Vision Avdelning 45"
     )
     assert "30 §" in res_varsel["legal_basis"]
@@ -268,7 +250,6 @@ def test_get_hr_document_template():
     res_anstallning = get_hr_document_template(
         template_type="anstallningsbevis",
         company_name="Svenska AB",
-        employee_name="Maria Karlsson",
         job_title="Systemarkitekt"
     )
     assert "6 c §" in res_anstallning["legal_basis"]
@@ -280,11 +261,10 @@ def test_get_hr_document_template():
     res_anmalan = get_hr_document_template(
         template_type="anmalan_foretradesratt",
         company_name="Svenska AB",
-        employee_name="Sara Nilsson"
     )
     assert "25–27 §§" in res_anmalan["legal_basis"]
     assert "ANMÄLAN OM ANSPRÅK PÅ FÖRETRÄDESRÄTT" in res_anmalan["document_template_text"]
-    assert "Sara Nilsson" in res_anmalan["document_template_text"]
+    assert "[Arbetstagarens Förnamn Efternamn]" in res_anmalan["document_template_text"]
 
     # 6. Begäran om förhandling 32 § LAS
     res_forhandling = get_hr_document_template(
@@ -299,16 +279,14 @@ def test_get_hr_document_template():
     res_tidsbegr = get_hr_document_template(
         template_type="underrattelse_tidsbegransad_28_las",
         company_name="Svenska AB",
-        employee_name="Lars Olofsson"
     )
     assert "28 §" in res_tidsbegr["legal_basis"]
-    assert "Lars Olofsson" in res_tidsbegr["document_template_text"]
+    assert "[Arbetstagarens Förnamn Efternamn]" in res_tidsbegr["document_template_text"]
 
     # 8. Uppsägningsbesked arbetsbrist (2 sidor med 10 § delgivningsregler)
     res_uppsagn = get_hr_document_template(
         template_type="uppsagningsbesked_arbetsbrist",
         company_name="Svenska AB",
-        employee_name="Olof Lind"
     )
     assert "8–10 §§" in res_uppsagn["legal_basis"]
     assert "UPPSÄGNINGSBESKED PÅ GRUND AV ARBETSBRIST" in res_uppsagn["document_template_text"]
@@ -320,18 +298,16 @@ def test_get_hr_document_template():
     res_avsked_varsel = get_hr_document_template(
         template_type="arbetsgivarverket_avskedande_varsel",
         company_name="Skatteverket",
-        employee_name="Nils Nilsson",
         union_name="ST Inom Skatteverket"
     )
     assert "30 §" in res_avsked_varsel["legal_basis"]
     assert "VARSEL OM AVSKEDANDE" in res_avsked_varsel["document_template_text"]
-    assert "Nils Nilsson" in res_avsked_varsel["document_template_text"]
+    assert "[Arbetstagarens Förnamn Efternamn]" in res_avsked_varsel["document_template_text"]
 
     # 10. Besked om avskedande (Arbetsgivarverket / 18–19 §§)
     res_avsked_beslut = get_hr_document_template(
         template_type="arbetsgivarverket_avskedande_beslut",
         company_name="Trafikverket",
-        employee_name="Per Persson"
     )
     assert "18–19 §§" in res_avsked_beslut["legal_basis"]
     assert "BESKED OM AVSKEDANDE" in res_avsked_beslut["document_template_text"]
@@ -340,7 +316,6 @@ def test_get_hr_document_template():
     res_69 = get_hr_document_template(
         template_type="arbetsgivarverket_69_ar_upphorande",
         company_name="Länsstyrelsen",
-        employee_name="Gunilla Andersson"
     )
     assert "32 a" in res_69["legal_basis"]
     assert "69 ÅR" in res_69["document_template_text"]
@@ -349,7 +324,6 @@ def test_get_hr_document_template():
     res_ura = get_hr_document_template(
         template_type="arbetsgivarverket_ura_kontrakt",
         company_name="Sida",
-        employee_name="Carl Bildt"
     )
     assert "URA" in res_ura["legal_basis"]
     assert "UTLANDSKONTRAKT" in res_ura["document_template_text"]

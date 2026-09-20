@@ -72,11 +72,62 @@ giltighet. Alla som har länken kan hämta filen; dela eller logga därför inte
 Filer rensas automatiskt. Cachen är processlokal: högst 32 filer, 32 MiB totalt
 och 2 MiB per fil. Omstart eller kapacitetsrensning kan göra länkar ogiltiga tidigare;
 vid flera instanser kan en annan instans sakna filen. Base64-exporten finns kvar.
-Export accepterar högst 1000 anställda, 32 fält per anställd och 2000 tecken per fält.
-Användarfält sparas som text, medan serverns DATEDIF-formler behålls.
+Exporten tar inte emot anställda alls: den genererar en tom mall med 1-1000 rader
+(`row_count`). Företags- och avtalsnamn får vara högst 200 tecken. Användarfält
+sparas som text, medan serverns egen DATEDIF-formel behålls som formel.
+Se avsnittet om separation mellan MCP-LAS och Novro.
 Docker-kontexten exkluderar miljöfiler och vanliga nyckel-/credential-filer.
 Cloud Run begränsas av CI till 5 instanser och concurrency 40. Uvicorns accesslogg är
 avstängd eftersom Cloud Run redan skapar en requestlogg för varje HTTP-anrop.
+
+## Separation mellan MCP-LAS och Novro
+
+MCP-LAS är en **lässerver för arbetsrätt**. Novro (`app.novro.se`) är ett
+HR-system med anställningsuppgifter, löner och lönekartläggningar. Det är två
+olika system och ska förbli det. MCP-LAS ska aldrig ta emot, läsa eller skriva
+Novros persondata.
+
+**Verktygen tar inte emot personuppgifter.** Inget verktyg accepterar namn,
+personnummer, födelsedatum eller listor över anställda.
+`generate_turordningslista_excel` genererar en TOM mall som fylls i lokalt,
+`calculate_redundancy_turnorder_and_exceptions` räknar på antal i stället för
+på personer, och `get_hr_document_template` levererar platshållare.
+`tests/test_no_personal_data.py` låser fast det: parametrarna får inte smyga
+tillbaka. Beräkningarna är rena sorteringar som den anropande assistenten kan
+göra lokalt på data som stannar hos användaren.
+
+**Ingen kodväg rör Novros data.** MCP-LAS använder enbart sina egna
+collections: `statutes`, `statute_sections`, `agreement_rules`, `precedents`,
+`source_sync_state`, `api_keys`, `key_requests`, `access_logs`,
+`cache_versions` och `mcp_rate_limits`. Lägg aldrig till en läsning av
+`organizations/`, `users/` eller någon annan Novro-collection.
+
+**Ingen loggning av innehåll.** `src/services/usage_logging.py` skriver bara
+allowlistad metadata (verktyg, transport, land, status, svarstid) — aldrig
+argument, aldrig resultat.
+
+**Dedikerat runtime-konto.** Cloud Run-tjänsten körs som
+`mcp-las-runtime@paygap-prod.iam.gserviceaccount.com` via `--service-account`
+i `ci.yml`. Utan den flaggan kör tjänsten som projektets default
+compute-konto, som i GCP:s standarduppsättning har Editor på hela projektet —
+alltså full åtkomst till Novros data. **Ta aldrig bort flaggan.** Kontot
+skapas med `scripts/setup_runtime_service_account.sh`.
+
+**Detta är ännu inte fullständig separation.** Båda systemen ligger i
+GCP-projektet `paygap-prod` och delar Firestores `(default)`-databas.
+`roles/datastore.user` gäller hela databasen — Firestore har ingen IAM på
+collection-nivå — så runtime-kontot *kan* fortfarande läsa Novros collections
+även om ingen kod gör det. Det dedikerade kontot tar bort Editor-behörigheten,
+inte databasgränsen. Full separation kräver ett av två steg:
+
+1. **Egen Firestore-databas** för LAS i samma projekt, med IAM-villkor som
+   binder kontot till just den databasen. Kräver datamigrering.
+2. **Eget GCP-projekt** för MCP-LAS. Renast, men störst arbete.
+
+**Checklista innan något nytt byggs här:** Tar ändringen emot en
+personuppgift? Läser den en collection som inte står i listan ovan? Loggar den
+något annat än metadata? Behöver den en bredare IAM-roll? Är svaret ja på
+någon av frågorna hör funktionen inte hemma i MCP-LAS.
 
 ## Norge, Tyskland och Spanien – laguppslag och sökning
 `lookup_statute` och `search_labor_law` stöder `jurisdiction="NO"` respektive `"DE"`, samt `"ES"` för Spanien.
