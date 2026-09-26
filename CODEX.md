@@ -108,7 +108,8 @@ Wetboek Boek 7 (arbeidsovereenkomst), Arbeidstijdenwet, Arbeidsomstandighedenwet
 Wet arbeid en zorg och Wet op de ondernemingsraden. Senaste version som trätt i kraft
 väljs ur lagens manifest. Källspråk `nl`, källa https://wetten.overheid.nl/.
 Storbritannien: 10 centrala lagar och förordningar från legislation.gov.uk, inklusive
-Employment Rights Act 1996, Equality Act 2010, Working Time Regulations 1998,
+Employment Rights Act 1996 (avgränsad till sections 1–145 på grund av den atomiska
+publiceringsgränsen), Equality Act 2010, Working Time Regulations 1998,
 National Minimum Wage Act 1998, TUPE och Agency Workers Regulations 2010.
 Källspråk `en`, källa https://www.legislation.gov.uk/ och licens OGL 3.0.
 Båda katalogerna är avgränsade. Bilagor indexeras inte som egna bestämmelser.

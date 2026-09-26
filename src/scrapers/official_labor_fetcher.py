@@ -23,7 +23,7 @@ DUTCH_LAWS = (
 )
 
 UK_LAWS = (
-    ("ukpga", 1996, 18, "Employment Rights Act 1996"),
+    ("ukpga", 1996, 18, "Employment Rights Act 1996", 145),
     ("ukpga", 2010, 15, "Equality Act 2010"),
     ("uksi", 1998, 1833, "Working Time Regulations 1998"),
     ("ukpga", 1998, 39, "National Minimum Wage Act 1998"),
@@ -165,6 +165,9 @@ class OfficialLaborFetcher:
             number = number.rstrip(".")
             if not number or number in seen:
                 continue
+            numeric = re.match(r"\d+", number)
+            if document.get("max_section") and numeric and int(numeric.group()) > document["max_section"]:
+                continue
             seen.add(number)
             title = _clean_text("".join(heading_node.itertext()) if heading_node is not None else "")
             content_parts = [cls._akn_text(child) for child in section
@@ -206,9 +209,12 @@ class OfficialLaborFetcher:
                 except Exception as exc:
                     yield {"id": f"NL:{bwb_id}"}, exc
         elif jurisdiction == "GB":
-            for kind, year, number, name in UK_LAWS:
+            for entry in UK_LAWS:
+                kind, year, number, name, *bounds = entry
                 base = f"{cls.GB_BASE}/{kind}/{year}/{number}"
                 document = {"id": f"{kind}-{year}-{number}", "name": name, "url": base}
+                if bounds:
+                    document["max_section"] = bounds[0]
                 try:
                     yield cls.parse_uk(document, cls._download(base + "/data.akn"))
                 except Exception as exc:

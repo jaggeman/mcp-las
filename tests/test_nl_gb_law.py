@@ -44,6 +44,7 @@ def test_new_country_catalogs_are_bounded_and_official():
 
     assert len(DUTCH_LAWS) == 9
     assert len(UK_LAWS) == 10
+    assert UK_LAWS[0][-1] == 145
     assert all(row[0].startswith("BWBR") for row in DUTCH_LAWS)
     assert all(row[0] in {"ukpga", "uksi"} for row in UK_LAWS)
 
@@ -101,6 +102,21 @@ def test_uk_akn_parser_indexes_regulation_hcontainers():
     assert len(sections) == 1
     assert sections[0].section_number == "4"
     assert "Editorial annotation" not in sections[0].content
+
+
+def test_uk_parser_can_bound_an_oversized_act_without_splitting_sections():
+    from src.scrapers.official_labor_fetcher import OfficialLaborFetcher
+
+    xml = GB_AKN.replace(
+        "</part>",
+        '<section eId="section-300"><num>300</num><heading>Later provision</heading><content><p>Outside the bounded catalogue.</p></content></section></part>',
+    )
+    _, sections = OfficialLaborFetcher.parse_uk(
+        {"id": "ukpga-1996-18", "name": "Employment Rights Act 1996", "url": "https://www.legislation.gov.uk/ukpga/1996/18", "max_section": 236},
+        xml,
+    )
+
+    assert [section.section_number for section in sections] == ["1"]
 
 
 def test_sync_service_supports_new_official_catalogs():
