@@ -129,7 +129,7 @@ jobs:
             --source . \
             --project=paygap-prod \
             --region=europe-west3 \
-            --allow-unauthenticated \
+            --build-service-account=projects/paygap-prod/serviceAccounts/mcp-las-builder@paygap-prod.iam.gserviceaccount.com \
             --service-account=mcp-las-runtime@paygap-prod.iam.gserviceaccount.com \
             --max-instances=5 \
             --concurrency=40 \

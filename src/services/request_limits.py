@@ -1,11 +1,12 @@
 """Reject oversized bodies before JSON/MCP parsing, including chunked bodies."""
 import asyncio
 import json
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 from src.services.request_context import reset_api_key, set_api_key
 
 
 class RequestSizeLimit:
+    allowed_origins = {'https://las.novro.se', 'https://mcp.novro.se'}
     def __init__(self, app, max_bytes=1024 * 1024):
         self.app = app
         self.max_bytes = max_bytes
@@ -16,6 +17,19 @@ class RequestSizeLimit:
         api_key = raw_key.decode('utf-8', 'replace') if raw_key else None
         token = set_api_key(api_key)
         async def observed_send(message):
+            if message['type'] == 'http.response.start':
+                response_headers = [(k, v) for k, v in message.get('headers', [])
+                                    if not k.lower().startswith(b'access-control-')]
+                origin = headers.get(b'origin', b'').decode('latin-1')
+                if origin in self.allowed_origins:
+                    response_headers.extend([
+                        (b'access-control-allow-origin', origin.encode('ascii')),
+                        (b'access-control-allow-methods', b'GET, POST, DELETE, OPTIONS'),
+                        (b'access-control-allow-headers', b'Content-Type, X-API-Key, MCP-Protocol-Version, MCP-Session-Id'),
+                        (b'vary', b'Origin'),
+                    ])
+                response_headers.append((b'x-content-type-options', b'nosniff'))
+                message = {**message, 'headers': response_headers}
             if message['type'] == 'http.response.start' and message['status'] >= 400:
                 path = scope.get('path', '')
                 route = 'mcp' if path in ('/mcp', '/sse') else 'api' if path.startswith('/api/') else 'other'
@@ -33,6 +47,12 @@ class RequestSizeLimit:
     async def _dispatch(self, scope, receive, send):
         if scope['type'] != 'http':
             return await self.app(scope, receive, send)
+        origin = dict(scope.get('headers', [])).get(b'origin', b'').decode('latin-1')
+        if origin and origin not in self.allowed_origins:
+            return await JSONResponse({'error': 'Origin not allowed'}, 403)(scope, receive, send)
+        # Preflight must never reach the MCP stateful session allocator.
+        if scope['method'] == 'OPTIONS':
+            return await Response(status_code=204)(scope, receive, send)
         if scope['method'] != 'OPTIONS' and (scope['path'].startswith('/api/') or scope['path'] in ('/mcp', '/sse')):
             from src.db.auth_service import auth_service
             allowed = await asyncio.to_thread(auth_service.check_rate_limit,

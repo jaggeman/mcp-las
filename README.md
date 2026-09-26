@@ -57,8 +57,8 @@ GitHub OIDC konfigurerades 2026-09-19: pool `github-mcp-las`, provider
 `github-main` i projekt 453511359123. Villkoren begränsar repository-ID
 1359199704, ägar-ID 209946709, main, push och `.github/workflows/ci.yml`.
 GitHub-variablerna `GCP_WORKLOAD_IDENTITY_PROVIDER` och `GCP_DEPLOY_SERVICE_ACCOUNT`
-är satta. Befintliga `github-deployer@paygap-prod.iam.gserviceaccount.com`
-återanvänds utan utökade projektroller. OIDC verifierades vid deploy av ddec5ca.
+är satta. Det dedikerade `mcp-las-deployer@paygap-prod.iam.gserviceaccount.com`
+används för LAS-deploy; byggkontot är `mcp-las-builder`.
 Veckosynken använder separat OIDC-pool `github-mcp-sync`, provider `github-sync`,
 och `mcp-source-sync@paygap-prod.iam.gserviceaccount.com` med endast
 `roles/datastore.user` på projektet, utan deployroller. Villkoren tillåter endast
@@ -405,3 +405,33 @@ Firebase Hosting skickar endast `/mcp`, `/mcp/**`, `/sse`, `/sse/**`,
 stannar i Hosting. Artifact Registry-policyn i
 `.github/artifact-cleanup-policy.json` tar bort `mcp-las`-images äldre än
 14 dagar men behåller alltid minst de tio senaste versionerna.
+
+## Säkerhet efter angreppsgranskning 2026-09-26
+
+HTTP-MCP kör stateless; OPTIONS besvaras före MCP så inga sessioner allokeras.
+Webborigins begränsas till https://las.novro.se och https://mcp.novro.se.
+Klienter utan Origin-header (vanliga MCP-klienter) stöds fortsatt.
+API-nycklar krävs fortfarande för REST; publikt MCP behåller sin delade anonyma kvot.
+Den globala kvoten skyddar kostnader men ger inte isolering mellan anonyma användare.
+Formulärets proxybaserade kvot har samma begränsning; godtyckliga X-Forwarded-For
+får aldrig betros. Fullständig anonym rättvisa kräver verifierad klientidentitet
+eller separat edge-/botskydd, inte en klientstyrd header.
+SMTP använder ssl.create_default_context() för certifikat- och värdnamnskontroll.
+Riksdagens liveuppslag validerar frågelängd, dokument-ID, limit och sidnummer före nätverk.
+Webbens script ligger i public/app.js; CSP tillåter inte unsafe-inline för JavaScript.
+Inline CSS stöds fortfarande. /health behåller publik build_sha för deployverifiering;
+commit-ID är offentlig metadata, inte en autentiseringsuppgift.
+Dockerbasen är digest-pinnad och övervakas av Dependabot veckovis.
+
+GitHub main kräver PR och godkänd Tester-kontroll, blockerar force-push/radering och
+har inga bypass-aktörer. Antalet obligatoriska personliga godkännanden är noll eftersom
+repot bara har en behörig användare; skyddet ersätter inte en oberoende kodgranskare.
+GitHub kräver SHA-pinning och tillåter endast projektets använda Actions.
+LAS använder mcp-las-deployer och mcp-las-builder i paygap-prod. Deployern får actAs
+endast på runtime-, synk- och byggkontot, Run-behörighet endast på LAS-tjänsten/jobbet,
+och inga Firestore-rättigheter. Firebase Hosting-admin och Cloud Build editor är
+fortfarande projektroller. LAS OIDC-bindning på det äldre github-deployer har tagits
+bort; andra tjänsters befintliga roller ändras inte.
+CI anger --build-service-account=projects/paygap-prod/serviceAccounts/mcp-las-builder@paygap-prod.iam.gserviceaccount.com.
+Firestore (default) i paygap-prod har raderingsskydd och PITR med sju dagars retention;
+PITR-historiken byggs upp från aktiveringen och medför extra lagringskostnad.

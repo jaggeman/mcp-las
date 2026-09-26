@@ -165,10 +165,12 @@ def test_legal_coverage_exposes_last_country_sync_without_claiming_availability(
 
 def test_website_loads_live_coverage_for_country_cards():
     html = Path("public/index.html").read_text(encoding="utf-8")
+    script = Path("public/app.js").read_text(encoding="utf-8")
 
-    assert "/api/coverage" in html
+    assert 'src="/app.js"' in html
+    assert "/api/coverage" in script
     assert "data-coverage-desc" in html
-    assert "section_count" in html
+    assert "section_count" in script
 
 
 def test_weekly_sync_and_deploy_image_include_danish_and_finnish_catalogs():

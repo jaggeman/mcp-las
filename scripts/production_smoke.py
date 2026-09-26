@@ -117,8 +117,8 @@ def run(base_url: str, expected_sha: str | None = None, max_response_seconds: fl
 
     client = MCPClient(base_url)
     initialized = client.initialize()
-    if initialized.get("serverInfo", {}).get("name") != "mcp-las" or not client.session_id:
-        raise RuntimeError("MCP initialize did not return the expected server/session")
+    if initialized.get("serverInfo", {}).get("name") != "mcp-las":
+        raise RuntimeError("MCP initialize did not return the expected server")
     tools = client.request("tools/list", {})
     names = {tool["name"] for tool in tools.get("tools", [])}
     if not {"get_legal_coverage", "lookup_statute", "search_labor_law"} <= names:

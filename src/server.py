@@ -818,7 +818,7 @@ def get_parliament_document_details(
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     if "PORT" in os.environ:
-        mcp.run(transport="http", host="0.0.0.0", port=port,
+        mcp.run(transport="http", host="0.0.0.0", port=port, stateless_http=True,
                 middleware=[Middleware(RequestSizeLimit)],
                 uvicorn_config={"proxy_headers": False, "access_log": False})
     else:

@@ -1,5 +1,6 @@
 import os
 import smtplib
+import ssl
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -123,19 +124,19 @@ class NotificationService:
             msg.attach(part2)
 
             if self.smtp_port == 465:
-                with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=10) as server:
+                with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=10, context=ssl.create_default_context()) as server:
                     server.login(self.smtp_user, self.smtp_pass)
                     server.sendmail(self.smtp_user, [self.recipient], msg.as_string())
             else:
                 with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=10) as server:
-                    server.starttls()
+                    server.starttls(context=ssl.create_default_context())
                     server.login(self.smtp_user, self.smtp_pass)
                     server.sendmail(self.smtp_user, [self.recipient], msg.as_string())
 
             logger.info("[NOTIFICATION] Key-request e-mail sent")
             return True
         except Exception as e:
-            logger.error(f"[NOTIFICATION] Failed to send email: {e}")
+            logger.error("[NOTIFICATION] Failed to send email")
             return False
 
 notification_service = NotificationService()
