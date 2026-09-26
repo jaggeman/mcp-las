@@ -1,6 +1,5 @@
 """Regression tests for bearer secrets, request retention and transport auth."""
 
-import hashlib
 import hmac
 import inspect
 from datetime import datetime, timezone
@@ -17,7 +16,7 @@ def test_api_key_lookup_uses_only_a_peppered_document_id(monkeypatch):
     requested = []
     key = "las_live_" + "A" * 43
     pepper = "P" * 64
-    digest = hmac.new(pepper.encode(), key.encode(), hashlib.sha256).hexdigest()
+    digest = hmac.digest(pepper.encode(), key.encode(), "sha256").hex()
     document = SimpleNamespace(
         id=digest,
         exists=True,
@@ -43,9 +42,9 @@ def test_api_key_lookup_accepts_a_peppered_v2_migration(monkeypatch):
 
     key = "las_live_" + "B" * 43
     pepper = "P" * 64
-    current_id = hmac.new(pepper.encode(), key.encode(), hashlib.sha256).hexdigest()
+    current_id = hmac.digest(pepper.encode(), key.encode(), "sha256").hex()
     old_id = "2c4aab101d78a8e17258829e0e07d42d46217899ccc5b5be0fc0c5d3542d7695"
-    migrated_id = hmac.new(pepper.encode(), old_id.encode("ascii"), hashlib.sha256).hexdigest()
+    migrated_id = hmac.digest(pepper.encode(), old_id.encode("ascii"), "sha256").hex()
     requested = []
 
     def document(document_id):
@@ -77,7 +76,7 @@ def test_new_keys_have_256_bits_and_are_stored_without_the_secret(monkeypatch):
     monkeypatch.setattr(settings, "API_KEY_PEPPER", pepper)
     key = generate_api_key()
     document_id, record = build_key_record(key, "Test")
-    expected = hmac.new(pepper.encode(), key.encode(), hashlib.sha256).hexdigest()
+    expected = hmac.digest(pepper.encode(), key.encode(), "sha256").hex()
 
     assert key.startswith("las_live_")
     assert len(key.removeprefix("las_live_")) >= 43

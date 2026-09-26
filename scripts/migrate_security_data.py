@@ -82,8 +82,9 @@ def main():
         result = cleanup_legacy_api_keys()
     else:
         result = backfill_request_expiry()
-    safe_counts = {str(key): int(value) for key, value in result.items()}
-    print(safe_counts)
+    if not isinstance(result, dict):
+        raise RuntimeError("Migration returned an invalid result")
+    print("Migration completed successfully.")
 
 
 if __name__ == "__main__":
