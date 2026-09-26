@@ -1,15 +1,15 @@
-fastmcp>=4.0,<5
+fastmcp>=4.0.5,<5
 mcp>=2.2,<3
-firebase-admin>=7.5,<8
-google-cloud-firestore>=2.30,<3
-pydantic>=2.13,<3
+firebase-admin>=7.6.0,<8
+google-cloud-firestore>=2.31.0,<3
+pydantic>=2.13.5,<3
 pydantic-settings>=2.15,<3
-requests>=2.33,<3
+requests>=2.34.2,<3
 beautifulsoup4>=4.15,<5
-python-dotenv>=1.2,<2
-pytest>=9.1,<10
+python-dotenv>=1.2.3,<2
+pytest>=9.1.1,<10
 pytest-asyncio>=1.4,<2
-numpy>=2.4,<3
-openai>=3.13,<4
-openpyxl>=3.1,<4
+numpy>=2.5.3,<3
+openai>=3.19.0,<4
+openpyxl>=3.1.5,<4
 
