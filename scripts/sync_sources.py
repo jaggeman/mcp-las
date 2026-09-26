@@ -33,6 +33,7 @@ if __name__ == "__main__":
         summary["changed"] += danish_summary["changed"]
         summary["skipped"] += danish_summary["skipped"]
         summary["errors"] += danish_summary["errors"]
+        summary["items"].extend(danish_summary["items"])
         if danish_summary["status"] == "error":
             summary["status"] = "error"
     if include_finnish:
@@ -41,6 +42,7 @@ if __name__ == "__main__":
         summary["changed"] += finnish_summary["changed"]
         summary["skipped"] += finnish_summary["skipped"]
         summary["errors"] += finnish_summary["errors"]
+        summary["items"].extend(finnish_summary["items"])
         if finnish_summary["status"] == "error":
             summary["status"] = "error"
     if '--spanish' in raw_args:

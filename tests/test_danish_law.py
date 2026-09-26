@@ -52,3 +52,14 @@ def test_retsinformation_xml_parser_extracts_metadata_and_text():
     assert metadata["language"] == "da"
     assert metadata["title"] == "Funktionærlov"
     assert "§ 1" in text
+
+
+def test_danish_chunker_keeps_first_authoritative_occurrence_of_duplicate_section():
+    sections = DanishLawChunker.chunk_statute_text(
+        statute_id="example",
+        statute_short="Eksempellov",
+        full_text="§ 1. Den gældende hovedregel.\n§ 2. En anden regel.\n§ 1. ændres således: historisk ændring.",
+    )
+
+    assert [section.section_number for section in sections] == ["1", "2"]
+    assert "gældende hovedregel" in sections[0].content

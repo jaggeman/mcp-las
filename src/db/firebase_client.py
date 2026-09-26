@@ -16,6 +16,11 @@ from src.db.cba_data import CBA_RULES_DATA
 logger = logging.getLogger(__name__)
 
 
+def firestore_document_id(value: Any) -> str:
+    """Return one Firestore document path segment for an external identifier."""
+    return str(value).replace(":", "_").replace("/", "_").replace("\\", "_")
+
+
 class FirebaseLaborLawDB:
     def __init__(self):
         self.db = None
@@ -171,7 +176,7 @@ class FirebaseLaborLawDB:
                 transaction.set(collection.document(row['id']), row)
             for doc in retired:
                 transaction.update(doc.reference, {'active': False})
-            transaction.set(self.db.collection('statutes').document(str(metadata['id']).replace(':', '_')), metadata)
+            transaction.set(self.db.collection('statutes').document(firestore_document_id(metadata['id'])), metadata)
             transaction.set(self.db.collection('source_sync_state').document(source_id), state)
             transaction.set(self.db.collection('cache_versions').document('statutes'), {'version': uuid.uuid4().hex})
 

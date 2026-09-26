@@ -35,6 +35,34 @@ def test_danish_catalog_discovery_uses_only_ministry_labor_law_links(monkeypatch
     assert all(row["statute_id"] for row in rows)
 
 
+def test_danish_html_fallback_excludes_historical_commencement_sections(monkeypatch):
+    html = """
+    <p class="Paragraf"><span class="ParagrafNr">§ 1.</span> Gældende regel.</p>
+    <p class="Stk2">Stk. 2. Mere gældende tekst.</p>
+    <p class="IKraftStreg">Ikrafttrædelse</p>
+    <p class="IkraftTekst">Lov nr. 1 indeholder følgende ikrafttrædelse:</p>
+    <p class="Paragraf"><span class="ParagrafNr">§ 1.</span> Loven træder i kraft.</p>
+    """
+
+    class Response:
+        def raise_for_status(self): return None
+        def json(self): return [{"id": 123, "documentHtml": html}]
+
+    monkeypatch.setattr("src.scrapers.retsinformation_fetcher.requests.post", lambda *a, **k: Response())
+    _, text = RetsinformationFetcher.fetch_document_html_text(
+        "https://www.retsinformation.dk/eli/lta/2024/1/xml"
+    )
+
+    assert "Gældende regel" in text
+    assert "Loven træder i kraft" not in text
+
+
+def test_firestore_document_ids_escape_finlex_slashes():
+    from src.db.firebase_client import firestore_document_id
+
+    assert firestore_document_id("FI:55/2001") == "FI_55_2001"
+
+
 def test_finnish_catalog_discovery_is_exact_and_preserves_official_act_numbers():
     rows = FinlexFetcher.catalog_documents()
 

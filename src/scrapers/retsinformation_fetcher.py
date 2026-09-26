@@ -115,7 +115,14 @@ class RetsinformationFetcher:
         if not isinstance(payload, list) or not payload or not payload[0].get("documentHtml"):
             raise ValueError("Retsinformation returned no document text")
         document = payload[0]
-        text = BeautifulSoup(document["documentHtml"], "html.parser").get_text("\n", strip=True)
+        soup = BeautifulSoup(document["documentHtml"], "html.parser")
+        main_nodes = []
+        for node in soup.find_all(recursive=False):
+            classes = set(node.get("class") or [])
+            if classes.intersection({"IKraftStreg", "IkraftTekst", "Fodnote"}):
+                break
+            main_nodes.append(node.get_text("\n", strip=True))
+        text = "\n".join(part for part in main_nodes if part)
         return document, text
 
     @classmethod
@@ -174,7 +181,8 @@ class RetsinformationFetcher:
             statute_short=metadata["short_name"],
             full_text=text,
         )
-        if not sections:
+        section_ids = [section.id for section in sections]
+        if not sections or len(section_ids) != len(set(section_ids)):
             web_metadata, text = cls.fetch_document_html_text(href)
             sections = DanishLawChunker.chunk_statute_text(
                 statute_id=statute_id,

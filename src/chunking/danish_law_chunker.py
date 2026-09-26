@@ -39,6 +39,7 @@ class DanishLawChunker:
             blocks.append((default_chapter, text))
 
         sections: List[StatuteSection] = []
+        seen_ids = set()
         for chapter, block in blocks:
             matches = list(re.finditer(r"(?:^|\n)\s*§\s*(\d+\s*[a-z]?)\s*\.?(?=\s|$)", block, re.IGNORECASE))
             for index, match in enumerate(matches):
@@ -50,6 +51,9 @@ class DanishLawChunker:
                 safe_id = re.sub(r"[^a-z0-9_-]+", "-", statute_id.lower()).strip("-")
                 chapter_part = f"_k{chapter}" if chapter else ""
                 doc_id = f"dk-{safe_id}{chapter_part}_s{section_number}"
+                if doc_id in seen_ids:
+                    continue
+                seen_ids.add(doc_id)
                 sections.append(StatuteSection(
                     id=doc_id,
                     statute_id=statute_id,
