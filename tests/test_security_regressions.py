@@ -34,7 +34,7 @@ def test_valid_and_anonymous_mcp_limits(monkeypatch):
 def test_excel_strings_are_not_formulas_and_filename_is_safe():
     result = tools.generate_turordningslista_excel(company_name='Bad\r\n"/公司', employees=[{
         'name': '=1+1', 'title': '=2+2', 'driftsenhet': '=3+3',
-        'avtalsomrade': '=4+4', 'birth_date': '=5+5', 'notes': '=6+6',
+        'avtalsomrade': '=4+4', 'birth_date': '1990-01-01', 'notes': '=6+6',
     }])
     book = load_workbook(io.BytesIO(base64.b64decode(result['file_base64'])))
     for row in book.active.iter_rows(min_row=5):

@@ -464,6 +464,21 @@ class FirebaseLaborLawDB:
         }
         target_statute = next((statute_hints[k] for k in statute_hints if k in q_lower), None)
 
+        # A few foundational questions have a single governing provision but
+        # share many words with adjacent exception/remedy sections. Treat the
+        # user's explicit legal concept as a citation hint, while keeping the
+        # ordinary hybrid ranking for broader questions.
+        intent_target = None
+        if 'uppsägn' in q_lower and 'avsked' in q_lower:
+            intent_target = ('LAS', None, '18')
+        elif 'diskrimineringsgrund' in q_lower:
+            intent_target = ('Diskrimineringslagen', '1', '5')
+        elif re.search(r'\brast(?:en|er)?\b', q_lower) and 'paus' not in q_lower:
+            intent_target = ('Arbetstidslagen', None, '15')
+        elif ('semesterdag' in q_lower and not any(w in q_lower for w in ('spara', 'sparad'))
+              and any(phrase in q_lower for phrase in ('hur många', 'rätt till', 'per år', 'varje år'))):
+            intent_target = ('Semesterlagen', None, '4')
+
         expanded_query_terms = list(meaningful_q)
         for w in meaningful_q:
             if w in SYNONYMS:
@@ -553,6 +568,14 @@ class FirebaseLaborLawDB:
 
             if target_statute and (target_statute.lower() in statute_short.lower() or target_statute in s.get("statute_id", "")):
                 boost += 10.0
+
+            if intent_target:
+                intent_statute, intent_chapter, intent_section = intent_target
+                chapter_matches = ((intent_chapter is None and sec_chap is None)
+                                   or str(intent_chapter) == sec_chap)
+                if (intent_statute.lower() == statute_short.lower()
+                        and chapter_matches and intent_section == sec_num):
+                    boost += 35.0
 
             total_score = (0.4 * lex_score) + (0.6 * (sem_score * 30.0)) + boost
 

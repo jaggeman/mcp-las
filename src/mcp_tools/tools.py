@@ -795,6 +795,25 @@ def calculate_redundancy_turnorder_and_exceptions(
     Unionens kollektivavtalsregler och Lagen om anställningsskydd (LAS 3 §, 7 §, 22 § och 25-27 §§).
     Källa: https://www.unionen.se/rad-och-stod/regler-turordning-vid-uppsagning
     """
+    for name, value in (("total_employees_in_unit", total_employees_in_unit),
+                        ("redundancy_count", redundancy_count)):
+        if value is not None and (type(value) is not int or value < 0):
+            raise ValueError(f"{name} must be a non-negative integer")
+    if (total_employees_in_unit is not None and redundancy_count is not None
+            and redundancy_count > total_employees_in_unit):
+        raise ValueError("redundancy_count cannot exceed total_employees_in_unit")
+    if type(contract_areas_count) is not int or contract_areas_count < 1:
+        raise ValueError("contract_areas_count must be a positive integer")
+    for name, value in (("has_collective_bargaining_agreement", has_collective_bargaining_agreement),
+                        ("single_operating_unit_only", single_operating_unit_only),
+                        ("merged_operating_units_in_municipality", merged_operating_units_in_municipality)):
+        if type(value) is not bool:
+            raise ValueError(f"{name} must be a boolean")
+    if employees_list is not None and not isinstance(employees_list, list):
+        raise ValueError("employees_list must be a list")
+    if employees_list is not None and redundancy_count is not None and redundancy_count > len(employees_list):
+        raise ValueError("redundancy_count cannot exceed employees_list length")
+
     # 1. Undantagsberäkningar (Exemption calculations)
     las_max_exemptions = 3
     cba_alternatives = {}
@@ -804,7 +823,8 @@ def calculate_redundancy_turnorder_and_exceptions(
         "name": "Standardundantag per driftsenhet & avtalsområde",
         "allowed_exemptions": 3,
         "rule": "Arbetsgivaren kan vid berörd driftsenhet och avtalsområde undanta 3 arbetstagare.",
-        "applies_per": "Per berörd driftsenhet och avtalsområde"
+        "applies_per": "Per berörd driftsenhet och avtalsområde",
+        "is_applicable": has_collective_bargaining_agreement,
     }
 
     # Alternativ 2: Om arbetsgivaren endast har en enda driftsenhet totalt
@@ -812,7 +832,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         "name": "Ensam driftsenhet i företaget (totalt för samtliga avtalsområden)",
         "allowed_exemptions": 4 if single_operating_unit_only else None,
         "rule": "Arbetsgivare som endast har en driftsenhet i hela bolaget kan istället välja att undanta totalt 4 arbetstagare för samtliga avtalsområden gemensamt.",
-        "is_applicable": single_operating_unit_only
+        "is_applicable": has_collective_bargaining_agreement and single_operating_unit_only
     }
 
     # Alternativ 3: Sammanslagna driftsenheter på samma ort (22 § 3 st LAS)
@@ -833,7 +853,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         "name": "Sammanslagna driftsenheter på samma ort",
         "allowed_exemptions": alt3_count,
         "rule": alt3_rule,
-        "is_applicable": merged_operating_units_in_municipality
+        "is_applicable": has_collective_bargaining_agreement and merged_operating_units_in_municipality
     }
 
     # Alternativ 4: Procentregeln (15% av de uppsagda, max 10% av enhetens totala personal)
@@ -852,7 +872,7 @@ def calculate_redundancy_turnorder_and_exceptions(
                 "final_allowed": final_pct_exemptions
             },
             "rule": "Undanta 15 % av de som slutligen sägs upp på grund av arbetsbrist, dock högst 10 % av totala personalen vid driftsenheten per avtalsområde.",
-            "is_applicable": True
+            "is_applicable": has_collective_bargaining_agreement
         }
     else:
         cba_alternatives["alternativ_4_procentregel"] = {
@@ -861,6 +881,26 @@ def calculate_redundancy_turnorder_and_exceptions(
             "rule": "Undanta 15 % av de som slutligen sägs upp på grund av arbetsbrist, dock högst 10 % av totala personalen vid driftsenheten per avtalsområde.",
             "is_applicable": False
         }
+
+    if employees_list:
+        for index, emp in enumerate(employees_list, start=1):
+            if not isinstance(emp, dict):
+                raise ValueError(f"employees_list[{index}] must be an object")
+            for field in ("seniority_days", "age"):
+                value = emp.get(field, 0)
+                if type(value) not in (int, float) or value < 0:
+                    raise ValueError(f"employees_list[{index}].{field} must be non-negative")
+            for field in ("has_qualifications", "is_exempt"):
+                if field in emp and type(emp[field]) is not bool:
+                    raise ValueError(f"employees_list[{index}].{field} must be a boolean")
+        applicable_counts = [las_max_exemptions]
+        if has_collective_bargaining_agreement:
+            applicable_counts.extend(
+                option["allowed_exemptions"] for option in cba_alternatives.values()
+                if option.get("is_applicable") and type(option.get("allowed_exemptions")) is int
+            )
+        if sum(emp.get("is_exempt") is True for emp in employees_list) > max(applicable_counts):
+            raise ValueError("employees_list contains more exemptions than the applicable rule permits")
 
     # 2. Turordningslista sortering om anställda skickats med
     processed_employees = None
@@ -948,6 +988,7 @@ import secrets
 import re
 import datetime
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
@@ -969,9 +1010,17 @@ def _excel_safe_value(value: Any) -> Any:
     innehållet syns fortfarande, det exekveras bara inte.
     """
     text = str(value)
-    if text.startswith(_FORMULA_TRIGGER_CHARS):
+    if text.lstrip().startswith(_FORMULA_TRIGGER_CHARS):
         return "'" + text
     return value
+
+
+def _markdown_cell(value: Any) -> str:
+    """Keep one user value inside one Markdown table cell."""
+    text = str(_excel_safe_value(value))
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r'([\\|*_`\[\]<>])', r'\\\1', text)
+    return text.replace("\n", "<br>")
 
 
 def generate_turordningslista_excel(
@@ -987,6 +1036,12 @@ def generate_turordningslista_excel(
     Inkluderar automatisk ID-generering, beräkning av anställningsdagar med Excel-formler (=DATEDIF),
     sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § vs kollektivavtal).
     """
+    if not isinstance(company_name, str) or (cba_name is not None and not isinstance(cba_name, str)):
+        return {"success": False, "error": "company_name och cba_name måste vara text."}
+    if type(single_operating_unit) is not bool:
+        return {"success": False, "error": "single_operating_unit måste vara true eller false."}
+    if employees is not None and not isinstance(employees, list):
+        return {"success": False, "error": "employees måste vara en lista."}
     if employees and (len(employees) > 1000 or any(
         not isinstance(emp, dict) or len(emp) > 32 or any(
             not isinstance(value, (str, int, float, bool, type(None)))
@@ -996,15 +1051,19 @@ def generate_turordningslista_excel(
         return {"success": False, "error": "Max 1000 anställda, 32 fält per anställd och 2000 tecken per fält."}
     if len(company_name) > 200 or (cba_name and len(cba_name) > 200):
         return {"success": False, "error": "Företagsnamn och avtalsnamn får vara högst 200 tecken."}
+    if ILLEGAL_CHARACTERS_RE.search(company_name) or (
+            cba_name and ILLEGAL_CHARACTERS_RE.search(cba_name)):
+        return {"success": False, "error": "Textfält innehåller otillåtna kontrolltecken."}
+    has_collective_agreement = bool(cba_name and cba_name.strip())
     company_name = str(_excel_safe_value(company_name))
-    cba_name = str(_excel_safe_value(cba_name))
+    cba_name = str(_excel_safe_value(cba_name or "Inget angivet"))
 
     target_date = datetime.date.today()
     if as_of_date:
         try:
             target_date = datetime.datetime.strptime(as_of_date, "%Y-%m-%d").date()
-        except Exception:
-            pass
+        except (TypeError, ValueError):
+            return {"success": False, "error": "as_of_date måste vara ett giltigt datum i formatet YYYY-MM-DD."}
 
     if not employees:
         # Skapa realistiskt exempel om inga anställda skickades med
@@ -1015,6 +1074,26 @@ def generate_turordningslista_excel(
             {"name": "Johan Berg", "title": "Junior Utvecklare", "driftsenhet": "Huvudkontor Stockholm", "avtalsomrade": "Tjänstemän", "start_date": "2023-08-15", "birth_date": "1997-01-19", "has_qualifications": True, "is_exempt": False, "notes": "Tillsvidare"},
             {"name": "Sara Karlsson", "title": "Ekonomiassistent", "driftsenhet": "Huvudkontor Stockholm", "avtalsomrade": "Tjänstemän", "start_date": "2023-08-15", "birth_date": "1994-07-30", "has_qualifications": True, "is_exempt": False, "notes": "Samma startdatum som Johan, men äldre"}
         ]
+
+    if redundancy_count is None:
+        redundancy_count = 0
+    if type(redundancy_count) is not int or not 0 <= redundancy_count <= len(employees):
+        return {"success": False, "error": "redundancy_count måste vara ett heltal mellan 0 och antalet anställda."}
+
+    for idx, emp in enumerate(employees, start=1):
+        for field in ("has_qualifications", "is_exempt"):
+            if field in emp and type(emp[field]) is not bool:
+                return {"success": False, "error": f"employees[{idx}].{field} måste vara true eller false."}
+        if any(ILLEGAL_CHARACTERS_RE.search(value) for value in emp.values()
+               if isinstance(value, str)):
+            return {"success": False, "error": f"employees[{idx}] innehåller otillåtna kontrolltecken."}
+
+    max_exemptions = 4 if single_operating_unit and has_collective_agreement else 3
+    exemption_count = sum(emp.get("is_exempt") is True for emp in employees)
+    if exemption_count > max_exemptions:
+        return {"success": False, "error": (
+            f"Högst {max_exemptions} anställda får markeras som undantagna "
+            "med vald driftsenhetsregel.")}
 
     # Beräkna anställningsdagar och ålder
     parsed_employees = []
@@ -1031,16 +1110,19 @@ def generate_turordningslista_excel(
 
         try:
             s_date = datetime.datetime.strptime(str(start_date_str), "%Y-%m-%d").date()
-            seniority_days = (target_date - s_date).days
-        except Exception:
-            seniority_days = emp.get("seniority_days", 365)
-            start_date_str = "2023-01-01"
+        except (TypeError, ValueError):
+            return {"success": False, "error": f"employees[{idx}].start_date måste vara YYYY-MM-DD."}
+        if s_date > target_date:
+            return {"success": False, "error": f"employees[{idx}].start_date får inte ligga efter as_of_date."}
+        seniority_days = (target_date - s_date).days
 
         try:
             b_date = datetime.datetime.strptime(str(birth_date_str), "%Y-%m-%d").date()
-            age = (target_date - b_date).days // 365
-        except Exception:
-            age = emp.get("age", 30)
+        except (TypeError, ValueError):
+            return {"success": False, "error": f"employees[{idx}].birth_date måste vara YYYY-MM-DD."}
+        if b_date > target_date:
+            return {"success": False, "error": f"employees[{idx}].birth_date får inte ligga efter as_of_date."}
+        age = (target_date - b_date).days // 365
 
         years = seniority_days // 365
         months = (seniority_days % 365) // 30
@@ -1057,6 +1139,7 @@ def generate_turordningslista_excel(
             "tenure_text": tenure_text,
             "birth_date": str(birth_date_str),
             "age": age,
+            "birth_ordinal": b_date.toordinal(),
             "has_qualifications": has_qual,
             "is_exempt": is_exempt,
             "notes": notes
@@ -1067,12 +1150,12 @@ def generate_turordningslista_excel(
     # 2. Vid lika anställningstid: Äldre före yngre (störst age)
     sorted_employees = sorted(
         parsed_employees,
-        key=lambda x: (x["seniority_days"], x["age"]),
+        key=lambda x: (x["seniority_days"], -x["birth_ordinal"]),
         reverse=True
     )
 
     total_count = len(sorted_employees)
-    red_count = redundancy_count or 0
+    red_count = redundancy_count
     cutoff_rank = total_count - red_count
 
     # Tilldela ID och status
@@ -1294,8 +1377,8 @@ def generate_turordningslista_excel(
 
     # Skapa markdown-tabell för AI-chatten
     md_lines = [
-        f"### 📋 Turordningslista vid Arbetsbrist — {company_name}",
-        f"*Upprättad: {target_date.strftime('%Y-%m-%d')} | Kollektivavtal: {cba_name} | Varsel: {red_count} av {total_count} anställda*",
+        f"### 📋 Turordningslista vid Arbetsbrist — {_markdown_cell(company_name)}",
+        f"*Upprättad: {target_date.strftime('%Y-%m-%d')} | Kollektivavtal: {_markdown_cell(cba_name)} | Varsel: {red_count} av {total_count} anställda*",
         "",
         "| ID | Namn | Befattning | Driftsenhet | Anställd sedan | Dagar (Formel) | Rang | Utfall / Status |",
         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |"
@@ -1305,9 +1388,9 @@ def generate_turordningslista_excel(
         # docstring i tests/test_excel_formula_injection.py) - en mottagare
         # kopierar ofta raden rakt in i ett kalkylark från chatten, så samma
         # sanering som cellskrivningen ovan behövs här också.
-        md_name = _excel_safe_value(emp['name'])
-        md_title = _excel_safe_value(emp['title'])
-        md_unit = _excel_safe_value(emp['driftsenhet'])
+        md_name = _markdown_cell(emp['name'])
+        md_title = _markdown_cell(emp['title'])
+        md_unit = _markdown_cell(emp['driftsenhet'])
         md_lines.append(
             f"| `{emp['id']}` | **{md_name}** | {md_title} | {md_unit} | {emp['start_date']} | {emp['seniority_days']} dgr | #{emp['rank']} | {emp['status']} |"
         )

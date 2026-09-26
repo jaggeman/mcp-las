@@ -349,7 +349,7 @@ def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]
     limit = 300 if api_key else 60
     if not auth_service.check_rate_limit(client_id, max_requests=limit, window_seconds=60):
         return {
-            "error": "Rate limit exceeded (max 60 förfrågningar/minut). Vänligen vänta en kort stund innan du skickar fler anrop.",
+            "error": f"Rate limit exceeded (max {limit} förfrågningar/minut). Vänligen vänta en kort stund innan du skickar fler anrop.",
             "status": "rate_limited"
         }
     return None

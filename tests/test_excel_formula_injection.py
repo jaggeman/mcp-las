@@ -114,6 +114,17 @@ def test_a_benign_name_is_completely_unaffected():
     assert ws.cell(row=5, column=2).value == "Anna Andersson"
 
 
+@pytest.mark.parametrize("payload", [" =1+1", "\t=1+1"])
+def test_formula_after_leading_whitespace_is_neutralised(payload):
+    res = generate_turordningslista_excel(employees=[{
+        "name": payload, "start_date": "2020-01-01", "birth_date": "1990-01-01",
+    }])
+    ws = _load_sheet1(res)
+    assert str(ws.cell(row=5, column=2).value).startswith("'")
+    data_line = res["markdown_table"].splitlines()[-1]
+    assert data_line.split("|")[2].strip("* ").startswith("'")
+
+
 # Den genererade `.xlsx`-filen är inte den enda vägen ut. Verktyget returnerar
 # också en `markdown_table` i samma JSON-svar, "för AI-chatten" (se kod-
 # kommentaren i tools.py) — avsedd att visas i en chatt och sedan kopieras
