@@ -3,8 +3,9 @@ from src.db.firebase_client import db_client
 from src.scrapers.european_labor_fetcher import NORWEGIAN_LAWS, GERMAN_LAWS
 from src.scrapers.boe_fetcher import SPANISH_LAWS
 from src.scrapers.official_labor_fetcher import DUTCH_LAWS, UK_LAWS
+from src.jurisdictions import JURISDICTIONS, JURISDICTION_LANGUAGES
 
-SUPPORTED_JURISDICTIONS = {"SE": "sv", "DK": "da", "FI": "fi", "NO": "nb", "DE": "de", "ES": "es", "NL": "nl", "GB": "en"}
+SUPPORTED_JURISDICTIONS = JURISDICTION_LANGUAGES
 
 
 def get_legal_coverage() -> Dict[str, Any]:
@@ -21,61 +22,34 @@ def get_legal_coverage() -> Dict[str, Any]:
     """
     counts = db_client.count_sections_by_jurisdiction()
     sync_status = db_client.get_sync_status_by_jurisdiction()
+    catalog_counts = {
+        "NO": len(NORWEGIAN_LAWS),
+        "DE": len(GERMAN_LAWS),
+        "ES": len(SPANISH_LAWS),
+        "NL": len(DUTCH_LAWS),
+        "GB": len(UK_LAWS),
+    }
+    jurisdictions = {}
+    for code, definition in JURISDICTIONS.items():
+        details = {
+            key: list(value) if key == "calculators" else value
+            for key, value in definition.items()
+            if key in {"country", "language", "case_law", "collective_agreements", "calculators", "hr_templates"}
+        }
+        details.update(
+            statutes=counts.get(code, 0) > 0,
+            section_count=counts.get(code, 0),
+        )
+        if code in catalog_counts:
+            details["catalog_statutes"] = catalog_counts[code]
+        jurisdictions[code] = details
+
+    codes = list(JURISDICTIONS)
     coverage = {
-        "jurisdictions": {
-            "NL": {
-                "country": "Nederländerna", "language": "nl", "statutes": counts.get("NL", 0) > 0,
-                "section_count": counts.get("NL", 0), "catalog_statutes": len(DUTCH_LAWS),
-                "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False,
-            },
-            "GB": {
-                "country": "Storbritannien", "language": "en", "statutes": counts.get("GB", 0) > 0,
-                "section_count": counts.get("GB", 0), "catalog_statutes": len(UK_LAWS),
-                "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False,
-            },
-            "ES": {
-                "country": "Spanien", "language": "es", "statutes": counts.get("ES", 0) > 0,
-                "section_count": counts.get("ES", 0), "catalog_statutes": len(SPANISH_LAWS),
-                "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False,
-            },
-            "NO": {
-                "country": "Norge", "language": "nb", "statutes": counts.get("NO", 0) > 0,
-                "section_count": counts.get("NO", 0),
-                "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False, "catalog_statutes": len(NORWEGIAN_LAWS),
-            },
-            "DE": {
-                "country": "Tyskland", "language": "de", "statutes": counts.get("DE", 0) > 0,
-                "section_count": counts.get("DE", 0),
-                "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False, "catalog_statutes": len(GERMAN_LAWS),
-            },
-            "SE": {
-                "country": "Sverige", "language": "sv",
-                "statutes": counts.get("SE", 0) > 0, "section_count": counts.get("SE", 0),
-                "case_law": "Arbetsdomstolen", "collective_agreements": True,
-                "calculators": ["notice_period", "vacation", "turnorder", "travel"],
-                "hr_templates": True,
-            },
-            "DK": {
-                "country": "Danmark", "language": "da",
-                "statutes": counts.get("DK", 0) > 0, "section_count": counts.get("DK", 0),
-                "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False,
-            },
-            "FI": {
-                "country": "Finland", "language": "fi",
-                "statutes": counts.get("FI", 0) > 0, "section_count": counts.get("FI", 0),
-                "case_law": False, "collective_agreements": False,
-                "calculators": [], "hr_templates": False,
-            },
-        },
-        "selection_rule": "Ange jurisdiction=SE, DK, FI, NO, DE, ES, NL eller GB i lookup_statute och search_labor_law.",
+        "jurisdictions": jurisdictions,
+        "selection_rule": f"Ange jurisdiction={', '.join(codes[:-1])} eller {codes[-1]} i lookup_statute och search_labor_law.",
         "coverage_note": "Adapterstöd och avgränsade lagkataloger. Tillgängliga paragrafer beror på genomförd synk; inte fullständig rättslig täckning.",
-        "sources": {"SE": "Riksdagen", "DK": "Retsinformation", "FI": "Finlex", "NO": "Lovdata", "DE": "Gesetze im Internet", "ES": "BOE", "NL": "KOOP Basiswettenbestand", "GB": "legislation.gov.uk"},
+        "sources": {code: details["source"] for code, details in JURISDICTIONS.items()},
     }
     for code, details in coverage["jurisdictions"].items():
         status = sync_status.get(code, {})

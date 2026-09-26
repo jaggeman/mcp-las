@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterable
 
 from src.db.firebase_client import db_client
 from src.embeddings.embedder import Embedder
+from src.jurisdictions import JURISDICTION_LANGUAGES
 from src.scrapers.riksdagen_fetcher import RiksdagenFetcher
 from src.scrapers.retsinformation_fetcher import RetsinformationFetcher
 from src.scrapers.finlex_fetcher import FinlexFetcher
@@ -46,7 +47,7 @@ class SourceSyncService:
             raise ValueError("Empty source; refusing to replace existing statute")
         metadata = dict(metadata)
         metadata.setdefault("jurisdiction", country)
-        metadata.setdefault("language", {"SE":"sv","DK":"da","FI":"fi","NO":"nb","DE":"de","ES":"es","NL":"nl","GB":"en"}[country])
+        metadata.setdefault("language", JURISDICTION_LANGUAGES[country])
         model = self.embedder.fingerprint()
         fingerprint = content_hash('atomic-v1:' + str(metadata) + model + "\n" + "\n".join(s.raw_text for s in sections))
         previous = self.db.get_sync_state(source_id) or {}

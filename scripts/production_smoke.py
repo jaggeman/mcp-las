@@ -10,17 +10,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.benchmarks.search_quality_data import SEARCH_QUALITY_CASES
-
-SMOKE_QUERIES = {
-    "SE": "provanställning",
-    "DK": "ferie",
-    "FI": "työsopimus",
-    "NO": "arbeidsmiljø",
-    "DE": "Kündigung",
-    "ES": "vacaciones",
-    "NL": "arbeidsovereenkomst",
-    "GB": "unfair dismissal",
-}
+from src.jurisdictions import SMOKE_QUERIES
 
 
 def parse_sse_json(body: str) -> dict:

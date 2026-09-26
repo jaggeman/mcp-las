@@ -12,6 +12,7 @@ from src.config import settings
 from src.embeddings.embedder import Embedder
 from src.db.ad_cases_data import AD_PRECEDENTS_DATA
 from src.db.cba_data import CBA_RULES_DATA
+from src.jurisdictions import JURISDICTION_CODES
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +131,7 @@ class FirebaseLaborLawDB:
         now = time.monotonic()
         if self._sync_status_cache is not None and now - self._sync_status_cache_at < 60:
             return {key: dict(value) for key, value in self._sync_status_cache.items()}
-        countries = ("SE", "DK", "FI", "NO", "DE", "ES", "NL", "GB")
+        countries = JURISDICTION_CODES
         statuses = {}
         if self.db:
             try:
@@ -350,7 +351,7 @@ class FirebaseLaborLawDB:
                 return dict(coverage_cache)
             try:
                 counts = {country: self._aggregate_country_count(country)
-                          for country in ('SE', 'DK', 'FI', 'NO', 'DE', 'ES', 'NL', 'GB')}
+                          for country in JURISDICTION_CODES}
                 counts = {country: count for country, count in counts.items() if count}
                 self._coverage_cache, self._coverage_cache_at = counts, now
                 return dict(counts)

@@ -91,14 +91,14 @@ Källor: https://api.lovdata.no/om-api-tjenesten/ (Stiftelsen Lovdata, NLOD 2.0)
 och https://www.gesetze-im-internet.de/ (XML-paket per lag).
 Norska paragrafnummer behålls, t.ex. `section="15-7"`; tyska t.ex. `section="1a"`.
 Källspråk är `nb` respektive `de`. Sök på källspråket; översättning garanteras inte.
-Prod synkroniserades 2026-09-19: 425 norska och 405 tyska paragrafer,
+Prod verifierades och synkroniserades 2026-09-26: 425 norska och 405 tyska paragrafer,
 20 lagar totalt, inga rapporterade synkfel. Antalen kan ändras vid senare synk.
 Katalogen är avgränsad, inte fullständig nationell arbetsrätt. Norska traktatbilagor
 med artikelnummer och tyska bilagor ingår inte i paragrafindexet.
 Spanien: 7 BOE-lagar – Estatuto de los Trabajadores, Prevención de Riesgos Laborales,
 Libertad Sindical, Igualdad efectiva de mujeres y hombres, Trabajo a distancia,
 Ley de Empleo samt Inspección de Trabajo y Seguridad Social.
-370 artiklar importerades 2026-09-19. Källspråk `es`, källa https://www.boe.es/datosabiertos/.
+370 artiklar verifierades i prod 2026-09-26. Källspråk `es`, källa https://www.boe.es/datosabiertos/.
 Ange BOE-ID (t.ex. BOE-A-2015-11430), `jurisdiction="ES"` och artikelnummer (t.ex. `38`).
 Senaste publicerade version som trätt i kraft väljs per numrerad artikel. Framtida
 versioner, upphävda artiklar, bilagor och kompletterande/övergångsbestämmelser ingår inte.
@@ -107,11 +107,13 @@ Nederländerna: 9 centrala lagar från KOOP Basiswettenbestand, inklusive Burger
 Wetboek Boek 7 (arbeidsovereenkomst), Arbeidstijdenwet, Arbeidsomstandighedenwet,
 Wet arbeid en zorg och Wet op de ondernemingsraden. Senaste version som trätt i kraft
 väljs ur lagens manifest. Källspråk `nl`, källa https://wetten.overheid.nl/.
+Prod verifierades 2026-09-26 med 703 indexerade nederländska bestämmelser.
 Storbritannien: 10 centrala lagar och förordningar från legislation.gov.uk, inklusive
 Employment Rights Act 1996 (avgränsad till sections 1–145 på grund av den atomiska
 publiceringsgränsen), Equality Act 2010, Working Time Regulations 1998,
 National Minimum Wage Act 1998, TUPE och Agency Workers Regulations 2010.
 Källspråk `en`, källa https://www.legislation.gov.uk/ och licens OGL 3.0.
+Prod verifierades 2026-09-26 med 919 indexerade brittiska bestämmelser.
 Båda katalogerna är avgränsade. Bilagor indexeras inte som egna bestämmelser.
 Danmark och Finland använder avgränsade arbetsrättskataloger från
 Beskæftigelsesministeriet/Retsinformation respektive Finlex; faktisk mängd och

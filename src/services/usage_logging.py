@@ -10,6 +10,7 @@ from functools import wraps
 
 from src.db.firebase_client import db_client
 from src.config import settings
+from src.jurisdictions import JURISDICTION_CODES
 
 _pending = Queue(maxsize=1000)
 
@@ -37,7 +38,7 @@ def country(tool, arguments):
         value = filters.get('jurisdiction') if isinstance(filters, dict) else None
     if value is None:
         return 'SE'
-    return value.upper() if isinstance(value, str) and value.upper() in {'SE', 'DK', 'FI', 'NO', 'DE', 'ES', 'NL', 'GB'} else 'unknown'
+    return value.upper() if isinstance(value, str) and value.upper() in JURISDICTION_CODES else 'unknown'
 
 
 def outcome(result):
