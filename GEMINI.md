@@ -122,8 +122,9 @@ Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast fö
 utifrån databasen. Källfel rapporteras som driftfel, inte som en tom lagdatabas.
 Cacheuppdateringar samordnas inom varje process för att undvika dubbla inläsningar.
 Efter extern synk uppdateras serverns lagcache inom 60 sekunder utan omstart.
-Laguppslag läser och cachelagrar endast efterfrågat land; täckningsantal hämtas med
-Firestore-aggregat i stället för att läsa hela lagkorpusen.
+Laguppslag läser och cachelagrar endast efterfrågat land; högst tre landskorpusar
+hålls samtidigt i processminnet och tillhörande sökindex rensas vid avhysning.
+Täckningsantal hämtas med Firestore-aggregat i stället för att läsa hela lagkorpusen.
 Synken publicerar varje lag atomiskt: paragrafer, inaktivering, metadata, synkstatus och
 cache_versions/statutes ingår i samma Firestore-transaktion. Vid fel behålls tidigare lagtext.
 Högst 447 nya paragrafer, 450 skrivningar totalt och 7 MB JSON för nya rader tillåts per lag;

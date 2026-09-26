@@ -54,6 +54,33 @@ def test_country_cache_reads_only_requested_jurisdiction(monkeypatch):
     assert len(rows)==1 and rows[0]['jurisdiction']=='ES'
 
 
+def test_country_and_search_caches_evict_old_corpora_to_bound_memory():
+    import threading
+    from collections import OrderedDict
+
+    db = FirebaseLaborLawDB.__new__(FirebaseLaborLawDB)
+    db.db = None
+    db._statute_cache_lock = threading.RLock()
+    db._cached_statute_sections_by_country = OrderedDict()
+    db._country_cache_at = {}
+    db._country_cache_version = {}
+    db._country_full_read_at = {}
+    db._search_indexes = OrderedDict()
+    db._local_sections = {
+        country: {"id": country, "jurisdiction": country, "content": "employment law", "active": True}
+        for country in ("SE", "DK", "NL", "GB")
+    }
+
+    first_snapshot = None
+    for country in ("SE", "DK", "NL", "GB"):
+        snapshot = db._get_statute_items(country)
+        first_snapshot = first_snapshot or snapshot
+        db._search_index(snapshot, {"jurisdiction": country})
+
+    assert list(db._cached_statute_sections_by_country) == ["DK", "NL", "GB"]
+    assert all(entry[0] is not first_snapshot for entry in db._search_indexes.values())
+
+
 def test_coverage_uses_aggregate_counts_not_full_corpus(monkeypatch):
     db=FirebaseLaborLawDB.__new__(FirebaseLaborLawDB); db.db=SimpleNamespace()
     monkeypatch.setattr(db,'_aggregate_country_count',lambda country:{'SE':537,'DE':405}.get(country,0))

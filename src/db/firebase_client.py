@@ -216,8 +216,12 @@ class FirebaseLaborLawDB:
     def _refresh_country_items(self, jurisdiction):
         now = time.monotonic()
         cache = getattr(self, '_cached_statute_sections_by_country', {})
+        if not isinstance(cache, OrderedDict):
+            cache = OrderedDict(cache)
         cache_at = getattr(self, '_country_cache_at', {})
         if jurisdiction in cache and now - cache_at.get(jurisdiction, 0) < 60:
+            cache.move_to_end(jurisdiction)
+            self._cached_statute_sections_by_country = cache
             return cache[jurisdiction]
         if self.db:
             try:
@@ -228,6 +232,8 @@ class FirebaseLaborLawDB:
                         and version == versions.get(jurisdiction)
                         and now - full_at.get(jurisdiction, 0) < 300):
                     cache_at[jurisdiction] = now
+                    cache.move_to_end(jurisdiction)
+                    self._cached_statute_sections_by_country = cache
                     return cache[jurisdiction]
                 from google.cloud.firestore_v1.base_query import FieldFilter
                 query = self.db.collection('statute_sections').where(
@@ -244,7 +250,17 @@ class FirebaseLaborLawDB:
                      if str(row.get('jurisdiction', 'SE')).upper() == jurisdiction]
         items = [row for row in items if row.get('active', True)]
         cache[jurisdiction] = items
+        cache.move_to_end(jurisdiction)
         cache_at[jurisdiction] = now
+        while len(cache) > 3:
+            evicted_country, evicted_snapshot = cache.popitem(last=False)
+            cache_at.pop(evicted_country, None)
+            getattr(self, '_country_cache_version', {}).pop(evicted_country, None)
+            getattr(self, '_country_full_read_at', {}).pop(evicted_country, None)
+            indexes = getattr(self, '_search_indexes', None)
+            if isinstance(indexes, dict):
+                for key in [key for key, entry in indexes.items() if entry[0] is evicted_snapshot]:
+                    indexes.pop(key, None)
         self._cached_statute_sections_by_country = cache
         self._country_cache_at = cache_at
         return items
