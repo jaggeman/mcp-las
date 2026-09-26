@@ -67,47 +67,47 @@ def _determine_certainty(text: str, source_type: str = "statute") -> Dict[str, A
 
     if source_type == "calculation":
         return {
-            "score_pct": 99,
+            "score_pct": None, "measurement": "not_calibrated",
             "level": "EXACT_CALCULATION",
-            "badge": "🟢 Mycket hög (99%) — Exakt matematisk beräkning",
+            "badge": "🟢 Mycket hög — Exakt matematisk beräkning",
             "type": "Formelbaserad lag- och avtalsberäkning",
             "is_interpretive": False
         }
     elif source_type == "statute":
         if is_interpretive:
             return {
-                "score_pct": 80,
+                "score_pct": None, "measurement": "not_calibrated",
                 "level": "STATUTORY_WITH_INTERPRETATION",
-                "badge": "🟡 Medelhög (80%) — Lagstadgad ram med tolkningsutrymme",
+                "badge": "🟡 Medelhög — Lagstadgad ram med tolkningsutrymme",
                 "type": "Lagens grundregel (tillämpning kräver skälighetsbedömning/praxis)",
                 "is_interpretive": True
             }
         else:
             return {
-                "score_pct": 95,
+                "score_pct": None, "measurement": "not_calibrated",
                 "level": "DIRECT_STATUTE",
-                "badge": "🟢 Hög (95%) — Direkt lagregel",
+                "badge": "🟢 Hög — Direkt lagregel",
                 "type": "Tydlig lagregel med fastställda frister/krav",
                 "is_interpretive": False
             }
     elif source_type == "cba":
         return {
-            "score_pct": 90,
+            "score_pct": None, "measurement": "not_calibrated",
             "level": "CBA_RULE",
-            "badge": "🔵 Hög (90%) — Kollektivavtalsregel",
+            "badge": "🔵 Hög — Kollektivavtalsregel",
             "type": "Gäller under förutsättning att arbetsgivaren är bunden av avtalet",
             "is_interpretive": is_interpretive
         }
     elif source_type == "precedent":
         return {
-            "score_pct": 75,
+            "score_pct": None, "measurement": "not_calibrated",
             "level": "CASE_LAW_PRECEDENT",
-            "badge": "🟡 Medel (75%) — Rättspraxis (AD)",
+            "badge": "🟡 Medel — Rättspraxis (AD)",
             "type": "Vägledande domstolspraxis från Arbetsdomstolen i enskilt rättsfall",
             "is_interpretive": True
         }
     return {
-        "score_pct": 70,
+        "score_pct": None, "measurement": "not_calibrated",
         "level": "GENERAL",
         "badge": "⚪ Allmän juridisk information",
         "type": "Allmän rättskälla",
@@ -213,8 +213,8 @@ def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdict
             "message": f"Ingen specifik avvikelse hittades i {agreement_name} för {statute} {section} §.",
             "data": None,
             "certainty": {
-                "score_pct": 85,
-                "badge": "🔵 Hög (85%) — Lagens grundregel gäller (inga kända avtalsundantag)",
+                "score_pct": None, "measurement": "not_calibrated",
+                "badge": "🔵 Hög — Lagens grundregel gäller (inga kända avtalsundantag)",
                 "level": "STATUTE_DEFAULT"
             }
         }
@@ -316,8 +316,8 @@ def calculate_vacation_pay(
             "summary": f"Kollektivavtalet ger cirka {round(diff):,} kr mer i semestertillägg före skatt jämfört med lagens miniminivå."
         },
         "certainty": {
-            "score_pct": 98,
-            "badge": "🟢 Mycket hög (98%) — Exakt matematisk beräkning enligt kollektivavtal & Semesterlagen",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — Exakt matematisk beräkning enligt kollektivavtal & Semesterlagen",
             "level": "EXACT_CALCULATION"
         }
     }
@@ -361,8 +361,8 @@ def calculate_unpaid_vacation_deduction(
             f"(4,6 % av månadslönen per dag). Din kvarvarande månadslön blir {remaining_salary_kr:,.0f} kr."
         ),
         "certainty": {
-            "score_pct": 98,
-            "badge": "🟢 Mycket hög (98%) — Exakt avdragsberäkning enligt kollektivavtal & praxis",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — Exakt avdragsberäkning enligt kollektivavtal & praxis",
             "level": "EXACT_CALCULATION"
         }
     }
@@ -479,8 +479,8 @@ def calculate_notice_period(
             f"säger upp."
         ),
         "certainty": {
-            "score_pct": 97,
-            "badge": "🟢 Mycket hög (97%) — Direkt tillämpning av LAS 11 §",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — Direkt tillämpning av LAS 11 §",
             "level": "EXACT_CALCULATION",
         },
     }
@@ -535,8 +535,8 @@ def calculate_earned_vacation_days(
             f"{unpaid_vacation_days} obetalda semesterdagar (av totalt {annual_vacation_right} semesterdagar per år)."
         ),
         "certainty": {
-            "score_pct": 99,
-            "badge": "🟢 Mycket hög (99%) — Exakt matematisk beräkning enligt Semesterlagen 7 §",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — Exakt matematisk beräkning enligt Semesterlagen 7 §",
             "level": "EXACT_CALCULATION"
         }
     }
@@ -573,8 +573,8 @@ def get_employer_certificate_info() -> Dict[str, Any]:
             "tjanstgoringsbetyg": "Intyg med personligt omdöme och vitsord över hur arbetet har utförts."
         },
         "certainty": {
-            "score_pct": 99,
-            "badge": "🟢 Mycket hög (99%) — Direkt lagstadgad skyldighet (47 § ALF) & Officiell e-tjänst",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — Direkt lagstadgad skyldighet (47 § ALF) & Officiell e-tjänst",
             "level": "DIRECT_STATUTE"
         }
     }
@@ -613,8 +613,8 @@ def get_rehabilitation_plan_info() -> Dict[str, Any]:
             "description": "Bidrag från Försäkringskassan för att köpa in expertstöd från företagshälsovård (upp till 10 000 kr/insats och max 200 000 kr/år per arbetsgivare)."
         },
         "certainty": {
-            "score_pct": 99,
-            "badge": "🟢 Mycket hög (99%) — Direkt lagstadgat krav (30 kap. 6 § SFB) & Försäkringskassans officiella föreskrifter",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — Direkt lagstadgat krav (30 kap. 6 § SFB) & Försäkringskassans officiella föreskrifter",
             "level": "DIRECT_STATUTE"
         }
     }
@@ -656,8 +656,8 @@ def get_discrimination_act_guide(topic: Optional[str] = None) -> Dict[str, Any]:
             "ban_on_retaliation": "Arbetsgivaren får enligt 2 kap. 18–19 §§ DL inte utsätta en arbetstagare för repressalier (bestraffning/missgynnande) för att denne påtalat diskriminering eller deltagit i en utredning."
         },
         "certainty": {
-            "score_pct": 98,
-            "badge": "🟢 Mycket hög (98%) — Direkt lagstadgad rätt (Diskrimineringslagen 2008:567) & DO-praxis",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — Direkt lagstadgad rätt (Diskrimineringslagen 2008:567) & DO-praxis",
             "level": "DIRECT_STATUTE"
         }
     }
@@ -766,8 +766,8 @@ def check_bank_days_and_deadlines(
         response["all_salary_payouts_2026"] = [get_salary_payout_date(year, m) for m in range(1, 13)]
 
     response["certainty"] = {
-        "score_pct": 100,
-        "badge": "🟢 Mycket hög (100%) — Riksbankens officiella kalender 2026 & Lag (1930:173)",
+        "score_pct": None, "measurement": "not_calibrated",
+        "badge": "🟢 Mycket hög — Riksbankens officiella kalender 2026 & Lag (1930:173)",
         "level": "EXACT_CALCULATION"
     }
 
@@ -966,8 +966,8 @@ def calculate_redundancy_turnorder_and_exceptions(
         },
         "sorted_turordningslista": processed_employees,
         "certainty": {
-            "score_pct": 95,
-            "badge": "🟢 Hög (95%) — Unionens officiella turordningsregler & LAS (1982:80)",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Hög — Unionens officiella turordningsregler & LAS (1982:80)",
             "level": "CBA_AND_STATUTORY_RULE"
         }
     }
@@ -1406,8 +1406,8 @@ def generate_turordningslista_excel(
             "Länken är en hemlig åtkomstnyckel, giltig i högst 10 minuter. Dela den inte vidare."
         ),
         "certainty": {
-            "score_pct": 100,
-            "badge": "🟢 Mycket hög (100%) — Komplett Excel-arbetsbok med DATEDIF-formler & LAS-undantag",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — Komplett Excel-arbetsbok med DATEDIF-formler & LAS-undantag",
             "level": "EXACT_CALCULATION"
         }
     }
@@ -2071,8 +2071,8 @@ Namnteckning ({e_name})
             "Förklara vilka lagkrav som gäller och ge användaren mallen så att de kan kopiera eller redigera vidare."
         ),
         "certainty": {
-            "score_pct": 98,
-            "badge": "🟢 Mycket hög (98%) — SKR & Arbetsgivarverket Officiell LAS-standard",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Mycket hög — SKR & Arbetsgivarverket Officiell LAS-standard",
             "level": "STATUTORY_LEGAL_TEMPLATE"
         }
     }
@@ -2219,8 +2219,8 @@ def calculate_travel_deduction_and_mileage(
             "regelverk": "Inkomstskattelagen (1999:1229) 12 kap. 26–30 §§ samt Skatteverkets allmänna råd."
         },
         "certainty": {
-            "score_pct": 100,
-            "badge": "🟢 100% — Skatteverkets Officiella Skatteregler",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Skatteverkets Officiella Skatteregler",
             "level": "STATUTORY_TAX_REGULATION"
         }
     }
@@ -2254,8 +2254,8 @@ def get_base_amounts_and_indices(
             f"(Inkomstindex {data.get('inkomstindex', 0)})."
         ),
         "certainty": {
-            "score_pct": 100,
-            "badge": "🟢 100% — Officiellt fastställt av Regeringen & SCB",
+            "score_pct": None, "measurement": "not_calibrated",
+            "badge": "🟢 Officiellt fastställt av Regeringen & SCB",
             "level": "OFFICIAL_STATUTORY_INDEX"
         }
     }

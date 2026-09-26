@@ -100,8 +100,8 @@ class RiksdagenAPIService:
                 "documents": [],
                 "source": "Riksdagens Öppna Data API (data.riksdagen.se)",
                 "certainty": {
-                    "score_pct": 100,
-                    "badge": "🟢 100% — Riksdagens Officiella API",
+                    "score_pct": None, "measurement": "not_calibrated",
+                    "badge": "🟢 Riksdagens Officiella API",
                     "level": "OFFICIAL_API"
                 }
             }
@@ -193,8 +193,8 @@ class RiksdagenAPIService:
                     "documents": parsed_docs,
                     "source": "Riksdagens Öppna Data API (data.riksdagen.se)",
                     "certainty": {
-                        "score_pct": 100,
-                        "badge": "🟢 100% — Riksdagens Officiella API",
+                        "score_pct": None, "measurement": "not_calibrated",
+                        "badge": "🟢 Riksdagens Officiella API",
                         "level": "OFFICIAL_API"
                     }
                 }
@@ -213,8 +213,8 @@ class RiksdagenAPIService:
             "source": "Riksdagens Öppna Data API (data.riksdagen.se)",
             "error_note": "Kunde inte ansluta till Riksdagens API just nu eller ingen träff.",
             "certainty": {
-                "score_pct": 90,
-                "badge": "🟡 90% — API-anrop med fallback",
+                "score_pct": None, "measurement": "not_calibrated",
+                "badge": "🟡 API-anrop med fallback",
                 "level": "OFFICIAL_API_FALLBACK"
             }
         }
@@ -325,8 +325,8 @@ class RiksdagenAPIService:
                 "has_full_text": bool(len(text_content) > 0),
                 "source": "Riksdagens Öppna Data API (data.riksdagen.se)",
                 "certainty": {
-                    "score_pct": 100,
-                    "badge": "🟢 100% — Riksdagens Officiella API",
+                    "score_pct": None, "measurement": "not_calibrated",
+                    "badge": "🟢 Riksdagens Officiella API",
                     "level": "OFFICIAL_API"
                 }
             }
@@ -340,8 +340,8 @@ class RiksdagenAPIService:
                 "error": "Document source unavailable",
                 "source": "Riksdagens Öppna Data API (data.riksdagen.se)",
                 "certainty": {
-                    "score_pct": 80,
-                    "badge": "🟡 80% — Direktlänk till Riksdagen",
+                    "score_pct": None, "measurement": "not_calibrated",
+                    "badge": "🟡 Direktlänk till Riksdagen",
                     "level": "OFFICIAL_LINK_FALLBACK"
                 }
             }
