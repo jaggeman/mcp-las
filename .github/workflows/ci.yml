@@ -35,7 +35,7 @@ jobs:
         run: pip install --require-hashes -r requirements.lock
 
       - name: Granska kända beroendesårbarheter
-        run: pip install "pip-audit==2.10.1" && pip-audit
+        run: pip install "pip-audit==2.10.1" && pip-audit -r requirements.lock
 
       # Grinden. Körs utan credentials och utan externa tjänster, så ett fel
       # här betyder att koden är trasig - inte att en tredje part ligger nere.
