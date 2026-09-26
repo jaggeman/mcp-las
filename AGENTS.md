@@ -10,7 +10,8 @@ en återkallad nyckel kan därför fortsätta fungera i högst 30 sekunder på e
 REST accepterar nycklar endast i `X-API-Key`, inte URL eller JSON-body.
 MCP använder samma `X-API-Key` på transportnivå; nyckeln exponeras inte som
 verktygsargument för AI-modellen. Nya nycklar har 256 bitars slump, visas en
-gång och lagras endast under sin SHA-256-digest i Firestore. Rånycklar får
+gång och lagras endast under ett HMAC-SHA-256-ID med en serverhemlig pepper i
+Secret Manager. Rånycklar får
 inte lagras, listas, loggas eller användas som dokument-ID.
 Kvoter delas mellan instanser med Firestore-transaktioner i `mcp_rate_limits`.
 Vid fel i kvotlagringen nekas anrop. Utan databas används en trådsäker lokal
@@ -217,6 +218,7 @@ PORT=8080
 
 # Tom = master-admin-vägen avstängd (rekommenderat)
 MASTER_ADMIN_KEY=
+API_KEY_PEPPER= # krävs; sätts från Secret Manager i prod, aldrig i kod/repo
 
 EMBEDDING_PROVIDER=mock
 OPENAI_API_KEY=

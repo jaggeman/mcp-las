@@ -1,5 +1,4 @@
 import hmac
-import hashlib
 import secrets
 import logging
 from threading import RLock
@@ -9,6 +8,7 @@ from collections import defaultdict, OrderedDict
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List
 from src.db.firebase_client import db_client
+from src.services.api_key_digest import key_id, migrated_v2_key_id, rate_limit_id
 
 class AuthService:
     """Hanterar validering av API-nycklar, rate limiting och loggning till Firebase."""
@@ -59,7 +59,11 @@ class AuthService:
     @staticmethod
     def _distributed_limit(client_id, max_requests, window_seconds):
         from google.cloud import firestore
-        identifier = hashlib.sha256(client_id.encode('utf-8')).hexdigest()
+        try:
+            identifier = rate_limit_id(client_id)
+        except RuntimeError:
+            logging.error('API key pepper unavailable; distributed rate limit denied')
+            return False
         ref = db_client.db.collection('mcp_rate_limits').document(identifier)
 
         @firestore.transactional
@@ -89,7 +93,13 @@ class AuthService:
         if master_key and hmac.compare_digest(api_key.encode('utf-8'), master_key.encode('utf-8')):
             return {"name": "Master Admin", "is_active": True}
 
-        cache_key = hashlib.sha256(api_key.encode('utf-8')).hexdigest()
+        try:
+            current_id = key_id(api_key)
+            legacy_id = migrated_v2_key_id(api_key)
+        except RuntimeError:
+            logging.error('API key pepper unavailable; authentication denied')
+            return None
+        cache_key = current_id
         now = time.monotonic()
         with self._lock:
             cached = self._key_cache.get(cache_key)
@@ -101,12 +111,14 @@ class AuthService:
 
         if db_client.db:
             try:
-                doc = db_client.db.collection("api_keys").document(cache_key).get()
+                doc = db_client.db.collection("api_keys").document(current_id).get()
+                if not doc.exists:
+                    doc = db_client.db.collection("api_keys").document(legacy_id).get()
                 if doc.exists:
                     data = doc.to_dict()
                     stored_digest = data.get("key_digest")
                     digest_matches = isinstance(stored_digest, str) and hmac.compare_digest(
-                        cache_key.encode("ascii"), stored_digest.encode("ascii")
+                        doc.id.encode("ascii"), stored_digest.encode("ascii")
                     )
                     if digest_matches and data.get("is_active") is True:
                         with self._lock:

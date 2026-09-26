@@ -1,7 +1,6 @@
 """One-off, idempotent migration for hashed API keys and request retention."""
 
 import argparse
-import hashlib
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -9,52 +8,43 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.db.firebase_client import db_client
-
-
-def _digest(value: str) -> str:
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+from src.services.api_key_digest import migrate_v2_identifier
 
 
 def prepare_api_keys() -> dict:
-    """Create hash-addressed copies while legacy readers still use raw IDs."""
+    """Create peppered v3 copies of existing v2 digest-addressed records."""
     prepared = skipped = 0
     for document in db_client.db.collection("api_keys").stream():
         data = document.to_dict()
-        raw_key = data.get("key")
-        if not isinstance(raw_key, str) or not raw_key:
+        old_identifier = data.get("key_digest")
+        if data.get("key_version") != 2 or not isinstance(old_identifier, str) or len(old_identifier) != 64:
             skipped += 1
             continue
-        clean = {key: value for key, value in data.items() if key != "key"}
-        clean["key_version"] = 2
-        clean["key_digest"] = _digest(raw_key)
+        clean = dict(data)
+        clean["key_version"] = 3
+        clean["key_digest"] = migrate_v2_identifier(old_identifier)
         db_client.db.collection("api_keys").document(clean["key_digest"]).set(clean)
         prepared += 1
     return {"prepared": prepared, "skipped": skipped}
 
 
 def cleanup_legacy_api_keys() -> dict:
-    """Remove records whose raw bearer secret is stored in an ID or field."""
-    removed = cleaned = 0
+    """Remove v2 records only after their peppered v3 replacement exists."""
+    removed = skipped = 0
     documents = list(db_client.db.collection("api_keys").stream())
     for document in documents:
         data = document.to_dict()
-        raw_key = data.get("key")
-        if not isinstance(raw_key, str) or not raw_key:
+        old_identifier = data.get("key_digest")
+        if data.get("key_version") != 2 or not isinstance(old_identifier, str):
+            skipped += 1
             continue
-        digest = _digest(raw_key)
+        digest = migrate_v2_identifier(old_identifier)
         target = db_client.db.collection("api_keys").document(digest).get()
-        if not target.exists:
+        if not target.exists or target.to_dict().get("key_version") != 3:
             raise RuntimeError("Hash-addressed replacement is missing; refusing cleanup")
-        if document.id == digest:
-            clean = {key: value for key, value in data.items() if key != "key"}
-            clean["key_version"] = 2
-            clean["key_digest"] = digest
-            document.reference.set(clean)
-            cleaned += 1
-        else:
-            document.reference.delete()
-            removed += 1
-    return {"removed": removed, "cleaned": cleaned}
+        document.reference.delete()
+        removed += 1
+    return {"removed": removed, "skipped": skipped}
 
 
 def backfill_request_expiry(days: int = 90) -> dict:
@@ -92,7 +82,8 @@ def main():
         result = cleanup_legacy_api_keys()
     else:
         result = backfill_request_expiry()
-    print(result)
+    safe_counts = {str(key): int(value) for key, value in result.items()}
+    print(safe_counts)
 
 
 if __name__ == "__main__":

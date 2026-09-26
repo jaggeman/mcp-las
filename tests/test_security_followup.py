@@ -9,7 +9,7 @@ from src.db.auth_service import AuthService
 
 @pytest.mark.parametrize('metadata', [{}, {'is_active': 'false'}, {'is_active': 1}])
 def test_activation_is_explicit(monkeypatch, metadata):
-    doc = SimpleNamespace(exists=True, to_dict=lambda: metadata)
+    doc = SimpleNamespace(id="invalid", exists=True, to_dict=lambda: metadata)
     monkeypatch.setattr(server.db_client, 'db', SimpleNamespace(collection=lambda _: SimpleNamespace(document=lambda _: SimpleNamespace(get=lambda: doc))))
     monkeypatch.setattr(server.settings, 'MASTER_ADMIN_KEY', None)
     assert AuthService().validate_key('synthetic') is None
