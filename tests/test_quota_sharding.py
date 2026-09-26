@@ -37,4 +37,4 @@ def test_swedish_sync_runs_on_runner_and_foreign_sync_in_frankfurt():
     workflow = Path('.github/workflows/sync-sources.yml').read_text(encoding='utf-8')
     ci = Path('.github/workflows/ci.yml').read_text(encoding='utf-8')
     assert 'python scripts/sync_sources.py --swedish' in workflow
-    assert '--args="scripts/sync_sources.py,--danish,--finnish,--norwegian,--german,--spanish"' in ci
+    assert '--args="scripts/sync_sources.py,--danish,--finnish,--norwegian,--german,--spanish,--dutch,--british"' in ci

@@ -11,6 +11,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.benchmarks.search_quality_data import SEARCH_QUALITY_CASES
 
+SMOKE_QUERIES = {
+    "SE": "provanställning",
+    "DK": "ferie",
+    "FI": "työsopimus",
+    "NO": "arbeidsmiljø",
+    "DE": "Kündigung",
+    "ES": "vacaciones",
+    "NL": "arbeidsovereenkomst",
+    "GB": "unfair dismissal",
+}
+
 
 def parse_sse_json(body: str) -> dict:
     data_lines = []
@@ -115,20 +126,12 @@ def run(base_url: str, expected_sha: str | None = None, max_response_seconds: fl
     if not {"get_legal_coverage", "lookup_statute", "search_labor_law"} <= names:
         raise RuntimeError("required MCP tools are missing")
 
-    queries = {
-        "SE": "provanställning",
-        "DK": "ferie",
-        "FI": "työsopimus",
-        "NO": "arbeidsmiljø",
-        "DE": "Kündigung",
-        "ES": "vacaciones",
-    }
     for country, status in coverage.items():
         if not status.get("statutes"):
             continue
         result = client.request("tools/call", {
             "name": "search_labor_law",
-            "arguments": {"query": queries[country], "jurisdiction": country, "limit": 1},
+            "arguments": {"query": SMOKE_QUERIES[country], "jurisdiction": country, "limit": 1},
         })
         if result.get("isError") or not result.get("content"):
             raise RuntimeError(f"MCP search failed for {country}")

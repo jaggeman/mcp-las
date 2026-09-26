@@ -130,7 +130,7 @@ class FirebaseLaborLawDB:
         now = time.monotonic()
         if self._sync_status_cache is not None and now - self._sync_status_cache_at < 60:
             return {key: dict(value) for key, value in self._sync_status_cache.items()}
-        countries = ("SE", "DK", "FI", "NO", "DE", "ES")
+        countries = ("SE", "DK", "FI", "NO", "DE", "ES", "NL", "GB")
         statuses = {}
         if self.db:
             try:
@@ -334,7 +334,7 @@ class FirebaseLaborLawDB:
                 return dict(coverage_cache)
             try:
                 counts = {country: self._aggregate_country_count(country)
-                          for country in ('SE', 'DK', 'FI', 'NO', 'DE', 'ES')}
+                          for country in ('SE', 'DK', 'FI', 'NO', 'DE', 'ES', 'NL', 'GB')}
                 counts = {country: count for country, count in counts.items() if count}
                 self._coverage_cache, self._coverage_cache_at = counts, now
                 return dict(counts)

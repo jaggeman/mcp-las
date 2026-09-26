@@ -177,7 +177,7 @@ def test_weekly_sync_and_deploy_image_include_danish_and_finnish_catalogs():
 
     for flag in ("--danish", "--finnish"):
         assert flag in ci
-    assert "alla sex lagkataloger" in sync
+    assert "alla åtta lagkataloger" in sync
 
 
 def test_search_quality_benchmark_has_at_least_22_ground_truth_questions():

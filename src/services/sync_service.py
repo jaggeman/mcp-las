@@ -46,7 +46,7 @@ class SourceSyncService:
             raise ValueError("Empty source; refusing to replace existing statute")
         metadata = dict(metadata)
         metadata.setdefault("jurisdiction", country)
-        metadata.setdefault("language", {"SE":"sv","DK":"da","FI":"fi","NO":"nb","DE":"de","ES":"es"}[country])
+        metadata.setdefault("language", {"SE":"sv","DK":"da","FI":"fi","NO":"nb","DE":"de","ES":"es","NL":"nl","GB":"en"}[country])
         model = self.embedder.fingerprint()
         fingerprint = content_hash('atomic-v1:' + str(metadata) + model + "\n" + "\n".join(s.raw_text for s in sections))
         previous = self.db.get_sync_state(source_id) or {}
@@ -128,6 +128,15 @@ class SourceSyncService:
             for meta, sections in BoeFetcher.iter_documents():
                 yield meta['id'], lambda m=meta, s=sections: (m, s)
         return self._run(jobs(), 'ES')
+
+    def sync_official_statutes(self, jurisdiction):
+        """Synchronize bounded Dutch or UK catalogues from official XML sources."""
+        from src.scrapers.official_labor_fetcher import OfficialLaborFetcher
+        def jobs():
+            for meta, sections in OfficialLaborFetcher.iter_documents(jurisdiction):
+                source_id = meta.get("id") or meta.get("statute_id")
+                yield source_id, lambda m=meta, s=sections: (m, s)
+        return self._run(jobs(), jurisdiction)
 
     def _sync_foreign(self, documents, fetcher, country):
         def jobs():

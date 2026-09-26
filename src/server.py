@@ -50,8 +50,8 @@ mcp = FastMCP(
     name=settings.MCP_SERVER_NAME,
     mask_error_details=True,
     instructions=(
-        "Arbetsrätts-MCP för Sverige, Danmark, Finland, Norge, Tyskland och Spanien. "
-        "Välj jurisdiction (SE, DK, FI, NO, DE, ES) för laguppslag och sökning. "
+        "Arbetsrätts-MCP för Sverige, Danmark, Finland, Norge, Tyskland, Spanien, Nederländerna och Storbritannien. "
+        "Välj jurisdiction (SE, DK, FI, NO, DE, ES, NL, GB) för laguppslag och sökning. "
         "Källor: Riksdagen, Retsinformation, Finlex, Lovdata, Gesetze im Internet och BOE. "
         "get_legal_coverage visar faktisk datatäckning per land; kontrollera den före uppslag. "
         "Specialverktyg för beräkningar, praxis, kollektivavtal och mallar gäller endast Sverige. "
@@ -392,7 +392,7 @@ def get_legal_coverage(api_key: Optional[str] = None) -> Dict[str, Any]:
 @mcp.tool()
 @tracked_tool
 def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
-    """Slå upp en paragraf i SE, DK, FI, NO, DE eller ES. Spanien använder artikelnummer, t.ex. section='20 bis'."""
+    """Slå upp en paragraf i SE, DK, FI, NO, DE, ES, NL eller GB. Spanien och Nederländerna använder artikelnummer."""
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return rl_err
@@ -403,7 +403,7 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisd
 @mcp.tool()
 @tracked_tool
 def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Sök arbetsrätt i SE, DK, FI, NO, DE eller ES. Använd källspråket nb/de/es för NO/DE/ES."""
+    """Sök arbetsrätt i SE, DK, FI, NO, DE, ES, NL eller GB. Sök på respektive källspråk."""
     rl_err = _check_rate_limit(api_key)
     if rl_err:
         return [rl_err]

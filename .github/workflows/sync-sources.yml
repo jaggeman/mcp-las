@@ -5,7 +5,7 @@ name: Veckovis synk av lagkällor
 # eftersom certainty-badgen på varje svar gör inaktuell text aktivt
 # vilseledande snarare än bara ofullständig (se issue #17).
 #
-# Sverige, Danmark, Finland, Norge, Tyskland och Spanien.
+# Sverige, Danmark, Finland, Norge, Tyskland, Spanien, Nederländerna och Storbritannien.
 on:
   schedule:
     # Måndagar 03:00 UTC - efter att helgens ev. lagändringar hunnit synas
@@ -15,7 +15,7 @@ on:
 
 jobs:
   sync:
-    name: Synka alla sex lagkataloger
+    name: Synka alla åtta lagkataloger
     permissions:
       contents: read
       id-token: write

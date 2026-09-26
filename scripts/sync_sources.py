@@ -11,7 +11,7 @@ from src.services.sync_service import DEFAULT_STATUTES, SourceSyncService
 
 if __name__ == "__main__":
     raw_args = sys.argv[1:]
-    source_flags = {"--swedish", "--danish", "--finnish", "--norwegian", "--german", "--spanish"}
+    source_flags = {"--swedish", "--danish", "--finnish", "--norwegian", "--german", "--spanish", "--dutch", "--british"}
     args = [arg for arg in raw_args if arg not in source_flags]
     explicit_sources = source_flags.intersection(raw_args)
     include_swedish = "--swedish" in raw_args or not explicit_sources
@@ -55,6 +55,15 @@ if __name__ == "__main__":
     for flag, country in (("--norwegian", "NO"), ("--german", "DE")):
         if flag in raw_args:
             country_summary = service.sync_european_statutes(country)
+            summary[country] = country_summary
+            for key in ('changed', 'skipped', 'errors'):
+                summary[key] += country_summary[key]
+            summary['items'].extend(country_summary['items'])
+            if country_summary['status'] == 'error':
+                summary['status'] = 'error'
+    for flag, country in (("--dutch", "NL"), ("--british", "GB")):
+        if flag in raw_args:
+            country_summary = service.sync_official_statutes(country)
             summary[country] = country_summary
             for key in ('changed', 'skipped', 'errors'):
                 summary[key] += country_summary[key]

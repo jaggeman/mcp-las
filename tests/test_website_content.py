@@ -61,7 +61,7 @@ def test_mcp_server_instructions_describe_nordic_labor_law():
     server_path = Path("src/server.py")
     content = server_path.read_text(encoding="utf-8")
 
-    assert "Sverige, Danmark, Finland, Norge, Tyskland och Spanien" in content
+    assert "Sverige, Danmark, Finland, Norge, Tyskland, Spanien, Nederländerna och Storbritannien" in content
     assert "Lovdata" in content
     assert "Gesetze im Internet" in content
     assert "jurisdiction" in content
