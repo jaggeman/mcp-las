@@ -33,9 +33,16 @@ async def _post(body, ip="203.0.113.7"):
 
 def _giltig(**extra):
     bas = {"name": "Anna Andersson", "email": "anna@example.se",
-           "company": "Exempel AB", "reason": "Vill testa"}
+           "company": "Exempel AB", "reason": "Vill testa", "legal_accept": True}
     bas.update(extra)
     return bas
+
+
+@pytest.mark.asyncio
+async def test_villkor_maste_accepteras_explicit():
+    status, payload = await _post(_giltig(legal_accept=False), ip="198.51.100.17")
+    assert status == 400
+    assert "villkor" in payload["message"].lower()
 
 
 @pytest.fixture(autouse=True)

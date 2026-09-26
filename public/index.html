@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MCP LAS — Europeisk arbetsrätt för AI-Agenter (SE · DK · FI · NO · DE · ES · NL · GB)</title>
   <link rel="icon" type="image/png" href="/brand/favicon.png">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
   <style>
     :root {
       --bg: #f8fafc;
@@ -56,7 +53,7 @@
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.6;
@@ -67,7 +64,7 @@
     }
 
     code, pre {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     }
 
     .container {
@@ -482,7 +479,7 @@
       gap: 0.2rem;
     }
     .tool-badge {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
       font-size: 0.72rem;
       color: var(--brand);
       background: var(--code-bg);
@@ -567,6 +564,35 @@
       min-height: 100px;
     }
 
+    .legal-acceptance {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+    .legal-acceptance input {
+      width: 1rem;
+      height: 1rem;
+      margin-top: 0.15rem;
+      accent-color: var(--brand);
+      flex: 0 0 auto;
+    }
+    .legal-acceptance a,
+    .footer-links a {
+      color: var(--brand);
+      font-weight: 650;
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem 1rem;
+      margin-top: 0.85rem;
+      font-size: 0.82rem;
+    }
+
     footer {
       margin-top: auto;
       border-top: 1px solid var(--nav-border);
@@ -584,7 +610,7 @@
       border: 1px solid var(--card-border);
       padding: 0.2rem 0.55rem;
       border-radius: 0.4rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
       font-size: 0.75rem;
       color: var(--text-muted);
     }
@@ -1334,6 +1360,15 @@ Strukturera alltid svaren med:
           <label class="form-label" for="reason" data-i18n="lbl_reason">Användningsområde</label>
           <textarea id="reason" class="form-control" placeholder="Beskriv kort vad du planerar att använda MCP-servern till..." data-i18n-placeholder="ph_reason"></textarea>
         </div>
+        <div class="form-group legal-acceptance">
+          <input type="checkbox" id="legalAccept" required>
+          <label for="legalAccept">
+            <span data-i18n="legal_accept">Jag accepterar användarvillkoren och bekräftar att jag har tagit del av integritetspolicyn.</span>
+            <a href="/terms.html" target="_blank" rel="noopener" data-i18n="terms_link">Användarvillkor</a>
+            ·
+            <a href="/privacy.html" target="_blank" rel="noopener" data-i18n="privacy_link">Integritets- och cookiepolicy</a>
+          </label>
+        </div>
         <button type="submit" class="btn btn-primary" id="submitBtn" style="width: 100%; justify-content: center;">
           <i class="fa-regular fa-paper-plane"></i> <span data-i18n="btn_submit">Skicka ansökan</span>
         </button>
@@ -1353,6 +1388,11 @@ Strukturera alltid svaren med:
     <div class="container">
       <p style="margin-bottom: 0.5rem;" data-i18n="footer_copy">&copy; 2026 MCP LAS — Svensk Arbetsrätt & Kollektivavtal för AI-Agenter. Öppen källkodslösning.</p>
       <p style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="footer_disclaimer">Byggd med Model Context Protocol (FastMCP) på Google Cloud Run & Firebase Firestore.</p>
+      <nav class="footer-links" aria-label="Juridisk information">
+        <a href="/privacy.html" data-i18n="privacy_link">Integritets- och cookiepolicy</a>
+        <a href="/terms.html" data-i18n="terms_link">Användarvillkor</a>
+        <a href="mailto:jagge@novro.se" data-i18n="contact_link">Kontakt</a>
+      </nav>
       <p style="font-size: 0.8rem; margin-top: 0.85rem;">
         <a href="https://github.com/jaggeman/mcp-las/issues/new/choose" target="_blank" rel="noopener noreferrer" style="color: var(--brand); font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.4rem;">
           <i class="fa-brands fa-github"></i> <span data-i18n="footer_report_bug">Rapportera en bugg eller önskemål på GitHub</span>
@@ -1474,6 +1514,10 @@ Strukturera alltid svaren med:
         ph_email: "anna@foretag.se",
         ph_company: "Företag AB",
         ph_reason: "Beskriv kort vad du planerar att använda MCP-servern till...",
+        legal_accept: "Jag accepterar användarvillkoren och bekräftar att jag har tagit del av integritetspolicyn.",
+        terms_link: "Användarvillkor",
+        privacy_link: "Integritets- och cookiepolicy",
+        contact_link: "Kontakt",
         btn_submit: "Skicka ansökan",
         btn_submitting: "Skickar...",
         succ_title: "Tack för din ansökan!",
@@ -1589,6 +1633,10 @@ Strukturera alltid svaren med:
         ph_email: "anna@company.com",
         ph_company: "Acme Corp",
         ph_reason: "Briefly describe how you plan to use the MCP server...",
+        legal_accept: "I accept the Terms of Use and acknowledge that I have read the Privacy Policy.",
+        terms_link: "Terms of Use",
+        privacy_link: "Privacy and Cookie Policy",
+        contact_link: "Contact",
         btn_submit: "Submit Request",
         btn_submitting: "Submitting...",
         succ_title: "Thank you for your application!",
@@ -2030,7 +2078,8 @@ Strukturera alltid svaren med:
         name: document.getElementById('name').value,
         email: document.getElementById('email').value,
         company: document.getElementById('company').value,
-        reason: document.getElementById('reason').value
+        reason: document.getElementById('reason').value,
+        legal_accept: document.getElementById('legalAccept').checked
       };
 
       try {

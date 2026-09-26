@@ -156,6 +156,13 @@ Embedding-provider och modell ingår i synkhashen; providerbyte kräver omindexe
 hela korpusen. `EMBEDDING_PROVIDER=mock` använder alltid lokal beräkning även om API-nycklar
 finns. OpenAI/Gemini ger fel vid saknad nyckel eller API-fel, utan tyst byte till mock.
 
+Webbens juridiska information finns i `public/privacy.html` och `public/terms.html`.
+Sajten använder inga analys- eller annonscookies; `mcp_lang` och `mcp_theme` lagras
+endast lokalt i webbläsaren. API-ansökningar gallras efter 90 dagar. Aktiva
+API-kontoposter behålls medan nyckeln är aktiv och får `expires_at` 90 dagar efter
+avaktivering; Firestore TTL ska vara aktivt för `api_keys.expires_at`. Externa typsnitt
+eller ikon-CDN får inte införas utan att integritetspolicyn och samtyckesbehovet granskas.
+
 
 Detta dokument beskriver arkitektur, driftsättning, miljövariabler och MCP-konfiguration för **MCP-LAS** under Novro (`las.novro.se`).
 

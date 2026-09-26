@@ -1,6 +1,6 @@
 import sys
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -104,7 +104,12 @@ def deactivate_key(api_key: str):
     for document_id in (derive_key_id(api_key), migrated_v2_key_id(api_key)):
         reference = db_client.db.collection("api_keys").document(document_id)
         if reference.get().exists:
-            reference.update({"is_active": False})
+            now = datetime.now(timezone.utc)
+            reference.update({
+                "is_active": False,
+                "deactivated_at": now,
+                "expires_at": now + timedelta(days=90),
+            })
             print(f"Nyckeln med fingeravtryck {document_id[:12]} är nu AVSTÄNGD.")
             return
     print("Nyckeln hittades inte.")

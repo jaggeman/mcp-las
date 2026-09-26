@@ -110,7 +110,12 @@ def test_deactivate_key_supports_migrated_v2_records(monkeypatch):
     )
 
     manage_keys.deactivate_key(api_key)
-    assert updated == [(migrated_id, {"is_active": False})]
+    assert len(updated) == 1
+    document_id, values = updated[0]
+    assert document_id == migrated_id
+    assert values["is_active"] is False
+    assert values["deactivated_at"].tzinfo is not None
+    assert 89 <= (values["expires_at"] - datetime.now(timezone.utc)).days <= 90
 
 
 @pytest.mark.asyncio
@@ -125,7 +130,10 @@ async def test_request_key_records_receive_a_ninety_day_expiry(monkeypatch):
     monkeypatch.setattr(server.notification_service, "send_key_request_notification", lambda _: True)
 
     async def body():
-        return {"name": "Test", "email": "test@example.invalid", "company": "AB", "reason": "Test"}
+        return {
+            "name": "Test", "email": "test@example.invalid", "company": "AB",
+            "reason": "Test", "legal_accept": True,
+        }
 
     request = SimpleNamespace(method="POST", client=SimpleNamespace(host="192.0.2.1"), json=body)
     response = await server.handle_key_request(request)
@@ -134,6 +142,8 @@ async def test_request_key_records_receive_a_ninety_day_expiry(monkeypatch):
     expiry = captured[0]["expires_at"]
     assert expiry.tzinfo is not None
     assert 89 <= (expiry - datetime.now(timezone.utc)).days <= 90
+    assert captured[0]["terms_version"] == "2026-09-26"
+    assert captured[0]["legal_accepted_at"].tzinfo is not None
 
 
 def test_notification_logs_never_contain_applicant_email(monkeypatch):

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Integritets- och cookiepolicy för MCP LAS från Novro Sweden AB.">
+  <title>Integritets- och cookiepolicy — MCP LAS</title>
+  <link rel="icon" type="image/png" href="/brand/favicon.png">
+  <style>
+    :root { color-scheme: light dark; --bg:#f8fafc; --card:#fff; --text:#0f172a; --muted:#475569; --line:#e2e8f0; --brand:#15803d; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#0f172a; --card:#111c30; --text:#f8fafc; --muted:#cbd5e1; --line:#334155; --brand:#4ade80; } }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.65; }
+    header, main, footer { width:min(860px, calc(100% - 2rem)); margin-inline:auto; }
+    header { padding:2rem 0 1rem; }
+    main { background:var(--card); border:1px solid var(--line); border-radius:1rem; padding:clamp(1.25rem,4vw,3rem); }
+    footer { padding:2rem 0 3rem; color:var(--muted); font-size:.9rem; }
+    h1 { line-height:1.15; margin:.6rem 0; font-size:clamp(2rem,5vw,3rem); }
+    h2 { margin-top:2.2rem; line-height:1.25; }
+    h3 { margin-top:1.4rem; }
+    p, li { color:var(--muted); }
+    a { color:var(--brand); font-weight:650; }
+    .back { text-decoration:none; }
+    .updated, .notice { font-size:.92rem; color:var(--muted); }
+    .notice { border-left:4px solid var(--brand); background:color-mix(in srgb, var(--brand) 8%, transparent); padding:.9rem 1rem; border-radius:.35rem; }
+    table { width:100%; border-collapse:collapse; display:block; overflow-x:auto; }
+    th, td { border:1px solid var(--line); padding:.7rem; text-align:left; vertical-align:top; min-width:135px; color:var(--muted); }
+    th { color:var(--text); }
+    code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.9em; }
+    hr { border:0; border-top:1px solid var(--line); margin:3rem 0; }
+  </style>
+</head>
+<body>
+  <header><a class="back" href="/">← Till MCP LAS</a></header>
+  <main>
+    <h1>Integritets- och cookiepolicy</h1>
+    <p class="updated">Senast uppdaterad: 26 september 2026</p>
+    <p class="notice"><strong>Kort sagt:</strong> vi använder inga analyscookies, annonspixlar eller beteendeprofilering. Webbplatsen sparar bara dina val av språk och tema lokalt i webbläsaren. Uppgifter i en API-ansökan används för att hantera ansökan och driften av tjänsten.</p>
+
+    <h2>1. Personuppgiftsansvarig</h2>
+    <p><strong>Novro Sweden AB</strong>, som driver <code>las.novro.se</code>, är personuppgiftsansvarig för den behandling som beskrivs här. Frågor och begäranden skickas till <a href="mailto:jagge@novro.se">jagge@novro.se</a>. Vi har inte utsett ett dataskyddsombud.</p>
+
+    <h2>2. Vilka uppgifter vi behandlar</h2>
+    <h3>Ansökan om API-nyckel</h3>
+    <p>När du ansöker behandlar vi namn, e-postadress, företag eller organisation, beskrivet användningsområde, tidpunkt, ansökans status samt tidpunkt och version för godkända villkor. Syftet är att bedöma, administrera och följa upp din begäran. Rättslig grund är åtgärder på din begäran innan avtal ingås (GDPR artikel 6.1 b) och vårt berättigade intresse av att kunna visa vilka villkor som gällde (artikel 6.1 f). Uppgifterna gallras senast 90 dagar efter registreringen.</p>
+
+    <h3>API-konto och säkerhet</h3>
+    <p>För godkända användare sparar vi namn, e-postadress, status, skapandedatum och ett kryptografiskt HMAC-SHA-256-fingeravtryck av API-nyckeln. Själva nyckeln sparas inte. Uppgifterna behövs för att leverera och skydda tjänsten (artikel 6.1 b samt vårt berättigade intresse av säker drift enligt artikel 6.1 f). Kontouppgifter sparas medan nyckeln är aktiv och gallras senast 90 dagar efter avaktivering.</p>
+
+    <h3>Användning, kvoter och tekniska loggar</h3>
+    <p>Vi loggar verktygsnamn, transporttyp, land/jurisdiktion, status, svarstid, tidpunkt och slumpmässigt händelse-ID. Vi loggar inte frågetext, resultat, API-nycklar eller klientidentifierare i användningsloggen. Säkerhets- och driftloggar hos Firebase Hosting och Google Cloud Run kan innehålla IP-adress, user-agent, sökväg, tidpunkt och HTTP-status. Kvotidentifierare är pseudonymiserade med HMAC. Behandlingen grundas på vårt berättigade intresse av säkerhet, felsökning, kapacitetsplanering och missbruksbekämpning (artikel 6.1 f).</p>
+    <p>Cloud Loggings standardlagring är konfigurerad till 30 dagar. Om den frivilliga Firestore-kopian av användningsloggar aktiveras har även den 30 dagars automatisk gallring. Kortlivade kvotposter gallras automatiskt efter att deras funktion upphört.</p>
+
+    <h3>Frågor till MCP/API</h3>
+    <p>Innehållet i en fråga behandlas för att skapa svaret men sparas inte av applikationen i användningsloggen. Skicka inte personuppgifter, företagshemligheter, lösenord, API-nycklar eller känsliga personuppgifter i frågor. Den organisation som ansluter tjänsten ansvarar för att den har rättslig grund och lämnar nödvändig information till berörda personer.</p>
+
+    <h2>3. Cookies och lokal lagring</h2>
+    <p>Webbplatsen sätter för närvarande inga cookies och använder inga analyscookies eller marknadsföringstjänster. Därför visas ingen samtyckesbanner. Två funktionella inställningar sparas i webbläsarens <code>localStorage</code>:</p>
+    <table>
+      <thead><tr><th>Nyckel</th><th>Syfte</th><th>Lagringstid</th><th>Tredje part</th></tr></thead>
+      <tbody>
+        <tr><td><code>mcp_lang</code></td><td>Kommer ihåg svenska eller engelska.</td><td>Tills du rensar webbplatsdata eller ändrar valet.</td><td>Ingen</td></tr>
+        <tr><td><code>mcp_theme</code></td><td>Kommer ihåg ljust eller mörkt tema.</td><td>Tills du rensar webbplatsdata eller ändrar valet.</td><td>Ingen</td></tr>
+      </tbody>
+    </table>
+    <p>Uppgifterna lämnar inte din webbläsare. Du kan radera dem via webbläsarens inställningar. Om vi i framtiden inför icke nödvändig mätning eller marknadsföring kommer vi att uppdatera policyn och inhämta giltigt samtycke innan sådan lagring sker.</p>
+
+    <h2>4. Mottagare och överföringar</h2>
+    <p>Personuppgifter kan behandlas av våra personuppgiftsbiträden: Google Cloud/Firebase för hosting, Cloud Run, loggning och Firestore, samt vår e-postleverantör när en API-ansökan skickas till ansvarig mottagare. Driftdata i Cloud Run och Firestore är konfigurerad i Frankfurt (<code>europe-west3</code>), men globala support-, säkerhets- och CDN-funktioner kan innebära behandling utanför EU/EES. Vid en sådan överföring används tillämpligt beslut om adekvat skyddsnivå, EU:s standardavtalsklausuler eller annan giltig skyddsåtgärd enligt GDPR kapitel V. Kontakta oss om du vill ha mer information.</p>
+    <p>Vi säljer inte personuppgifter. Uppgifter lämnas bara till myndighet eller annan mottagare när lag kräver det eller när det behövs för att fastställa, göra gällande eller försvara rättsliga anspråk.</p>
+
+    <h2>5. Dina rättigheter</h2>
+    <p>Du kan, beroende på situationen, begära tillgång, rättelse, radering, begränsning och dataportabilitet. Du kan invända mot behandling som bygger på berättigat intresse. Vi kan behöva verifiera din identitet och kan behöva behålla vissa uppgifter när lag eller ett rättsligt anspråk kräver det.</p>
+    <p>Kontakta <a href="mailto:jagge@novro.se">jagge@novro.se</a>. Du har också rätt att lämna klagomål till <a href="https://www.imy.se/privatperson/utfora-arenden/lamna-ett-klagomal/" target="_blank" rel="noopener noreferrer">Integritetsskyddsmyndigheten (IMY)</a>.</p>
+
+    <h2>6. Säkerhet och automatiserade beslut</h2>
+    <p>Vi använder åtkomstkontroll, krypterad överföring, pseudonymiserade nyckelidentifierare, kvoter, begränsad loggning och automatisk gallring. Ingen internetbaserad tjänst kan garantera absolut säkerhet. Vi använder inte personuppgifter för profilering eller automatiserat beslutsfattande som har rättsliga eller liknande betydande effekter.</p>
+
+    <h2>7. Ändringar</h2>
+    <p>Vi kan ändra policyn när tjänsten, leverantörer eller rättsliga krav ändras. Den aktuella versionen publiceras här med nytt uppdateringsdatum. Väsentliga ändringar kommuniceras på ett rimligt sätt innan de börjar gälla när det krävs.</p>
+
+    <hr>
+    <h2 lang="en">English summary</h2>
+    <p lang="en">Novro Sweden AB operates this service and can be contacted at <a href="mailto:jagge@novro.se">jagge@novro.se</a>. We do not use analytics or advertising cookies. Language and theme choices are stored only in your browser. API applications are retained for up to 90 days; active account records are retained while active and for up to 90 days after deactivation. Usage logs exclude prompts, results, API keys and client identifiers. Technical infrastructure logs may contain IP addresses and are retained according to the configured 30-day logging period. Google Cloud/Firebase and the email provider act as processors. You have GDPR rights including access, correction, deletion, restriction, portability and objection, and may complain to the Swedish Authority for Privacy Protection (IMY). Do not send personal or sensitive data, secrets or credentials through the service.</p>
+  </main>
+  <footer><a href="/terms.html">Användarvillkor</a> · <a href="/">MCP LAS</a></footer>
+</body>
+</html>

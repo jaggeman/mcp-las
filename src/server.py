@@ -186,9 +186,16 @@ async def handle_key_request(request):
         email = str(data.get("email", "")).strip()
         company = str(data.get("company", "")).strip()
         reason = str(data.get("reason", "")).strip()
+        legal_accept = data.get("legal_accept")
 
         if not name or not email or "@" not in email or "." not in email:
             return JSONResponse({"success": False, "message": "Giltigt namn och e-postadress krävs."}, status_code=400)
+        if legal_accept is not True:
+            return JSONResponse(
+                {"success": False, "message": "Du måste acceptera villkoren och läsa integritetspolicyn."},
+                status_code=400,
+                headers={"Access-Control-Allow-Origin": "*"},
+            )
 
         for falt, varde in (("name", name), ("email", email),
                             ("company", company), ("reason", reason)):
@@ -198,14 +205,17 @@ async def handle_key_request(request):
                      "message": f"Fältet '{falt}' är för långt (max {MAXLANGD[falt]} tecken)."},
                     status_code=400, headers={"Access-Control-Allow-Origin": "*"})
 
+        accepted_at = datetime.now(timezone.utc)
         request_record = {
             "name": name,
             "email": email,
             "company": company,
             "reason": reason,
             "status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": datetime.now(timezone.utc) + timedelta(days=90),
+            "created_at": accepted_at.isoformat(),
+            "expires_at": accepted_at + timedelta(days=90),
+            "terms_version": "2026-09-26",
+            "legal_accepted_at": accepted_at,
         }
 
         # Spara i databasen
