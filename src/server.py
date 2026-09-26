@@ -132,6 +132,32 @@ async def download_turordning_excel(request):
     }
     return Response(content=file_data["bytes"], media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
 
+
+@mcp.custom_route("/api/coverage", methods=["GET", "OPTIONS"])
+async def public_legal_coverage(request):
+    """Small public, read-only snapshot used by the landing page.
+
+    The underlying aggregate is cached in the database client for 60 seconds,
+    and the same period is advertised to browsers/CDNs.  This keeps the site
+    truthful after source synchronization without turning page views into
+    unbounded Firestore reads.
+    """
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers=CORS_HEADERS)
+    try:
+        coverage = await asyncio.to_thread(_get_legal_coverage)
+        return JSONResponse(
+            coverage,
+            headers={**CORS_HEADERS, "Cache-Control": "public, max-age=60"},
+        )
+    except Exception:
+        logging.error("Kunde inte läsa publik lagtäckning")
+        return JSONResponse(
+            {"error": "Täckningsstatus är tillfälligt otillgänglig."},
+            status_code=503,
+            headers={**CORS_HEADERS, "Cache-Control": "no-store"},
+        )
+
 from src.services.notification_service import notification_service
 
 @mcp.custom_route("/api/request-key", methods=["POST", "OPTIONS"])

@@ -1,0 +1,29 @@
+name: Produktionsövervakning
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcp-las-production-monitor
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: MCP, webb, täckning och svarstid
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Installera HTTP-klient
+        run: pip install "requests>=2.33,<3"
+      - name: Kontrollera produktion
+        run: python scripts/production_smoke.py --base-url https://las.novro.se --max-response-seconds 10

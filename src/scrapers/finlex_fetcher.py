@@ -9,12 +9,33 @@ import requests
 
 from src.chunking.finnish_law_chunker import FinnishLawChunker
 from src.chunking.law_chunker import StatuteSection
+from src.data.finnish_labor_law_catalog import FINNISH_LABOR_LAW_CATALOG
 
 
 class FinlexFetcher:
     API_URL = "https://opendata.finlex.fi/finlex/avoindata/v1"
     STATUTE_LIST_URL = f"{API_URL}/akn/fi/act/statute/list"
     USER_AGENT = "MCP-LAS/1.0 (legal-source-sync)"
+
+    @classmethod
+    def catalog_documents(cls) -> List[Dict[str, Any]]:
+        documents = []
+        for entry in FINNISH_LABOR_LAW_CATALOG:
+            number, year = entry["act_number"].split("/", 1)
+            uri = f"{cls.API_URL}/akn/fi/act/statute/{year}/{number}/fin@"
+            documents.append({
+                "id": entry["act_number"],
+                "documentId": entry["act_number"],
+                "statute_id": entry["act_number"],
+                "akn_uri": uri,
+                "url": uri,
+                "xmlUrl": uri,
+                "title": entry["name"],
+                "language": "fi",
+                "category": entry.get("category"),
+                "priority": entry.get("priority"),
+            })
+        return documents
 
     @classmethod
     def harvest_statutes(
@@ -136,13 +157,24 @@ class FinlexFetcher:
         xml_url = document.get("xmlUrl") or document.get("xml_url") or document_url
         if not document_id or not xml_url:
             raise ValueError("Finlex document lacks id and XML URL")
-        return cls.parse_document(
+        xml = cls.fetch_document_xml(xml_url)
+        metadata, sections = cls.parse_document(
             document_id=document_id,
             document_url=document_url or xml_url,
-            xml=cls.fetch_document_xml(xml_url),
+            xml=xml,
             title=document.get("title") or document.get("name"),
             language=document.get("language", "fi"),
         )
+        statute_id = document.get("statute_id")
+        if statute_id and statute_id != metadata["statute_id"]:
+            metadata["id"] = f"FI:{statute_id}"
+            metadata["statute_id"] = statute_id
+            sections = FinnishLawChunker.chunk_xml(
+                statute_id, metadata["short_name"], xml
+            )
+        metadata["category"] = document.get("category")
+        metadata["priority"] = document.get("priority")
+        return metadata, sections
 
     @classmethod
     def get_changed_laws(cls, **kwargs: Any) -> Iterable[Dict[str, Any]]:

@@ -133,7 +133,7 @@ jobs:
         run: |
           REVISION=$(gcloud run services describe mcp-las --project=paygap-prod --region=europe-west3 --format='value(status.latestReadyRevisionName)')
           IMAGE=$(gcloud run revisions describe "$REVISION" --project=paygap-prod --region=europe-west3 --format='value(status.imageDigest)')
-          gcloud run jobs update mcp-las-source-sync --project=paygap-prod --region=europe-west3 --image="$IMAGE" --args="scripts/sync_sources.py,--norwegian,--german,--spanish"
+          gcloud run jobs update mcp-las-source-sync --project=paygap-prod --region=europe-west3 --image="$IMAGE" --args="scripts/sync_sources.py,--danish,--finnish,--norwegian,--german,--spanish"
 
       # mcp-novro (las.novro.se) ar den etablerade, produktionsbarande siten -
       # anvandare har den redan i sin claude_desktop_config.json. Den far ALDRIG
@@ -153,3 +153,13 @@ jobs:
         continue-on-error: true
         run: |
           npx firebase-tools deploy --only hosting:mcp-endpoint --project=paygap-prod
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Installera smoketestets HTTP-klient
+        run: pip install "requests>=2.33,<3"
+
+      - name: Produktions-smoketest via publik domän
+        run: python scripts/production_smoke.py --base-url https://las.novro.se --expected-sha ${{ github.sha }} --check-search-quality

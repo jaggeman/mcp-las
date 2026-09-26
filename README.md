@@ -58,15 +58,16 @@ och `mcp-source-sync@paygap-prod.iam.gserviceaccount.com` med endast
 `roles/datastore.user` på projektet, utan deployroller. Villkoren tillåter endast
 samma repository/ägare, main och `sync-sources.yml` vid schedule/workflow_dispatch.
 GitHub-variabler: `GCP_SYNC_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SYNC_SERVICE_ACCOUNT`.
-Jobbet synkar Sverige, Norge, Tyskland och Spanien måndagar 03:00 UTC, utan överlappande körningar.
+Jobbet synkar Sverige, Danmark, Finland, Norge, Tyskland och Spanien måndagar 03:00 UTC, utan överlappande körningar.
 Sverige synkas direkt på GitHub-runnern; Riksdagen-hämtning från Cloud Run misslyckades.
-Norge, Tyskland och Spanien körs i Frankfurt. GitHub startar Cloud Run Job `mcp-las-source-sync` i europe-west3 och väntar på resultatet.
+Danmark, Finland, Norge, Tyskland och Spanien körs i Frankfurt. GitHub startar Cloud Run Job `mcp-las-source-sync` i europe-west3 och väntar på resultatet.
 Direkt hämtning från GitHub fick anslutningstimeout till den tyska källan; Frankfurt fungerar.
 Synkkontot har även `roles/run.jobsExecutor` och `roles/run.viewer` på endast detta jobb.
-CI uppdaterar jobbets image till samma digest som backend och anger flaggorna --norwegian --german --spanish.
+CI uppdaterar jobbets image till samma digest som backend och anger flaggorna --danish --finnish --norwegian --german --spanish.
 Jobbet använder mock-embeddings, 1 CPU/1 GiB, 1800 sekunders timeout och inga automatiska omförsök.
-Ingen workflow använder längre `GCP_SA_KEY`; den gamla nyckeln har inte
-återkallats eftersom eventuella användningar utanför repot inte har inventerats.
+Ingen workflow använder längre `GCP_SA_KEY`. GitHub-hemligheten och den sista
+användarhanterade nyckeln för deploykontot återkallades 2026-09-26 efter kontroll
+av revisionsloggar; endast Googles systemhanterade nyckel återstår.
 Excel-länkar är hemliga bearer-token med 256 bitars slump och högst 10 minuters
 giltighet. Alla som har länken kan hämta filen; dela eller logga därför inte länkarna.
 Filer rensas automatiskt. Cachen är processlokal: högst 32 filer, 32 MiB totalt
@@ -84,7 +85,7 @@ Norge: 9 lagar (Arbeidsmiljøloven, Ferieloven, Likestillings- og diskriminering
 Arbeidstvistloven, Allmenngjøringsloven, Statsansatteloven, Permitteringslønnsloven, Lønnsgarantiloven och Yrkesskadeforsikringsloven). Tyskland: 11 lagar
 (KSchG, BUrlG, ArbZG, TzBfG, AGG, ArbSchG, BetrVG, EntgFG, MuSchG, BEEG och NachwG).
 
-Synkronisera med `.venv\Scripts\python.exe scripts/sync_sources.py --norwegian --german --spanish`.
+Synkronisera med `.venv\Scripts\python.exe scripts/sync_sources.py --danish --finnish --norwegian --german --spanish`.
 Kommandot skriver till konfigurerad Firestore och kräver skrivbehörighet.
 Källor: https://api.lovdata.no/om-api-tjenesten/ (Stiftelsen Lovdata, NLOD 2.0)
 och https://www.gesetze-im-internet.de/ (XML-paket per lag).
@@ -102,7 +103,9 @@ Ange BOE-ID (t.ex. BOE-A-2015-11430), `jurisdiction="ES"` och artikelnummer (t.e
 Senaste publicerade version som trätt i kraft väljs per numrerad artikel. Framtida
 versioner, upphävda artiklar, bilagor och kompletterande/övergångsbestämmelser ingår inte.
 Konsoliderade BOE-texter är informativa, utan officiell rättslig giltighet; kontrollera originalet.
-Danmark och Finland har adaptrar men inga indexerade paragrafer vid denna verifiering.
+Danmark och Finland använder avgränsade arbetsrättskataloger från
+Beskæftigelsesministeriet/Retsinformation respektive Finlex; faktisk mängd och
+senaste lyckade synk visas av `get_legal_coverage` och `/api/coverage`.
 Webbgränssnittet är svenska/engelska; lagarnas källspråk är inte gränssnittsöversättningar.
 Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast för Sverige.
 `get_legal_coverage` anger faktisk paragrafmängd och tillgänglighet per land,

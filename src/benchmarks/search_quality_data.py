@@ -1,0 +1,26 @@
+"""Stable top-result ground truth for common Swedish HR search questions."""
+
+SEARCH_QUALITY_CASES = [
+    {"id": "provanstallning", "question": "Hur lång får en provanställning vara?", "expected": [("LAS", None, "6")]},
+    {"id": "semesterdagar", "question": "Hur många semesterdagar har jag rätt till per år?", "expected": [("Semesterlagen", None, "4")]},
+    {"id": "dygnsvila", "question": "Hur lång dygnsvila har man rätt till?", "expected": [("Arbetstidslagen", None, "13")]},
+    {"id": "veckovila", "question": "Hur lång veckovila har man rätt till?", "expected": [("Arbetstidslagen", None, "14")]},
+    {"id": "rast", "question": "Har man rätt till rast under arbetsdagen?", "expected": [("Arbetstidslagen", None, "15")]},
+    {"id": "visstid", "question": "När övergår särskild visstid automatiskt till tillsvidareanställning?", "expected": [("LAS", None, "5a")]},
+    {"id": "avsked", "question": "Vad är skillnaden mellan uppsägning och avskedande?", "expected": [("LAS", None, "18")]},
+    {"id": "diskrimineringsgrunder", "question": "Vilka är diskrimineringsgrunderna?", "expected": [("Diskrimineringslagen", "1", "5")]},
+    {"id": "uppsagningstid", "question": "Vilken uppsägningstid gäller efter sju års anställning?", "expected": [("LAS", None, "11")]},
+    {"id": "turordning", "question": "Vilka turordningsregler gäller vid arbetsbrist?", "expected": [("LAS", None, "22")]},
+    {"id": "ateranstallning", "question": "När har en uppsagd arbetstagare företrädesrätt till återanställning?", "expected": [("LAS", None, "25")]},
+    {"id": "forhandling", "question": "När måste arbetsgivaren förhandla med facket före ett viktigt beslut?", "expected": [("MBL", None, "11")]},
+    {"id": "information", "question": "Vilken löpande informationsskyldighet har arbetsgivaren mot facket?", "expected": [("MBL", None, "19")]},
+    {"id": "fredsplikt", "question": "Vad innebär fredsplikt under en kollektivavtalsperiod?", "expected": [("MBL", None, "41")]},
+    {"id": "semesterlon", "question": "Hur beräknas semesterlön enligt procentregeln?", "expected": [("Semesterlagen", None, "16b")]},
+    {"id": "overtid", "question": "Hur många timmar allmän övertid får tas ut per kalenderår?", "expected": [("Arbetstidslagen", None, "8")]},
+    {"id": "kvittning", "question": "Får arbetsgivaren dra en påstådd skuld direkt från lönen utan medgivande?", "expected": [("Kvittningslagen", None, "1"), ("Kvittningslagen", None, "2")]},
+    {"id": "studieledighet", "question": "När får arbetsgivaren skjuta upp studieledighet?", "expected": [("Studieledighetslagen", None, "4")]},
+    {"id": "sjuklon", "question": "Hur stor sjuklön ska arbetsgivaren betala under sjuklöneperioden?", "expected": [("Sjuklönelagen", None, "6")]},
+    {"id": "semesterersattning", "question": "När ska semesterersättning betalas efter att anställningen upphört?", "expected": [("Semesterlagen", None, "28")]},
+    {"id": "sparad_semester", "question": "Hur många semesterdagar får sparas till ett senare år?", "expected": [("Semesterlagen", None, "18")]},
+    {"id": "jourtid", "question": "Hur mycket jourtid får tas ut per arbetstagare?", "expected": [("Arbetstidslagen", None, "6")]},
+]

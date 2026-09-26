@@ -19,7 +19,8 @@ def get_legal_coverage() -> Dict[str, Any]:
     "ej funnen".
     """
     counts = db_client.count_sections_by_jurisdiction()
-    return {
+    sync_status = db_client.get_sync_status_by_jurisdiction()
+    coverage = {
         "jurisdictions": {
             "ES": {
                 "country": "Spanien", "language": "es", "statutes": counts.get("ES", 0) > 0,
@@ -63,6 +64,11 @@ def get_legal_coverage() -> Dict[str, Any]:
         "coverage_note": "Adapterstöd och avgränsade lagkataloger. Tillgängliga paragrafer beror på genomförd synk; inte fullständig rättslig täckning.",
         "sources": {"SE": "Riksdagen", "DK": "Retsinformation", "FI": "Finlex", "NO": "Lovdata", "DE": "Gesetze im Internet", "ES": "BOE"},
     }
+    for code, details in coverage["jurisdictions"].items():
+        status = sync_status.get(code, {})
+        details["sync_status"] = status.get("status", "unknown")
+        details["last_synced_at"] = status.get("synced_at")
+    return coverage
 
 def _determine_certainty(text: str, source_type: str = "statute") -> Dict[str, Any]:
     """

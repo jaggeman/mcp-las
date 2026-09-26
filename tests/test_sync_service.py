@@ -100,7 +100,7 @@ def test_sync_records_error_and_continues_with_other_sources():
 def test_sync_indexes_changed_danish_document_with_jurisdiction():
     class DanishFetcher:
         @classmethod
-        def get_changed_laws(cls):
+        def catalog_documents(cls):
             return [{"documentId": "A202400001", "href": "https://example.test/doc.xml"}]
 
         @classmethod
@@ -136,7 +136,7 @@ def test_sync_indexes_changed_danish_document_with_jurisdiction():
 def test_sync_indexes_changed_finnish_document_with_jurisdiction():
     class FinnishFetcher:
         @classmethod
-        def get_changed_laws(cls):
+        def catalog_documents(cls):
             return [{"akn_uri": "https://example.test/akn/fi/act/statute/2001/55/fin@"}]
 
         @classmethod

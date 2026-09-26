@@ -90,6 +90,23 @@ class SourceSyncService:
             result["errors"] += 1
             result["items"].append({"source_id":country,"status":"error","error":str(exc)})
         result["status"] = "error" if result["errors"] else "success"
+        save_sync_state = getattr(self.db, "save_sync_state", None)
+        if not callable(save_sync_state):
+            return result
+        status_saved = save_sync_state(f"coverage:{country}", {
+            "jurisdiction": country,
+            "status": result["status"],
+            "changed": result["changed"],
+            "skipped": result["skipped"],
+            "errors": result["errors"],
+            "synced_at": datetime.now(timezone.utc).isoformat(),
+        })
+        if status_saved is not True:
+            if result["errors"] == 0:
+                result["errors"] = 1
+            result["status"] = "error"
+            result["items"].append({"source_id": f"coverage:{country}", "status": "error",
+                                    "error": "Could not persist country sync status"})
         return result
 
     def sync_statutes(self, statutes=DEFAULT_STATUTES):
@@ -114,7 +131,7 @@ class SourceSyncService:
 
     def _sync_foreign(self, documents, fetcher, country):
         def jobs():
-            sources = documents if documents is not None else fetcher.get_changed_laws()
+            sources = documents if documents is not None else fetcher.catalog_documents()
             for document in sources:
                 doc_id = document.get("id") or document.get("documentId") or document.get("document_id") or document.get("akn_uri")
                 prefix = "finnish" if country=="FI" else "danish"

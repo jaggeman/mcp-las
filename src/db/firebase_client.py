@@ -39,6 +39,8 @@ class FirebaseLaborLawDB:
         self._country_full_read_at = {}
         self._coverage_cache = None
         self._coverage_cache_at = 0
+        self._sync_status_cache = None
+        self._sync_status_cache_at = 0
         self._statute_cache_lock = RLock()
         self._cached_precedents: Optional[List[Dict[str, Any]]] = None
         self._init_firebase()
@@ -119,6 +121,30 @@ class FirebaseLaborLawDB:
                 pass
         return getattr(self, "_local_sync_state", {}).get(source_id)
 
+    def get_sync_status_by_jurisdiction(self) -> Dict[str, Dict[str, Any]]:
+        now = time.monotonic()
+        if self._sync_status_cache is not None and now - self._sync_status_cache_at < 60:
+            return {key: dict(value) for key, value in self._sync_status_cache.items()}
+        countries = ("SE", "DK", "FI", "NO", "DE", "ES")
+        statuses = {}
+        if self.db:
+            try:
+                refs = [self.db.collection("source_sync_state").document(f"coverage:{code}")
+                        for code in countries]
+                for code, doc in zip(countries, self.db.get_all(refs)):
+                    if doc.exists:
+                        statuses[code] = doc.to_dict()
+            except Exception:
+                logger.warning("Synchronization status unavailable")
+                statuses = self._sync_status_cache or {}
+        else:
+            local = getattr(self, "_local_sync_state", {})
+            statuses = {code: dict(local[f"coverage:{code}"]) for code in countries
+                        if f"coverage:{code}" in local}
+        self._sync_status_cache = statuses
+        self._sync_status_cache_at = now
+        return {key: dict(value) for key, value in statuses.items()}
+
     def publish_statute(self, source_id, metadata, rows, statute_id, jurisdiction, state):
         """Atomically publish one bounded statute, retirement, metadata and state.
 
@@ -164,6 +190,7 @@ class FirebaseLaborLawDB:
             try:
                 self.db.collection("source_sync_state").document(source_id).set(state)
                 self._local_sync_state[source_id] = dict(state)
+                self._sync_status_cache = None
                 return True
             except Exception:
                 logger.exception('Could not persist sync state %s', source_id)
@@ -475,6 +502,20 @@ class FirebaseLaborLawDB:
             intent_target = ('Diskrimineringslagen', '1', '5')
         elif re.search(r'\brast(?:en|er)?\b', q_lower) and 'paus' not in q_lower:
             intent_target = ('Arbetstidslagen', None, '15')
+        elif ('förhandla' in q_lower and ('fack' in q_lower or 'arbetstagarorganisation' in q_lower)
+              and any(word in q_lower for word in ('före', 'innan', 'viktig'))):
+            intent_target = ('MBL', None, '11')
+        elif (any(word in q_lower for word in ('löpande', 'fortlöpande', 'informationsskyldighet'))
+              and ('fack' in q_lower or 'arbetstagarorganisation' in q_lower)):
+            intent_target = ('MBL', None, '19')
+        elif 'allmän övertid' in q_lower and any(word in q_lower for word in ('kalenderår', 'hur många', 'max')):
+            intent_target = ('Arbetstidslagen', None, '8')
+        elif ('sjuklön' in q_lower and any(word in q_lower for word in ('hur stor', 'procent', 'betala'))):
+            intent_target = ('Sjuklönelagen', None, '6')
+        elif 'semesterdag' in q_lower and any(word in q_lower for word in ('spara', 'sparas', 'sparad')):
+            intent_target = ('Semesterlagen', None, '18')
+        elif 'jourtid' in q_lower:
+            intent_target = ('Arbetstidslagen', None, '6')
         elif ('semesterdag' in q_lower and not any(w in q_lower for w in ('spara', 'sparad'))
               and any(phrase in q_lower for phrase in ('hur många', 'rätt till', 'per år', 'varje år'))):
             intent_target = ('Semesterlagen', None, '4')

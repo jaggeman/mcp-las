@@ -34,13 +34,13 @@ def test_website_navbar_does_not_contain_unauthenticated_rest_api_link():
     nav_section = content[content.find("<nav>"):content.find("</nav>")]
     assert "REST API" not in nav_section, "'REST API' link still present in navigation bar"
 
-def test_website_documents_automated_source_sync_and_danish_roadmap():
+def test_website_documents_automated_source_sync_and_live_coverage():
     html_path = Path("public/index.html")
     content = html_path.read_text(encoding="utf-8")
     assert "Automatisk källsynkronisering" in content
     assert "Cloud Run Job" in content
     assert "Europeiska lagar" in content
-    assert "DA-001" in content
+    assert "data-coverage-desc" in content
 
 
 def test_website_presents_european_labor_law():

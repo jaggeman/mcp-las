@@ -158,6 +158,30 @@ def _section(id_, statute, section, content, chapter=None):
         _section("1977-480:4", "Semesterlagen", "4", "En arbetstagare har rätt till tjugofem semesterdagar varje semesterår."),
         _section("1977-480:19", "Semesterlagen", "19", "En arbetstagare får spara betalda semesterdagar."),
     ]),
+    ("När måste arbetsgivaren förhandla med facket före ett viktigt beslut?", ("MBL", None, "11"), [
+        _section("1976-580:11", "MBL", "11", "Innan arbetsgivaren beslutar om viktigare förändring ska arbetsgivaren förhandla."),
+        _section("1982-80:29", "LAS", "29", "En arbetstagare och facket ska underrättas före ett beslut."),
+    ]),
+    ("Vilken löpande informationsskyldighet har arbetsgivaren mot facket?", ("MBL", None, "19"), [
+        _section("1976-580:19", "MBL", "19", "Arbetsgivaren ska fortlöpande hålla arbetstagarorganisationen underrättad."),
+        _section("1982-80:6e", "LAS", "6 e", "Arbetsgivaren ska lämna information till arbetstagaren."),
+    ]),
+    ("Hur många timmar allmän övertid får tas ut per kalenderår?", ("Arbetstidslagen", None, "8"), [
+        _section("1982-673:8", "Arbetstidslagen", "8", "Allmän övertid får tas ut med högst 200 timmar per kalenderår."),
+        _section("1982-673:8a", "Arbetstidslagen", "8 a", "Extra övertid får tas ut utöver allmän övertid."),
+    ]),
+    ("Hur stor sjuklön ska arbetsgivaren betala under sjuklöneperioden?", ("Sjuklönelagen", None, "6"), [
+        _section("1991-1047:6", "Sjuklönelagen", "6", "Sjuklönen är 80 procent av anställningsförmånerna."),
+        _section("1991-1047:7", "Sjuklönelagen", "7", "Sjuklöneperioden omfattar fjorton kalenderdagar."),
+    ]),
+    ("Hur många semesterdagar får sparas till ett senare år?", ("Semesterlagen", None, "18"), [
+        _section("1977-480:18", "Semesterlagen", "18", "Dagar utöver tjugo betalda semesterdagar får sparas."),
+        _section("1977-480:22", "Semesterlagen", "22", "Semesterlön för sparade semesterdagar beräknas enligt andra regler."),
+    ]),
+    ("Hur mycket jourtid får tas ut per arbetstagare?", ("Arbetstidslagen", None, "6"), [
+        _section("1982-673:6", "Arbetstidslagen", "6", "Jourtid får tas ut med högst 48 timmar under fyra veckor."),
+        _section("1995-584:11", "Föräldraledighetslagen", "11", "Arbetstagaren får ta ut ledighet."),
+    ]),
 ])
 def test_common_questions_rank_the_governing_section_first(question, expected, rows):
     result = _search_db(rows).search_statute_sections(
