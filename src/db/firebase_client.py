@@ -136,9 +136,11 @@ class FirebaseLaborLawDB:
             try:
                 refs = [self.db.collection("source_sync_state").document(f"coverage:{code}")
                         for code in countries]
-                for code, doc in zip(countries, self.db.get_all(refs)):
+                for doc in self.db.get_all(refs):
                     if doc.exists:
-                        statuses[code] = doc.to_dict()
+                        code = str(doc.id).removeprefix("coverage:").upper()
+                        if code in countries:
+                            statuses[code] = doc.to_dict()
             except Exception:
                 logger.warning("Synchronization status unavailable")
                 statuses = self._sync_status_cache or {}

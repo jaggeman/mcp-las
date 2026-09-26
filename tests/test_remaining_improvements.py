@@ -63,6 +63,36 @@ def test_firestore_document_ids_escape_finlex_slashes():
     assert firestore_document_id("FI:55/2001") == "FI_55_2001"
 
 
+def test_sync_status_uses_document_id_when_firestore_returns_shuffled_results():
+    from src.db.firebase_client import FirebaseLaborLawDB
+
+    class Document:
+        def __init__(self, document_id, value):
+            self.id, self.exists, self._value = document_id, True, value
+        def to_dict(self): return self._value
+
+    class Collection:
+        def document(self, document_id): return document_id
+
+    class DB:
+        def collection(self, name): return Collection()
+        def get_all(self, refs):
+            return [
+                Document("coverage:FI", {"status": "success", "synced_at": "fi"}),
+                Document("coverage:DK", {"status": "success", "synced_at": "dk"}),
+            ]
+
+    client = FirebaseLaborLawDB.__new__(FirebaseLaborLawDB)
+    client.db = DB()
+    client._sync_status_cache = None
+    client._sync_status_cache_at = 0
+
+    statuses = client.get_sync_status_by_jurisdiction()
+
+    assert statuses["DK"]["synced_at"] == "dk"
+    assert statuses["FI"]["synced_at"] == "fi"
+
+
 def test_finnish_catalog_discovery_is_exact_and_preserves_official_act_numbers():
     rows = FinlexFetcher.catalog_documents()
 
