@@ -8,6 +8,19 @@ from src.jurisdictions import JURISDICTIONS, JURISDICTION_LANGUAGES
 SUPPORTED_JURISDICTIONS = JURISDICTION_LANGUAGES
 
 
+def _ensure_statute_provenance(result: Dict[str, Any], jurisdiction: str) -> Dict[str, Any]:
+    """Add the stable official Swedish source when legacy rows lack metadata."""
+    if jurisdiction == "SE":
+        sfs_number = result.get("sfs_number") or result.get("statute_id")
+        if sfs_number:
+            doc_id = "sfs-" + str(sfs_number).strip().replace(":", "-").replace(" ", "")
+            result.setdefault("source", None)
+            result.setdefault("source_url", None)
+            result["source"] = result["source"] or "Sveriges riksdag"
+            result["source_url"] = result["source_url"] or f"https://data.riksdagen.se/dokument/{doc_id}.html"
+    return result
+
+
 def get_legal_coverage() -> Dict[str, Any]:
     """Beskriver faktisk land- och områdestäckning för MCP-servern.
 
@@ -147,6 +160,7 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisd
         }
 
     content = result.get("content", "")
+    _ensure_statute_provenance(result, jurisdiction)
     certainty = _determine_certainty(content, source_type="statute")
 
     return {
@@ -186,6 +200,7 @@ def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit
         effective_filters["language"] = language
     results = db_client.search_statute_sections(query=query, filters=effective_filters, limit=limit)
     for r in results:
+        _ensure_statute_provenance(r, jurisdiction)
         r["certainty"] = _determine_certainty(r.get("content", ""), source_type="statute")
     return results
 

@@ -36,11 +36,15 @@ def test_lookup_statute():
     assert res["law"] == "LAS"
     assert res["section"] == "7"
     assert "sakliga skäl" in res["content"].lower()
+    assert res["source"] == "Sveriges riksdag"
+    assert res["source_url"] == "https://data.riksdagen.se/dokument/sfs-1982-80.html"
 
 def test_search_labor_law():
     res = search_labor_law(query="sakliga skäl för uppsägning")
     assert len(res) > 0
     assert any(r["section"] == "7" for r in res)
+    assert all(r["source"] == "Sveriges riksdag" for r in res)
+    assert all(r["source_url"].startswith("https://data.riksdagen.se/dokument/sfs-") for r in res)
 
 def test_search_case_law():
     res = search_case_law(query="personliga skäl uppsägning")

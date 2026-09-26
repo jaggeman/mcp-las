@@ -113,7 +113,10 @@ class SourceSyncService:
     def sync_statutes(self, statutes=DEFAULT_STATUTES):
         def load(sfs):
             metadata, sections = self.fetcher.get_statute(sfs)
-            return metadata.model_dump(), sections
+            values = metadata.model_dump()
+            values["source"] = "Sveriges riksdag"
+            values["source_url"] = values.get("document_url")
+            return values, sections
         return self._run(((f"statute:{sfs}",lambda sfs=sfs:load(sfs)) for sfs in statutes),"SE")
 
     def sync_european_statutes(self, jurisdiction):

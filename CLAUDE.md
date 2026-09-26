@@ -7,7 +7,15 @@ recall@5/10 och reciprocal rank. Måtten avser hämtade referenser, inte sannoli
 att ett juridiskt svar är korrekt. Offline-regressionstester körs utan credentials
 i `tests/test_quality_evaluation.py`; åtta syntetiska landsfall testar motorn, inte
 ländernas juridiska täckning. Produktions-smoke nekar tomma, felaktiga och
-landblandade sökresultat. Befintliga svenska kvalitetsfrågor används fortsatt.
+landblandade sökresultat. Den blockerande kvalitetskontrollen har 36 granskade
+källspråksfall: 22 svenska och två per övrigt land (DK, FI, NO, DE, ES, NL, GB).
+Facit anger land, exakt bestämmelse, officiell referens och granskningsdatum.
+Frågan om utbetalning av semesterersättning ska träffa Semesterlagen 30 §;
+28 § reglerar rätten till ersättning men inte betalningsfristen. Den dagliga
+produktionsövervakningen kör både `--all-countries` och `--check-search-quality`.
+Varje sökträff måste ha en HTTPS-källänk till respektive lands tillåtna officiella
+rättskälla. Äldre svenska rader kompletteras vid läsning med Riksdagens stabila
+Open Data-länk och kommande synkar lagrar källnamn och källadress i varje paragraf.
 
 HR-benchmarken använder endast frågan vid sökning, aldrig facit för kompletterande
 uppslag. Nyckelord rapporteras separat och påverkar inte godkännande.
@@ -154,6 +162,9 @@ Båda katalogerna är avgränsade. Bilagor indexeras inte som egna bestämmelser
 Danmark och Finland använder avgränsade arbetsrättskataloger från
 Beskæftigelsesministeriet/Retsinformation respektive Finlex; faktisk mängd och
 senaste lyckade synk visas av `get_legal_coverage` och `/api/coverage`.
+Finland hämtas från Finlex aktuella konsoliderade lagvy på `data.finlex.fi`;
+ändringshistorikens ursprungliga `act/statute`-text får inte användas som gällande
+lydelse. Adaptern läser den finska dokumentvyn och ignorerar parallell svensk text.
 Webbgränssnittet är svenska/engelska; lagarnas källspråk är inte gränssnittsöversättningar.
 Beräkningar, praxis, kollektivavtal och HR-mallar stöds fortfarande endast för Sverige.
 `get_legal_coverage` anger faktisk paragrafmängd och tillgänglighet per land,

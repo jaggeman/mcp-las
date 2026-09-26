@@ -47,7 +47,8 @@ class FakeFetcher:
             short_name="TEST",
             document_url="https://example.test/lag",
             total_sections=1,
-            model_dump=lambda: {"id": sfs, "sfs_number": sfs, "title": "Testlag"},
+            model_dump=lambda: {"id": sfs, "sfs_number": sfs, "title": "Testlag",
+                                "document_url": "https://data.riksdagen.se/dokument/sfs-1982-80.html"},
         )
         section = SimpleNamespace(
             id=f"{sfs}_s1",
@@ -76,6 +77,8 @@ def test_sync_indexes_changed_statute_and_is_idempotent():
     assert len(db.statutes) == 1
     assert len(db.sections) == 1
     assert db.states["statute:1982:80"]["status"] == "success"
+    assert db.statutes[0]["source"] == "Sveriges riksdag"
+    assert db.sections[0]["source_url"] == "https://data.riksdagen.se/dokument/sfs-1982-80.html"
 
 
 def test_sync_records_error_and_continues_with_other_sources():
