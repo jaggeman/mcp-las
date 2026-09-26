@@ -85,7 +85,8 @@ Docker-kontexten exkluderar miljöfiler och vanliga nyckel-/credential-filer.
 Cloud Run använder det dedikerade kontot `mcp-las-runtime` med endast
 `roles/datastore.user`; standardkontot med Editor används inte av tjänsten.
 Produktionsberoenden installeras från hash-låsta `requirements.lock`.
-GitHub Actions är SHA-pinnade och Dependabot, pip-audit samt CodeQL är aktiverade.
+GitHub Actions är SHA-pinnade; CodeQL kör v4, Google-auth/setup-gcloud v3 och
+setup-node v7. Dependabot, pip-audit samt CodeQL är aktiverade.
 Den äldre lokala service-account-nyckeln för `mcp-las-rules` återkallades och
 raderades 2026-09-26.
 Cloud Run begränsas av CI till 5 instanser och concurrency 40. Uvicorns accesslogg är
