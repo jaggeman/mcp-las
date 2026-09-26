@@ -1,7 +1,7 @@
 """
-Autentiska tentamens- och HR-frågor från Personalvetarprogrammet och facklig/arbetsgivar-rådgivning.
-Används för att deterministiskt benchmarka och poängsätta svensk arbetsrättslig AI-precision.
-Totalt 50 validerade scenarier över 6 juridiska kategorier.
+Äldre HR-scenarier med förväntade referenser för sökdiagnostik.
+Ursprung och juridisk granskning är inte dokumenterade. Facit måste granskas
+oberoende innan resultaten används som mått på juridisk svarskvalitet.
 """
 
 from typing import List, Dict, Any

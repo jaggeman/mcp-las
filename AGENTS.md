@@ -1,6 +1,29 @@
 # AI Agent Guidelines for MCP-LAS
 
+## Mätning av svarskvalitet
+
+`src/benchmarks/quality.py` mäter exakt land/lag/kapitel/paragraf, hit@1,
+recall@5/10 och reciprocal rank. Måtten avser hämtade referenser, inte sannolikheten
+att ett juridiskt svar är korrekt. Offline-regressionstester körs utan credentials
+i `tests/test_quality_evaluation.py`; åtta syntetiska landsfall testar motorn, inte
+ländernas juridiska täckning. Produktions-smoke nekar tomma, felaktiga och
+landblandade sökresultat. Befintliga svenska kvalitetsfrågor används fortsatt.
+
+HR-benchmarken använder endast frågan vid sökning, aldrig facit för kompletterande
+uppslag. Nyckelord rapporteras separat och påverkar inte godkännande.
+Det äldre HR-facit är `legacy_unverified` och kräver oberoende juridisk granskning;
+fall utan referensfacit markeras ej utvärderade/ej godkända. Sänk inte gränser för
+att dölja brister efter att facitläckaget tagits bort.
+
+Positiva hårdkodade `certainty.score_pct` har ersatts med null och
+`measurement=not_calibrated`; klienter måste hantera null. Källtyp och tolkningsbehov
+är beskrivningar, inte uppmätt säkerhet. Felstatus kan fortfarande ha score_pct=0.
+MCP ser inte klientens slutliga AI-svar. End-to-end-bedömning, granskade testfall
+för samtliga länder och kalibrerad AI-bedömare återstår. Langfuse är inte installerat.
+Inga produktionsfrågor eller svar skickas till en extern utvärderingstjänst.
+
 ## Säkerhet för MCP och Excel-export
+
 
 Publika MCP-anrop utan nyckel delar en kvot på 60 anrop/minut.
 Angiven API-nyckel måste vara giltig och aktiv för kvoten 300 anrop/minut.

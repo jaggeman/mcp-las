@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.benchmarks.search_quality_data import SEARCH_QUALITY_CASES
 from src.jurisdictions import SMOKE_QUERIES
+from src.benchmarks.quality import matches_reference
 
 
 def parse_sse_json(body: str) -> dict:
@@ -71,16 +72,18 @@ def _assert_fast(response, maximum: float, label: str):
 
 
 def _matches_expected(result: dict, expected: list) -> bool:
-    normalize = lambda value: str(value or "").lower().replace(" ", "")
-    law = normalize(result.get("statute"))
-    chapter = normalize(result.get("chapter"))
-    section = normalize(result.get("section"))
-    return any(
-        normalize(wanted_law) in law
-        and (wanted_chapter is None or normalize(wanted_chapter) == chapter)
-        and normalize(wanted_section) == section
-        for wanted_law, wanted_chapter, wanted_section in expected
-    )
+    return any(matches_reference(result, reference) for reference in expected)
+
+
+def validate_search_result(result: dict, country: str) -> list:
+    structured = result.get("structuredContent")
+    rows = structured.get("result") if isinstance(structured, dict) else None
+    if (result.get("isError") or not isinstance(rows, list) or not rows
+            or any(not isinstance(row, dict) or row.get("jurisdiction") != country
+                   or not row.get("statute") or not row.get("section")
+                   or not str(row.get("content") or "").strip() for row in rows)):
+        raise RuntimeError(f"MCP search returned invalid, empty or wrong-country data for {country}")
+    return rows
 
 
 def smoke_countries(coverage: dict, all_countries: bool) -> list[str]:
@@ -129,8 +132,7 @@ def run(base_url: str, expected_sha: str | None = None, max_response_seconds: fl
             "name": "search_labor_law",
             "arguments": {"query": SMOKE_QUERIES[country], "jurisdiction": country, "limit": 1},
         })
-        if result.get("isError") or not result.get("content"):
-            raise RuntimeError(f"MCP search failed for {country}")
+        validate_search_result(result, country)
 
     if check_search_quality:
         failed = []
@@ -139,7 +141,7 @@ def run(base_url: str, expected_sha: str | None = None, max_response_seconds: fl
                 "name": "search_labor_law",
                 "arguments": {"query": case["question"], "jurisdiction": "SE", "limit": 1},
             })
-            rows = call.get("structuredContent", {}).get("result", [])
+            rows = validate_search_result(call, "SE")
             if not rows or not _matches_expected(rows[0], case["expected"]):
                 failed.append(case["id"])
         if failed:

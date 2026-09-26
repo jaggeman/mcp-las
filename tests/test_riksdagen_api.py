@@ -38,7 +38,8 @@ def test_get_document_details():
     assert res["dok_id"].upper() == "HD03304"
     assert "title" in res
     assert "certainty" in res
-    assert res["certainty"]["score_pct"] == 100
+    assert res["certainty"]["score_pct"] is None
+    assert res["certainty"]["measurement"] == "not_calibrated"
 
 def test_mcp_tools_wrapper():
     # Test tool wrapper functions in src.mcp_tools.tools
