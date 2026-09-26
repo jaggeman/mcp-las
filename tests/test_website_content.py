@@ -72,8 +72,17 @@ def test_mcp_server_instructions_describe_nordic_labor_law():
 
 def test_website_covers_new_countries_and_language_limits():
     content = Path('public/index.html').read_text(encoding='utf-8')
-    for code in ('NO', 'DE', 'ES'):
+    for code in ('NO', 'DE', 'ES', 'NL', 'GB'):
         assert f'data-country="{code}"' in content
     assert 'boe.es' in content
     assert 'Källspråk' in content
     assert 'inte fullständig' in content
+
+
+def test_website_new_country_status_is_current_and_uk_scope_is_explicit():
+    content = Path("public/index.html").read_text(encoding="utf-8")
+
+    assert "Danmark och Finland har källadaptrar men inga indexerade paragrafer" not in content
+    assert "Denmark and Finland have source adapters but no indexed sections" not in content
+    assert "sections 1–145" in content
+    assert "Aktuell mängd och senaste synk visas live" in content
