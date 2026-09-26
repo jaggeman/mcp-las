@@ -82,7 +82,15 @@ class RiksdagenAPIService:
         """
         Söker efter riksdagsdokument, propositioner, utredningar och förarbeten.
         """
-        query_str = (query or "").strip()
+        if not isinstance(query, str) or len(query) > 2000:
+            raise ValueError('query must contain at most 2000 characters')
+        if type(limit) is not int or not 1 <= limit <= 20:
+            raise ValueError('limit must be between 1 and 20')
+        if type(page) is not int or not 1 <= page <= 1000:
+            raise ValueError('page must be between 1 and 1000')
+        if doc_types is not None and (not isinstance(doc_types, (str, list)) or len(str(doc_types)) > 200):
+            raise ValueError('Invalid document types')
+        query_str = query.strip()
         if not query_str:
             return {
                 "query": "",
@@ -215,7 +223,9 @@ class RiksdagenAPIService:
         """
         Hämtar fullständig information, beslutsstatus, förslag och text för ett specifikt riksdagsdokument.
         """
-        clean_id = (dok_id or "").strip().upper()
+        if not isinstance(dok_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', dok_id):
+            raise ValueError('Invalid document ID')
+        clean_id = dok_id.upper()
         if not clean_id:
             return {"error": "Dokument-ID krävs."}
 
@@ -327,7 +337,7 @@ class RiksdagenAPIService:
                 "dok_id": clean_id,
                 "title": f"Dokument {clean_id}",
                 "url_html": f"https://data.riksdagen.se/dokument/{clean_id}.html",
-                "error": str(e),
+                "error": "Document source unavailable",
                 "source": "Riksdagens Öppna Data API (data.riksdagen.se)",
                 "certainty": {
                     "score_pct": 80,

@@ -63,7 +63,7 @@ def test_excel_store_expiration_capacity_and_size(monkeypatch):
         assert len(store) == 2 and 'a' not in store
         with pytest.raises(ValueError):
             store['large'] = {'bytes': b'12345'}
-        monkeypatch.setattr('src.services.download_store.time.monotonic', lambda: float('inf'))
+        monkeypatch.setattr('src.services.download_store.time.perf_counter', lambda: float('inf'))
         assert store.get('b') is None
         assert len(store) == 0
     finally:
@@ -77,7 +77,7 @@ def test_excel_rejects_large_inputs():
 
 def test_download_expiry_returns_404(monkeypatch):
     result = tools.generate_turordningslista_excel()
-    monkeypatch.setattr('src.services.download_store.time.monotonic', lambda: float('inf'))
+    monkeypatch.setattr('src.services.download_store.time.perf_counter', lambda: float('inf'))
     response = asyncio.run(server.download_turordning_excel(SimpleNamespace(
         method='GET', query_params={'id': result['file_id']})))
     assert response.status_code == 404

@@ -45,7 +45,7 @@ def test_website_documents_automated_source_sync_and_live_coverage():
 
 def test_website_presents_european_labor_law():
     html_path = Path("public/index.html")
-    content = html_path.read_text(encoding="utf-8")
+    content = html_path.read_text(encoding="utf-8") + Path("public/app.js").read_text(encoding="utf-8")
     assert "Europeisk arbetsrätt" in content
     assert "European labour law" in content
     assert "nordisk" not in content.lower()

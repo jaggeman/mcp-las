@@ -26,7 +26,7 @@ class DownloadStore(MutableMapping):
         timer.cancel()
 
     def _expire(self):
-        now = time.monotonic()
+        now = time.perf_counter()
         for key, (_, deadline, _) in list(self._items.items()):
             if deadline <= now:
                 self._remove(key)
@@ -47,7 +47,7 @@ class DownloadStore(MutableMapping):
                 self._remove(next(iter(self._items)))
             timer = Timer(self.ttl, self._expire_in_background)
             timer.daemon = True
-            self._items[key] = (dict(value), time.monotonic() + self.ttl, timer)
+            self._items[key] = (dict(value), time.perf_counter() + self.ttl, timer)
             self._bytes += size
             timer.start()
 
