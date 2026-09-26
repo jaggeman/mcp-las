@@ -1,10 +1,33 @@
 import sys
+import hashlib
 import secrets
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.db.firebase_client import db_client
+
+
+def generate_api_key() -> str:
+    """Return a 256-bit bearer secret suitable for one-time display."""
+    return "las_live_" + secrets.token_urlsafe(32)
+
+
+def key_digest(api_key: str) -> str:
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
+
+def build_key_record(api_key: str, name: str, email: str = ""):
+    digest = key_digest(api_key)
+    return digest, {
+        "name": name,
+        "email": email,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "is_active": True,
+        "total_requests": 0,
+        "key_version": 2,
+        "key_digest": digest,
+    }
 
 def list_requests():
     if not db_client.db:
@@ -47,48 +70,31 @@ def approve_request(email_or_id: str):
     company = req_data.get("company", "Klient")
     
     # Skapa API-nyckel
-    random_part = secrets.token_hex(6)
-    safe_comp = company.lower().replace(" ", "_")
-    key_id = f"las_live_{safe_comp}_{random_part}"
-    
-    key_data = {
-        "key": key_id,
-        "name": f"{name} ({company})",
-        "email": email,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "is_active": True,
-        "total_requests": 0
-    }
+    api_key = generate_api_key()
+    key_id, key_data = build_key_record(api_key, f"{name} ({company})", email)
     
     db_client.db.collection("api_keys").document(key_id).set(key_data)
-    req_doc.reference.update({"status": "approved", "approved_at": datetime.now(timezone.utc).isoformat(), "key_issued": key_id})
+    req_doc.reference.update({"status": "approved", "approved_at": datetime.now(timezone.utc).isoformat()})
     
     print("\n" + "="*60)
     print(f"✅ ANSÖKAN GODKÄND FÖR: {name} <{email}>")
     print("="*60)
-    print(f"\nSkapad API-Nyckel: {key_id}")
-    print(f"\n--- KOPIERA OCH MAILA DETTA TILL ANVÄNDAREN ---")
+    print(f"\nSkapad API-Nyckel: {api_key}")
+    print("\n--- VISAS EN GÅNG: KOPIERA OCH ÖVERFÖR SÄKERT TILL ANVÄNDAREN ---")
     print(f"Hej {name},\n")
     print("Din ansökan om tillgång till MCP LAS är godkänd!")
     print("Här är din personliga anslutningskonfiguration för Claude Desktop / Cursor:\n")
-    print("{\n  \"mcpServers\": {\n    \"mcp-las\": {\n      \"url\": \"https://las.novro.se/mcp?key=" + key_id + "\"\n    }\n  }\n}\n")
+    print("{\n  \"mcpServers\": {\n    \"mcp-las\": {\n      \"url\": \"https://las.novro.se/mcp\",\n      \"headers\": {\"X-API-Key\": \"" + api_key + "\"}\n    }\n  }\n}\n")
     print("Mvh,\nFörvaltningen för MCP LAS")
     print("="*60 + "\n")
 
 def create_key(name: str):
-    random_part = secrets.token_hex(6)
-    safe_name = name.lower().replace(" ", "_")
-    key_id = f"las_live_{safe_name}_{random_part}"
-    
-    key_data = {
-        "key": key_id,
-        "name": name,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "is_active": True,
-        "total_requests": 0
-    }
+    api_key = generate_api_key()
+    key_id, key_data = build_key_record(api_key, name)
     db_client.db.collection("api_keys").document(key_id).set(key_data)
-    print(f"\nNy API-nyckel skapad: {key_id}\nLänk: https://las.novro.se/mcp?key={key_id}\n")
+    print(f"\nNy API-nyckel (visas en gång): {api_key}")
+    print("Endpoint: https://las.novro.se/mcp")
+    print("Skicka nyckeln i X-API-Key-headern.\n")
 
 def list_keys():
     docs = list(db_client.db.collection("api_keys").stream())
@@ -96,11 +102,12 @@ def list_keys():
     for d in docs:
         data = d.to_dict()
         status = "AKTIV" if data.get("is_active") else "AVSTÄNGD"
-        print(f" - [{status}] {data.get('name')} | Nyckel: {data.get('key')}")
+        print(f" - [{status}] {data.get('name')} | Fingeravtryck: {d.id[:12]}")
 
 def deactivate_key(key_id: str):
-    db_client.db.collection("api_keys").document(key_id).update({"is_active": False})
-    print(f"Nyckeln {key_id} är nu AVSTÄNGD.")
+    document_id = key_digest(key_id)
+    db_client.db.collection("api_keys").document(document_id).update({"is_active": False})
+    print(f"Nyckeln med fingeravtryck {document_id[:12]} är nu AVSTÄNGD.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

@@ -125,3 +125,32 @@ def test_docker_excludes_environment_secrets():
     assert '**/.env' in patterns
     assert '**/.env.*' in patterns
     assert '**/*credentials*.json' in patterns
+
+
+def test_deploy_uses_a_dedicated_runtime_identity_and_locked_dependencies():
+    workflow = Path('.github/workflows/ci.yml').read_text(encoding='utf-8')
+    dockerfile = Path('Dockerfile').read_text(encoding='utf-8')
+    assert '--service-account=mcp-las-runtime@paygap-prod.iam.gserviceaccount.com' in workflow
+    assert 'pip-audit' in workflow
+    assert '--require-hashes -r requirements.lock' in workflow
+    assert '--require-hashes -r requirements.lock' in dockerfile
+
+
+def test_repository_security_automation_is_enabled_and_actions_are_sha_pinned():
+    workflows = list(Path('.github/workflows').glob('*.yml'))
+    assert Path('.github/dependabot.yml').exists()
+    assert Path('.github/workflows/codeql.yml').exists()
+    for workflow in workflows:
+        for line in workflow.read_text(encoding='utf-8').splitlines():
+            if 'uses:' not in line:
+                continue
+            reference = line.split('uses:', 1)[1].strip().split()[0]
+            assert '@' in reference
+            revision = reference.rsplit('@', 1)[1]
+            assert len(revision) == 40 and all(char in '0123456789abcdef' for char in revision)
+
+
+def test_hosting_declares_browser_security_headers():
+    config = Path('firebase.json').read_text(encoding='utf-8')
+    assert 'Content-Security-Policy' in config
+    assert 'Permissions-Policy' in config

@@ -4,7 +4,7 @@ import time
 import logging
 import inspect
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 project_root = str(Path(__file__).parent.parent)
@@ -16,6 +16,7 @@ from starlette.responses import HTMLResponse, JSONResponse, Response
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware import Middleware
 from src.services.request_limits import RequestSizeLimit
+from src.services.request_context import current_api_key
 from src.services.usage_logging import tracked_tool, tracked_rest
 from fastmcp import FastMCP
 from src.config import settings
@@ -203,7 +204,8 @@ async def handle_key_request(request):
             "company": company,
             "reason": reason,
             "status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": datetime.now(timezone.utc) + timedelta(days=90),
         }
 
         # Spara i databasen
@@ -369,6 +371,8 @@ async def execute_tool_direct_rest(request):
         }, status_code=500, headers={"Access-Control-Allow-Origin": "*"})
 
 def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    if api_key is None:
+        api_key = current_api_key()
     if api_key and (len(api_key) > 512 or not auth_service.validate_key(api_key)):
         return {"error": "Ogiltig eller inaktiv API-nyckel.", "status": "unauthorized"}
     client_id = api_key if api_key else "anon"
@@ -382,18 +386,18 @@ def _check_rate_limit(api_key: Optional[str] = None) -> Optional[Dict[str, Any]]
 
 @mcp.tool()
 @tracked_tool
-def get_legal_coverage(api_key: Optional[str] = None) -> Dict[str, Any]:
+def get_legal_coverage() -> Dict[str, Any]:
     """Visar land, språk, officiell källa och vilka specialområden som stöds."""
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     return _get_legal_coverage()
 
 @mcp.tool()
 @tracked_tool
-def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
+def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisdiction: str = "SE") -> Dict[str, Any]:
     """Slå upp en paragraf i SE, DK, FI, NO, DE, ES, NL eller GB. Spanien och Nederländerna använder artikelnummer."""
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -402,9 +406,9 @@ def lookup_statute(law: str, section: str, chapter: Optional[str] = None, jurisd
 
 @mcp.tool()
 @tracked_tool
-def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 5, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 5) -> List[Dict[str, Any]]:
     """Sök arbetsrätt i SE, DK, FI, NO, DE, ES, NL eller GB. Sök på respektive källspråk."""
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return [rl_err]
     t0 = time.time()
@@ -413,8 +417,8 @@ def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: O
 
 @mcp.tool()
 @tracked_tool
-def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10, jurisdiction: str = "SE", api_key: Optional[str] = None) -> List[Dict[str, Any]]:
-    rl_err = _check_rate_limit(api_key)
+def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10, jurisdiction: str = "SE") -> List[Dict[str, Any]]:
+    rl_err = _check_rate_limit()
     if rl_err:
         return [rl_err]
     t0 = time.time()
@@ -423,8 +427,8 @@ def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Op
 
 @mcp.tool()
 @tracked_tool
-def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
-    rl_err = _check_rate_limit(api_key)
+def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdiction: str = "SE") -> Dict[str, Any]:
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -433,8 +437,8 @@ def get_cba_exception(statute: str, section: str, agreement_name: str, jurisdict
 
 @mcp.tool()
 @tracked_tool
-def compare_statute_vs_cba(topic: str, agreement_name: str, jurisdiction: str = "SE", api_key: Optional[str] = None) -> Dict[str, Any]:
-    rl_err = _check_rate_limit(api_key)
+def compare_statute_vs_cba(topic: str, agreement_name: str, jurisdiction: str = "SE") -> Dict[str, Any]:
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -447,8 +451,7 @@ def calculate_notice_period(
     employment_years: float,
     terminated_by: str = "employer",
     agreement_name: Optional[str] = None,
-    age: Optional[int] = None,
-    api_key: Optional[str] = None
+    age: Optional[int] = None
 ) -> Dict[str, Any]:
     """
     Beräknar uppsägningstid enligt LAS 11 § utifrån sammanlagd anställningstid
@@ -457,7 +460,7 @@ def calculate_notice_period(
     Trappan i 11 § andra stycket gäller endast när arbetsgivaren säger upp.
     Vid arbetstagarens egen uppsägning gäller en månad oavsett anställningstid.
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -475,14 +478,13 @@ def calculate_vacation_pay(
     monthly_salary: float,
     variable_salary: float = 0.0,
     vacation_days: int = 25,
-    agreement_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
-    api_key: Optional[str] = None
+    agreement_name: Optional[str] = "Unionen / Tjänstemannaavtalet"
 ) -> Dict[str, Any]:
     """
     Beräknar semesterlön och semestertillägg enligt svensk lag (Semesterlagen 16 a-b §§)
     och jämför med Unionens och centrala kollektivavtalsregler (0.8% fast lön, 0.5% rörlig lön).
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -500,14 +502,13 @@ def calculate_unpaid_vacation_deduction(
     monthly_salary: float,
     unpaid_days: int = 1,
     is_advance_vacation_debt: bool = False,
-    agreement_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
-    api_key: Optional[str] = None
+    agreement_name: Optional[str] = "Unionen / Tjänstemannaavtalet"
 ) -> Dict[str, Any]:
     """
     Beräknar löneavdrag vid uttag av obetalda semesterdagar eller skuldavräkning för förskottssemester
     enligt Unionens kollektivavtalsregler (4,6 % av månadslönen per dag) samt Semesterlagen (1977:480) 29 a §.
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -525,14 +526,13 @@ def calculate_earned_vacation_days(
     employment_days_in_earning_year: int = 365,
     annual_vacation_right: int = 25,
     non_qualifying_absence_days: int = 0,
-    earning_year_days: int = 365,
-    api_key: Optional[str] = None
+    earning_year_days: int = 365
 ) -> Dict[str, Any]:
     """
     Beräknar antal betalda och obetalda semesterdagar enligt Semesterlagen (1977:480) 7 §
     och Unionens kollektivavtal baserat på anställningstid och frånvaro under intjänandeåret.
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -546,12 +546,12 @@ def calculate_earned_vacation_days(
 
 @mcp.tool()
 @tracked_tool
-def get_employer_certificate_info(api_key: Optional[str] = None) -> Dict[str, Any]:
+def get_employer_certificate_info() -> Dict[str, Any]:
     """
     Ger information om lagkrav och rutiner för Arbetsgivarintyg för a-kassa (47 § ALF)
     samt hänvisning till den officiella digitala tjänsten www.arbetsgivarintyg.nu.
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -560,12 +560,12 @@ def get_employer_certificate_info(api_key: Optional[str] = None) -> Dict[str, An
 
 @mcp.tool()
 @tracked_tool
-def get_rehabilitation_plan_info(api_key: Optional[str] = None) -> Dict[str, Any]:
+def get_rehabilitation_plan_info() -> Dict[str, Any]:
     """
     Ger lagkrav, tidsfrister och direktlänk till Försäkringskassans mall/blankett (FK 7459 PDF)
     för 'Plan för återgång i arbete' enligt 30 kap. 6 § Socialförsäkringsbalken (SFB).
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -574,12 +574,12 @@ def get_rehabilitation_plan_info(api_key: Optional[str] = None) -> Dict[str, Any
 
 @mcp.tool()
 @tracked_tool
-def get_discrimination_act_guide(topic: Optional[str] = None, api_key: Optional[str] = None) -> Dict[str, Any]:
+def get_discrimination_act_guide(topic: Optional[str] = None) -> Dict[str, Any]:
     """
     Vägledning och lagregler från Diskrimineringsombudsmannen (DO) och Diskrimineringslagen (2008:567),
     inklusive de 7 diskrimineringsgrunderna, aktiva åtgärder (lönekartläggning) och repressalieförbud.
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -591,14 +591,13 @@ def get_discrimination_act_guide(topic: Optional[str] = None, api_key: Optional[
 def check_bank_days_and_deadlines(
     date_str: Optional[str] = None,
     check_salary_payout_for_month: Optional[int] = None,
-    year: int = 2026,
-    api_key: Optional[str] = None
+    year: int = 2026
 ) -> Dict[str, Any]:
     """
     Kontrollerar bankdagar och Riksbankens officiella helgdagar (helgdagar-2026),
     beräknar datum för löneutbetalning (närmast föregående bankdag) samt lagstadgade frister enligt lag (1930:173).
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -618,14 +617,13 @@ def calculate_redundancy_turnorder_and_exceptions(
     single_operating_unit_only: bool = False,
     merged_operating_units_in_municipality: bool = False,
     contract_areas_count: int = 1,
-    employees_list: Optional[List[Dict[str, Any]]] = None,
-    api_key: Optional[str] = None
+    employees_list: Optional[List[Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
     Beräknar turordningslista och undantag vid arbetsbrist (undantagsregler 1-4, procentregeln 15%/10%, LAS 22 § vs kollektivavtal)
     samt krav på omplaceringsutredning (7 § LAS) och anställningstid (3 § LAS).
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -648,15 +646,14 @@ def generate_turordningslista_excel(
     redundancy_count: Optional[int] = 0,
     cba_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
     single_operating_unit: bool = False,
-    as_of_date: Optional[str] = None,
-    api_key: Optional[str] = None
+    as_of_date: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Skapar och genererar en nedladdningsbar Excel-fil (.xlsx) med formaterad turordningslista vid arbetsbrist.
     Inkluderar ID-kolumn (EMP-001...), beräkning av anställningsdagar via Excel-formler (=DATEDIF),
     sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § och kollektivavtal).
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -683,8 +680,7 @@ def get_hr_document_template(
     offered_position_title: Optional[str] = "[Erbjuden ny befattning]",
     offered_position_terms: Optional[str] = "[Anställningsvillkor, sysselsättningsgrad, lön, placering]",
     response_deadline: Optional[str] = "[Datum för svar, t.ex. ÅÅÅÅ-MM-DD]",
-    date_str: Optional[str] = None,
-    api_key: Optional[str] = None
+    date_str: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Hämtar och anpassar officiella svenska HR-dokumentmallar enligt SKR / LAS-standard:
@@ -694,7 +690,7 @@ def get_hr_document_template(
     4. 'underrattelse_personliga_skal' (Underrättelse till arbetstagaren enligt 30 § LAS)
     5. 'uppsagningsbesked_arbetsbrist' (Uppsägningsbesked vid arbetsbrist med företrädesrätt 8 § & 25 § LAS)
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -725,14 +721,13 @@ def calculate_travel_deduction_and_mileage(
     public_transit_cost_yearly: Optional[float] = 0.0,
     tax_year: int = 2026,
     has_public_transit: bool = True,
-    marginal_tax_pct: float = 32.0,
-    api_key: Optional[str] = None
+    marginal_tax_pct: float = 32.0
 ) -> Dict[str, Any]:
     """
     Beräknar Skatteverkets reseavdrag för resor till och från arbetet (egen bil 25 kr/mil, förmånsbil el 9.50 kr/mil, bensin/diesel 12 kr/mil, moped, cykel 350 kr/år, kollektivtrafik).
     Hanterar självrisknivåer (15 000 kr för 2026, 11 000 kr för 2025), tidsvinstkrav (minst 2 timmar) och avståndskrav (minst 5 km / 2 km).
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -753,15 +748,14 @@ def calculate_travel_deduction_and_mileage(
 @tracked_tool
 def get_base_amounts_and_indices(
     year: Optional[int] = 2026,
-    compare_all_years: bool = False,
-    api_key: Optional[str] = None
+    compare_all_years: bool = False
 ) -> Dict[str, Any]:
     """
     Hämtar officiella prisbasbelopp (PBB), förhöjt prisbasbelopp, inkomstbasbelopp (IBB) och inkomstindex
     från SCB och Regeringen/Pensionsmyndigheten för 2026, 2025, 2024 m.fl.
     Inkluderar automatisk årlig hämtning/kontrollfunktion för 1 januari.
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -777,14 +771,13 @@ def search_parliament_and_legislation(
     query: str,
     doc_type: Optional[str] = None,
     limit: int = 5,
-    page: int = 1,
-    api_key: Optional[str] = None
+    page: int = 1
 ) -> Dict[str, Any]:
     """
     Söker live i Riksdagens Öppna Data API (data.riksdagen.se) efter propositioner (prop),
     Statens offentliga utredningar (sou), utskottsbetänkanden (bet), departementsserien (ds) och lagförslag.
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()
@@ -799,14 +792,13 @@ def search_parliament_and_legislation(
 @mcp.tool()
 @tracked_tool
 def get_parliament_document_details(
-    dok_id: str,
-    api_key: Optional[str] = None
+    dok_id: str
 ) -> Dict[str, Any]:
     """
     Hämtar detaljerad status, förslag, beslutsprocess, bilagor och textutdrag för ett specifikt
     dokument från Riksdagen (t.ex. 'HD03304', 'sfs-1982-80', 'prop-202122-176').
     """
-    rl_err = _check_rate_limit(api_key)
+    rl_err = _check_rate_limit()
     if rl_err:
         return rl_err
     t0 = time.time()

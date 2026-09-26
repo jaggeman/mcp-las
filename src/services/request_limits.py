@@ -2,6 +2,7 @@
 import asyncio
 import json
 from starlette.responses import JSONResponse
+from src.services.request_context import reset_api_key, set_api_key
 
 
 class RequestSizeLimit:
@@ -10,6 +11,10 @@ class RequestSizeLimit:
         self.max_bytes = max_bytes
 
     async def __call__(self, scope, receive, send):
+        headers = dict(scope.get('headers', [])) if scope.get('type') == 'http' else {}
+        raw_key = headers.get(b'x-api-key')
+        api_key = raw_key.decode('utf-8', 'replace') if raw_key else None
+        token = set_api_key(api_key)
         async def observed_send(message):
             if message['type'] == 'http.response.start' and message['status'] >= 400:
                 path = scope.get('path', '')
@@ -20,7 +25,10 @@ class RequestSizeLimit:
                 except Exception:
                     pass
             await send(message)
-        return await self._dispatch(scope, receive, observed_send)
+        try:
+            return await self._dispatch(scope, receive, observed_send)
+        finally:
+            reset_api_key(token)
 
     async def _dispatch(self, scope, receive, send):
         if scope['type'] != 'http':

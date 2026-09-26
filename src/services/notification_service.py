@@ -105,10 +105,7 @@ class NotificationService:
 """
 
         if not self.smtp_user or not self.smtp_pass:
-            logger.warning(
-                f"[NOTIFICATION] SMTP credentials (SMTP_USER / SMTP_PASS) not configured. "
-                f"Notification for {email} logged locally. Target recipient: {self.recipient}"
-            )
+            logger.warning("[NOTIFICATION] SMTP credentials are not configured; notification skipped")
             return False
 
         try:
@@ -135,7 +132,7 @@ class NotificationService:
                     server.login(self.smtp_user, self.smtp_pass)
                     server.sendmail(self.smtp_user, [self.recipient], msg.as_string())
 
-            logger.info(f"[NOTIFICATION] E-mail sent to {self.recipient} for request by {email}")
+            logger.info("[NOTIFICATION] Key-request e-mail sent")
             return True
         except Exception as e:
             logger.error(f"[NOTIFICATION] Failed to send email: {e}")

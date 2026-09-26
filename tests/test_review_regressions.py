@@ -84,7 +84,7 @@ def test_cache_expires_and_retired_rows_are_hidden(monkeypatch):
 def test_excel_mcp_returns_result(monkeypatch):
     import src.server as server
     monkeypatch.setattr(server,'_generate_turordningslista_excel',lambda **kw:{'download_url':'test.xlsx'})
-    monkeypatch.setattr(server,'_check_rate_limit',lambda _:None)
+    monkeypatch.setattr(server,'_check_rate_limit',lambda *args:None)
     monkeypatch.setattr(server.auth_service,'log_access',lambda *a:None)
     fn=getattr(server.generate_turordningslista_excel,'fn',server.generate_turordningslista_excel)
     assert fn()=={'download_url':'test.xlsx'}

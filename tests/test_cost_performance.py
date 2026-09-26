@@ -10,9 +10,9 @@ from src.services import usage_logging
 def test_valid_key_cache_avoids_repeated_firestore_reads(monkeypatch):
     service = AuthService()
     reads=[]
-    doc=SimpleNamespace(exists=True,to_dict=lambda:{'is_active':True,'name':'test'})
-    db=SimpleNamespace(collection=lambda _:SimpleNamespace(document=lambda _:
-        SimpleNamespace(get=lambda:(reads.append(1) or doc))))
+    db=SimpleNamespace(collection=lambda _:SimpleNamespace(document=lambda digest:
+        SimpleNamespace(get=lambda:(reads.append(1) or SimpleNamespace(
+            exists=True, to_dict=lambda:{'is_active':True,'name':'test','key_digest':digest})))))
     monkeypatch.setattr('src.db.auth_service.db_client.db',db)
     assert service.validate_key('valid-key')['name']=='test'
     assert service.validate_key('valid-key')['name']=='test'
@@ -22,9 +22,9 @@ def test_valid_key_cache_avoids_repeated_firestore_reads(monkeypatch):
 
 def test_key_cache_expires_and_is_bounded(monkeypatch):
     service=AuthService(); clock=[100.0]; reads=[]
-    doc=SimpleNamespace(exists=True,to_dict=lambda:{'is_active':True})
-    db=SimpleNamespace(collection=lambda _:SimpleNamespace(document=lambda _:
-        SimpleNamespace(get=lambda:(reads.append(1) or doc))))
+    db=SimpleNamespace(collection=lambda _:SimpleNamespace(document=lambda digest:
+        SimpleNamespace(get=lambda:(reads.append(1) or SimpleNamespace(
+            exists=True, to_dict=lambda:{'is_active':True,'key_digest':digest})))))
     monkeypatch.setattr('src.db.auth_service.db_client.db',db)
     monkeypatch.setattr('src.db.auth_service.time.monotonic',lambda:clock[0])
     for n in range(1100): service.validate_key(f'key-{n}')

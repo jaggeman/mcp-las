@@ -8,6 +8,10 @@ Ogiltiga nycklar nekas; Firestore-nycklar kräver booleskt `is_active=true`.
 Giltiga nyckeluppslag cachelagras processlokalt i högst 30 sekunder och 1000 poster;
 en återkallad nyckel kan därför fortsätta fungera i högst 30 sekunder på en varm instans.
 REST accepterar nycklar endast i `X-API-Key`, inte URL eller JSON-body.
+MCP använder samma `X-API-Key` på transportnivå; nyckeln exponeras inte som
+verktygsargument för AI-modellen. Nya nycklar har 256 bitars slump, visas en
+gång och lagras endast under sin SHA-256-digest i Firestore. Rånycklar får
+inte lagras, listas, loggas eller användas som dokument-ID.
 Kvoter delas mellan instanser med Firestore-transaktioner i `mcp_rate_limits`.
 Vid fel i kvotlagringen nekas anrop. Utan databas används en trådsäker lokal
 reserv med högst 10000 klientposter. HTTP har dessutom en gemensam kvot på
@@ -43,7 +47,8 @@ Högst 10000 poster sammanställs; `truncated=true` betyder ofullständig rappor
 Äldre loggformat exkluderas. Antal anrop är inte antal unika användare eller AI-tokenkostnad.
 Cloud Logs Explorer-filter: `resource.type="cloud_run_revision" resource.labels.service_name="mcp-las" jsonPayload.event="las_tool_usage"`.
 Firestore TTL på `expires_at` för `access_logs` och `mcp_rate_limits` har
-aktiverats i paygap-prod 2026-09-19 och verifierats ACTIVE.
+aktiverats i paygap-prod 2026-09-19 och verifierats ACTIVE. `key_requests`
+har 90 dagars retention och TTL aktiverades 2026-09-26.
 TTL är asynkron och påverkar inte kvoternas giltighetskontroll.
 Äldre loggar utan utgångstid kräver separat granskning/gallring; de raderas inte av koden.
 CI använder Workload Identity Federation, inte `GCP_SA_KEY`.
@@ -76,6 +81,12 @@ vid flera instanser kan en annan instans sakna filen. Base64-exporten finns kvar
 Export accepterar högst 1000 anställda, 32 fält per anställd och 2000 tecken per fält.
 Användarfält sparas som text, medan serverns DATEDIF-formler behålls.
 Docker-kontexten exkluderar miljöfiler och vanliga nyckel-/credential-filer.
+Cloud Run använder det dedikerade kontot `mcp-las-runtime` med endast
+`roles/datastore.user`; standardkontot med Editor används inte av tjänsten.
+Produktionsberoenden installeras från hash-låsta `requirements.lock`.
+GitHub Actions är SHA-pinnade och Dependabot, pip-audit samt CodeQL är aktiverade.
+Den äldre lokala service-account-nyckeln för `mcp-las-rules` återkallades och
+raderades 2026-09-26.
 Cloud Run begränsas av CI till 5 instanser och concurrency 40. Uvicorns accesslogg är
 avstängd eftersom Cloud Run redan skapar en requestlogg för varje HTTP-anrop.
 

@@ -101,10 +101,14 @@ class AuthService:
 
         if db_client.db:
             try:
-                doc = db_client.db.collection("api_keys").document(api_key).get()
+                doc = db_client.db.collection("api_keys").document(cache_key).get()
                 if doc.exists:
                     data = doc.to_dict()
-                    if data.get("is_active") is True:
+                    stored_digest = data.get("key_digest")
+                    digest_matches = isinstance(stored_digest, str) and hmac.compare_digest(
+                        cache_key.encode("ascii"), stored_digest.encode("ascii")
+                    )
+                    if digest_matches and data.get("is_active") is True:
                         with self._lock:
                             self._key_cache[cache_key] = (now + self._key_cache_ttl, dict(data))
                             self._key_cache.move_to_end(cache_key)

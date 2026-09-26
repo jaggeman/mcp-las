@@ -11,14 +11,19 @@ from src.services import usage_logging as usage
 def events(monkeypatch):
     rows = []
     monkeypatch.setattr(usage, 'emit', lambda **event: rows.append(event))
-    monkeypatch.setattr(server, '_check_rate_limit', lambda _: None)
+    monkeypatch.setattr(server, '_check_rate_limit', lambda *args: None)
     return rows
 
 
 def test_mcp_logs_once_with_country_without_arguments(events, monkeypatch):
+    from src.services.request_context import reset_api_key, set_api_key
     monkeypatch.setattr(server, '_lookup_statute', lambda **kw: {'content': 'PRIVATE'})
     fn = getattr(server.lookup_statute, 'fn', server.lookup_statute)
-    fn(law='PRIVATE', section='1', jurisdiction='DK', api_key='SECRET')
+    token = set_api_key('SECRET')
+    try:
+        fn(law='PRIVATE', section='1', jurisdiction='DK')
+    finally:
+        reset_api_key(token)
     assert len(events) == 1
     assert events[0]['jurisdiction'] == 'DK'
     assert events[0]['transport'] == 'mcp'
@@ -27,10 +32,10 @@ def test_mcp_logs_once_with_country_without_arguments(events, monkeypatch):
 
 def test_mcp_denials_and_exceptions(events, monkeypatch):
     fn = getattr(server.get_legal_coverage, 'fn', server.get_legal_coverage)
-    monkeypatch.setattr(server, '_check_rate_limit', lambda _: {'status': 'unauthorized', 'error': 'SECRET'})
+    monkeypatch.setattr(server, '_check_rate_limit', lambda: {'status': 'unauthorized', 'error': 'SECRET'})
     fn()
     assert events[-1]['status'] == 'unauthorized'
-    monkeypatch.setattr(server, '_check_rate_limit', lambda _: None)
+    monkeypatch.setattr(server, '_check_rate_limit', lambda *args: None)
     def fail(): raise RuntimeError('SECRET')
     monkeypatch.setattr(server, '_get_legal_coverage', fail)
     with pytest.raises(RuntimeError): fn()
