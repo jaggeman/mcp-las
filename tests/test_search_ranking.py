@@ -60,3 +60,83 @@ def test_search_labor_law_supports_jurisdiction_filter(monkeypatch):
 
     assert results
     assert all(result["jurisdiction"] == "DK" for result in results)
+
+
+def test_payment_deadline_ranks_semesterlagen_30_first(monkeypatch):
+    monkeypatch.setattr(db_client, "_local_sections", {
+        "semester-28": {
+            "id": "semester-28", "statute_short": "Semesterlagen",
+            "statute_id": "1977:480", "section_number": "28", "chapter": None,
+            "section_title": "Semesterersättning",
+            "content": "När anställningen upphör ska intjänad semesterlön bli semesterersättning.",
+            "keywords": ["semesterersättning", "anställningen upphör"],
+            "embedding": [], "jurisdiction": "SE",
+        },
+        "semester-30": {
+            "id": "semester-30", "statute_short": "Semesterlagen",
+            "statute_id": "1977:480", "section_number": "30", "chapter": None,
+            "section_title": "Utbetalning av semesterersättning",
+            "content": "Semesterersättning ska betalas ut senast en månad efter anställningens upphörande.",
+            "keywords": ["semesterersättning", "betalas ut", "en månad"],
+            "embedding": [], "jurisdiction": "SE",
+        },
+    })
+    monkeypatch.setattr(db_client, "_cached_statute_sections", None)
+    db_client._cached_statute_sections_by_country = {}
+
+    result = search_labor_law(
+        "När ska semesterersättning betalas efter att anställningen upphört?",
+        jurisdiction="SE", limit=1,
+    )
+
+    assert result[0]["statute"] == "Semesterlagen"
+    assert result[0]["section"] == "30"
+
+
+@pytest.mark.parametrize("country,query,target", [
+    ("DK", "Hvor meget ferie har en lønmodtager ret til?", ("Ferieloven", "2", "4")),
+    ("FI", "Kuinka pitkä koeaika voi olla?", ("Työsopimuslaki", "1", "4")),
+    ("FI", "Kuinka monta vuosilomapäivää työntekijä ansaitsee?", ("Vuosilomalaki", "2", "5")),
+    ("NO", "Når kan en arbeidstaker sies opp på grunn av virksomhetens forhold?",
+     ("Arbeidsmiljøloven", "15", "15-7")),
+    ("NO", "Hvor mange virkedager ferie har en arbeidstaker rett til?", ("Ferieloven", None, "5")),
+    ("DE", "Wann ist eine Kündigung sozial ungerechtfertigt?", ("KSchG", None, "1")),
+    ("DE", "Wie hoch ist der gesetzliche Mindesturlaub?", ("BUrlG", None, "3")),
+    ("ES", "¿Cuál es la duración máxima de la jornada ordinaria?",
+     ("Estatuto de los Trabajadores", None, "34")),
+    ("ES", "¿Cuántos días de vacaciones anuales corresponden?",
+     ("Estatuto de los Trabajadores", None, "38")),
+    ("NL", "Wanneer kan een werkgever een arbeidsovereenkomst opzeggen?",
+     ("Burgerlijk Wetboek Boek 7 — arbeidsovereenkomst", None, "669")),
+    ("NL", "Hoeveel wettelijke vakantiedagen heeft een werknemer?",
+     ("Burgerlijk Wetboek Boek 7 — arbeidsovereenkomst", None, "634")),
+    ("GB", "What is the right not to be unfairly dismissed?",
+     ("Employment Rights Act 1996", "94", "94")),
+    ("GB", "What is the basic annual leave entitlement under the Working Time Regulations?",
+     ("Working Time Regulations 1998", "13", "13")),
+])
+def test_country_specific_core_question_ranks_governing_rule_first(
+    monkeypatch, country, query, target,
+):
+    statute, chapter, section = target
+    distractor = {
+        "id": f"{country}-distractor", "statute_short": "Distractor Act",
+        "statute_id": "distractor", "section_number": "999", "chapter": None,
+        "section_title": query, "content": f"{query} {query} {query}",
+        "keywords": query.lower().split(), "embedding": [], "jurisdiction": country,
+    }
+    governing = {
+        "id": f"{country}-target", "statute_short": statute,
+        "statute_id": "BWBR0005290" if country == "NL" else statute,
+        "section_number": section, "chapter": chapter,
+        "section_title": "Governing provision", "content": "The applicable core rule.",
+        "keywords": [], "embedding": [], "jurisdiction": country,
+    }
+    monkeypatch.setattr(db_client, "_local_sections", {
+        distractor["id"]: distractor, governing["id"]: governing,
+    })
+    db_client._cached_statute_sections_by_country = {}
+
+    result = search_labor_law(query, jurisdiction=country, limit=1)
+
+    assert (result[0]["statute"], result[0]["chapter"], result[0]["section"]) == target

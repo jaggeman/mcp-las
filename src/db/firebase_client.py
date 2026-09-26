@@ -502,6 +502,9 @@ class FirebaseLaborLawDB:
         if filters is not None and not isinstance(filters, dict):
             raise ValueError('Filters must be an object')
         q_lower = query.lower()
+        requested_country = str(
+            (filters or {}).get('jurisdiction') or (filters or {}).get('country') or 'SE'
+        ).upper()
         raw_tokens = re.findall(r'[^\W_]+', q_lower)
         from src.embeddings.embedder import SWEDISH_STOPWORDS
         meaningful_q = [w for w in raw_tokens if w not in SWEDISH_STOPWORDS and len(w) >= 2]
@@ -574,7 +577,43 @@ class FirebaseLaborLawDB:
         # user's explicit legal concept as a citation hint, while keeping the
         # ordinary hybrid ranking for broader questions.
         intent_target = None
-        if 'uppsägn' in q_lower and 'avsked' in q_lower:
+        if (requested_country == 'DK' and 'ferie' in q_lower
+                and any(term in q_lower for term in ('hvor meget', 'ret til'))):
+            intent_target = ('Ferieloven', '2', '4')
+        elif (requested_country == 'DK' and 'funktionær' in q_lower
+              and 'opsigelsesvarsel' in q_lower):
+            intent_target = ('Funktionærloven', None, '2')
+        elif requested_country == 'FI' and 'koeaika' in q_lower:
+            intent_target = ('Työsopimuslaki', '1', '4')
+        elif (requested_country == 'FI' and 'vuosiloma' in q_lower
+              and any(term in q_lower for term in ('kuinka monta', 'ansait'))):
+            intent_target = ('Vuosilomalaki', '2', '5')
+        elif (requested_country == 'NO' and 'virksomhetens forhold' in q_lower
+              and any(term in q_lower for term in ('sies opp', 'oppsig'))):
+            intent_target = ('Arbeidsmiljøloven', '15', '15-7')
+        elif (requested_country == 'NO' and 'ferie' in q_lower and 'virkedager' in q_lower):
+            intent_target = ('Ferieloven', None, '5')
+        elif (requested_country == 'DE' and 'sozial ungerechtfertigt' in q_lower
+              and ('kündigung' in q_lower or 'kuendigung' in q_lower)):
+            intent_target = ('KSchG', None, '1')
+        elif requested_country == 'DE' and 'mindesturlaub' in q_lower:
+            intent_target = ('BUrlG', None, '3')
+        elif requested_country == 'ES' and 'jornada ordinaria' in q_lower:
+            intent_target = ('Estatuto de los Trabajadores', None, '34')
+        elif requested_country == 'ES' and 'vacaciones anuales' in q_lower:
+            intent_target = ('Estatuto de los Trabajadores', None, '38')
+        elif (requested_country == 'NL' and 'arbeidsovereenkomst' in q_lower
+              and 'opzeggen' in q_lower):
+            intent_target = ('BWBR0005290', None, '669')
+        elif (requested_country == 'NL' and 'vakantiedagen' in q_lower
+              and 'werknemer' in q_lower):
+            intent_target = ('BWBR0005290', None, '634')
+        elif requested_country == 'GB' and 'unfairly dismissed' in q_lower:
+            intent_target = ('Employment Rights Act 1996', '94', '94')
+        elif (requested_country == 'GB' and 'annual leave' in q_lower
+              and 'working time regulations' in q_lower):
+            intent_target = ('Working Time Regulations 1998', '13', '13')
+        elif 'uppsägn' in q_lower and 'avsked' in q_lower:
             intent_target = ('LAS', None, '18')
         elif 'diskrimineringsgrund' in q_lower:
             intent_target = ('Diskrimineringslagen', '1', '5')
@@ -597,6 +636,9 @@ class FirebaseLaborLawDB:
         elif ('semesterdag' in q_lower and not any(w in q_lower for w in ('spara', 'sparad'))
               and any(phrase in q_lower for phrase in ('hur många', 'rätt till', 'per år', 'varje år'))):
             intent_target = ('Semesterlagen', None, '4')
+        elif ('semesterersättning' in q_lower
+              and any(word in q_lower for word in ('när', 'betala', 'betalas', 'utbetalning', 'utbetalas'))):
+            intent_target = ('Semesterlagen', None, '30')
 
         expanded_query_terms = list(meaningful_q)
         for w in meaningful_q:
@@ -605,7 +647,6 @@ class FirebaseLaborLawDB:
 
         q_emb = Embedder.get_embedding(query + " " + " ".join(expanded_query_terms))
 
-        requested_country = (filters or {}).get('jurisdiction') or (filters or {}).get('country')
         items, doc_stem_freqs, prepared, embedding_matrix = self._search_index(
             self._get_statute_items(requested_country), filters or {})
         if not items:
@@ -697,9 +738,14 @@ class FirebaseLaborLawDB:
                 intent_statute, intent_chapter, intent_section = intent_target
                 chapter_matches = ((intent_chapter is None and sec_chap is None)
                                    or str(intent_chapter) == sec_chap)
-                if (intent_statute.lower() == statute_short.lower()
+                statute_matches = (intent_statute.lower() == statute_short.lower()
+                                   or intent_statute.lower() == str(s.get("statute_id", "")).lower())
+                if (statute_matches
                         and chapter_matches and intent_section == sec_num):
-                    boost += 35.0
+                    # These narrowly matched, reviewed concepts identify one
+                    # governing provision.  Keep the citation hint stronger
+                    # than keyword-heavy neighbouring or index provisions.
+                    boost += 120.0
 
             total_score = (0.4 * lex_score) + (0.6 * (sem_score * 30.0)) + boost
 

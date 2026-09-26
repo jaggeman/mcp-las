@@ -203,6 +203,7 @@ def test_scheduled_monitor_runs_the_full_public_smoke_test():
     assert "production_smoke.py" in workflow
     assert "--max-response-seconds" in workflow
     assert "--all-countries" in workflow
+    assert "--check-search-quality" in workflow
 
 
 def test_smoke_defaults_to_one_country_and_supports_full_catalogue(monkeypatch):

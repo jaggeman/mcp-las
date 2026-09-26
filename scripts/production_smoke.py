@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.benchmarks.search_quality_data import SEARCH_QUALITY_CASES
 from src.jurisdictions import SMOKE_QUERIES
-from src.benchmarks.quality import matches_reference
+from src.benchmarks.quality import is_official_source_url, matches_reference
 
 
 def parse_sse_json(body: str) -> dict:
@@ -81,9 +81,25 @@ def validate_search_result(result: dict, country: str) -> list:
     if (result.get("isError") or not isinstance(rows, list) or not rows
             or any(not isinstance(row, dict) or row.get("jurisdiction") != country
                    or not row.get("statute") or not row.get("section")
-                   or not str(row.get("content") or "").strip() for row in rows)):
+                   or not str(row.get("content") or "").strip()
+                   or not is_official_source_url(row.get("source_url"), country)
+                   for row in rows)):
         raise RuntimeError(f"MCP search returned invalid, empty or wrong-country data for {country}")
     return rows
+
+
+def run_search_quality(client: MCPClient, cases=SEARCH_QUALITY_CASES) -> list[str]:
+    failed = []
+    for case in cases:
+        country = case["jurisdiction"]
+        call = client.request("tools/call", {
+            "name": "search_labor_law",
+            "arguments": {"query": case["question"], "jurisdiction": country, "limit": 1},
+        })
+        rows = validate_search_result(call, country)
+        if not rows or not _matches_expected(rows[0], case["expected"]):
+            failed.append(case["id"])
+    return failed
 
 
 def smoke_countries(coverage: dict, all_countries: bool) -> list[str]:
@@ -135,15 +151,7 @@ def run(base_url: str, expected_sha: str | None = None, max_response_seconds: fl
         validate_search_result(result, country)
 
     if check_search_quality:
-        failed = []
-        for case in SEARCH_QUALITY_CASES:
-            call = client.request("tools/call", {
-                "name": "search_labor_law",
-                "arguments": {"query": case["question"], "jurisdiction": "SE", "limit": 1},
-            })
-            rows = validate_search_result(call, "SE")
-            if not rows or not _matches_expected(rows[0], case["expected"]):
-                failed.append(case["id"])
+        failed = run_search_quality(client)
         if failed:
             raise RuntimeError(f"search quality regression in {len(failed)} cases: {', '.join(failed)}")
 

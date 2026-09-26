@@ -1,5 +1,7 @@
 from src.chunking.finnish_law_chunker import FinnishLawChunker
 from src.scrapers.finlex_fetcher import FinlexFetcher
+import html
+import json
 
 
 SAMPLE_AKOMA_NTOSO = """
@@ -75,3 +77,59 @@ def test_finlex_fetcher_builds_paginated_list_request(monkeypatch):
     assert calls[0][1]["params"]["startYear"] == 2024
     assert calls[0][1]["params"]["endYear"] == 2024
     assert "User-Agent" in calls[0][1]["headers"]
+
+
+def _flight_script(*lines):
+    payload = "\n".join(lines) + "\n"
+    return f"<script>self.__next_f.push({html.escape(json.dumps([1, payload]))})</script>"
+
+
+def test_finlex_current_page_parser_reads_consolidated_finnish_sections():
+    page = "".join([
+        _flight_script(
+            '1:["$","h3",null,{"id":"chp_1","children":[["$","span",null,{"className":"highlightable","children":"1 luku"}],["$","span",null,{"className":"highlightable","children":"Yleiset säännökset"}]]}]',
+            '2:["$","h4",null,{"id":"chp_1__sec_4","children":[["$","span",null,{"className":"highlightable","children":"4 §"}],["$","span",null,{"className":"highlightable","children":"Koeaika"}]]}]',
+            '3:["$","section",null,{"className":"subsection","children":["$L10",false]}]',
+            '4:["$","h3",null,{"id":"chp_2","children":[["$","span",null,{"className":"highlightable","children":"2 luku"}],["$","span",null,{"className":"highlightable","children":"Työnantajan velvollisuudet"}]]}]',
+            '5:["$","h4",null,{"id":"chp_2__sec_1","children":[["$","span",null,{"className":"highlightable","children":"1 §"}],["$","span",null,{"className":"highlightable","children":"Yleisvelvoite"}]]}]',
+            '6:["$","section",null,{"className":"subsection","children":["$L11",false]}]',
+        ),
+        _flight_script(
+            '10:["$","p",null,{"children":[["$","span",null,{"className":"highlightable","children":"Koeaika saa olla enintään kuusi kuukautta."}]]}]',
+            '11:["$","p",null,{"children":[["$","span",null,{"className":"highlightable","children":"Työnantajan on edistettävä suhteitaan työntekijöihin."}]]}]',
+            # The page also contains a Swedish document view. It must not be mixed in.
+            '12:["$","h3",null,{"id":"chp_1","children":[["$","span",null,{"className":"highlightable","children":"1 kap."}]]}]',
+        ),
+    ])
+
+    sections = FinlexFetcher.parse_current_page(
+        statute_id="55/2001", statute_short="Työsopimuslaki", html=page,
+    )
+
+    assert [(row.chapter, row.section_number) for row in sections] == [("1", "4"), ("2", "1")]
+    assert sections[0].section_title == "Koeaika"
+    assert "kuusi kuukautta" in sections[0].content
+    assert "kap." not in " ".join(row.content for row in sections)
+
+
+def test_finnish_catalog_uses_current_consolidated_finlex_pages():
+    documents = FinlexFetcher.catalog_documents()
+
+    assert documents
+    assert all(document["url"].startswith("https://data.finlex.fi/fi/lainsaadanto/")
+               for document in documents)
+    assert all(document["format"] == "finlex-current-html" for document in documents)
+
+
+def test_finlex_current_page_parser_supports_laws_without_chapters():
+    page = _flight_script(
+        '1:["$","h3",null,{"id":"sec_1","children":[["$","span",null,{"className":"highlightable","children":"1 §"}],["$","span",null,{"className":"highlightable","children":"Lain tarkoitus"}]]}]',
+        '2:["$","section",null,{"className":"subsection","children":["$L10",false]}]',
+        '10:["$","p",null,{"children":[["$","span",null,{"className":"highlightable","children":"Tämä on ajantasainen säännös."}]]}]',
+    )
+
+    sections = FinlexFetcher.parse_current_page("609/1986", "Tasa-arvolaki", page)
+
+    assert len(sections) == 1
+    assert sections[0].chapter is None
+    assert sections[0].section_number == "1"

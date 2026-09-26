@@ -1,12 +1,15 @@
 """Offline tests of the evaluator, not evidence of legal correctness."""
 import pytest
 
-from src.benchmarks.quality import evaluate_retrieval, parse_reference
+from src.benchmarks.quality import evaluate_retrieval, is_official_source_url, parse_reference
 
 
 def row(country="SE", section="7", **extra):
-    return dict(jurisdiction=country, statute="LAS", section=section,
-                chapter=None, content="synthetic text", **extra)
+    value = dict(jurisdiction=country, statute="LAS", section=section,
+                 chapter=None, content="synthetic text",
+                 source_url="https://data.riksdagen.se/dokument/sfs-1982-80.html")
+    value.update(extra)
+    return value
 
 
 @pytest.mark.parametrize("country", ["SE", "DK", "FI", "NO", "DE", "ES", "NL", "GB"])
@@ -68,6 +71,8 @@ def test_smoke_rejects_empty_wrong_country_and_error():
     from scripts.production_smoke import validate_search_result
     for result in ({}, {"structuredContent": {"result": []}},
                    {"structuredContent": {"result": [row("DK")]}},
+                   {"structuredContent": {"result": [row(source_url=None)]}},
+                   {"structuredContent": {"result": [row(source_url="https://example.test/fake")]}} ,
                    {"isError": True, "structuredContent": {"result": [row()]}}):
         with pytest.raises(RuntimeError):
             validate_search_result(result, "SE")
@@ -98,3 +103,58 @@ def test_empty_gold_is_not_a_perfect_score():
 def test_smoke_law_names_are_not_substring_matches():
     from scripts.production_smoke import _matches_expected
     assert not _matches_expected(dict(row(), statute="NOT-LAS"), [("LAS", None, "7")])
+
+
+@pytest.mark.parametrize("country,url", [
+    ("SE", "https://data.riksdagen.se/dokument/sfs-1982-80.html"),
+    ("DK", "https://www.retsinformation.dk/eli/lta/2024/1"),
+    ("FI", "https://www.finlex.fi/fi/laki/ajantasa/2001/20010055"),
+    ("NO", "https://lovdata.no/dokument/NL/lov/2005-06-17-62"),
+    ("DE", "https://www.gesetze-im-internet.de/kschg/"),
+    ("ES", "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430"),
+    ("NL", "https://wetten.overheid.nl/BWBR0005290"),
+    ("GB", "https://www.legislation.gov.uk/ukpga/1996/18"),
+])
+def test_only_official_source_hosts_are_accepted(country, url):
+    assert is_official_source_url(url, country)
+    assert not is_official_source_url("https://example.test/copied-law", country)
+    assert not is_official_source_url(f"http://{url.split('/')[2]}/insecure", country)
+
+
+def test_search_quality_cases_cover_every_supported_country_with_reviewed_foreign_gold():
+    from src.benchmarks.search_quality_data import SEARCH_QUALITY_CASES
+
+    assert {case["jurisdiction"] for case in SEARCH_QUALITY_CASES} == {
+        "SE", "DK", "FI", "NO", "DE", "ES", "NL", "GB",
+    }
+    assert len({case["id"] for case in SEARCH_QUALITY_CASES}) == len(SEARCH_QUALITY_CASES)
+    for case in SEARCH_QUALITY_CASES:
+        assert case["expected"]
+        if case["jurisdiction"] != "SE":
+            assert case["reviewed_at"] == "2026-09-26"
+            assert is_official_source_url(case["official_reference"], case["jurisdiction"])
+
+
+def test_quality_smoke_uses_each_cases_jurisdiction():
+    from scripts.production_smoke import run_search_quality
+
+    calls = []
+
+    class Client:
+        def request(self, _method, params):
+            calls.append(params["arguments"]["jurisdiction"])
+            country = params["arguments"]["jurisdiction"]
+            return {"structuredContent": {"result": [{
+                "jurisdiction": country, "statute": "Law", "section": "1",
+                "content": "text", "source_url": {
+                    "DK": "https://www.retsinformation.dk/eli/lta/2024/1",
+                    "FI": "https://data.finlex.fi/fi/lainsaadanto/2001/55",
+                }[country],
+            }]}}
+
+    cases = [
+        {"id": "dk", "question": "q", "jurisdiction": "DK", "expected": [("Law", None, "1")]},
+        {"id": "fi", "question": "q", "jurisdiction": "FI", "expected": [("Law", None, "1")]},
+    ]
+    assert run_search_quality(Client(), cases) == []
+    assert calls == ["DK", "FI"]

@@ -26,4 +26,4 @@ jobs:
       - name: Installera HTTP-klient
         run: pip install "requests>=2.33,<3"
       - name: Kontrollera produktion
-        run: python scripts/production_smoke.py --base-url https://las.novro.se --max-response-seconds 10 --all-countries
+        run: python scripts/production_smoke.py --base-url https://las.novro.se --max-response-seconds 10 --all-countries --check-search-quality
