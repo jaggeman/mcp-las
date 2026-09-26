@@ -97,7 +97,7 @@ def test_cache_checks_version_without_reloading_unchanged_corpus(monkeypatch):
     assert db_client._get_statute_items()[0]['id']=='b'
     clock[0]+=301
     db_client._get_statute_items()
-    assert len(reads)==3
+    assert len(reads)==2
 
 
 def test_country_filter_applied_before_tokenization(monkeypatch):

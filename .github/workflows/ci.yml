@@ -77,14 +77,41 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+
+      - name: Avgör vad som behöver driftsättas
+        id: changes
+        shell: bash
+        run: |
+          BASE="${{ github.event.before }}"
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            git fetch --no-tags --depth=1 origin "$BASE"
+          fi
+          FILES=$(git diff --name-only "$BASE" "${{ github.sha }}")
+          BACKEND=false
+          HOSTING=false
+          while IFS= read -r FILE; do
+            case "$FILE" in
+              src/*|scripts/*|Dockerfile|requirements.txt|requirements.lock|check_coverage.py)
+                BACKEND=true ;;
+              public/*|firebase.json|.firebaserc)
+                HOSTING=true ;;
+            esac
+          done <<< "$FILES"
+          echo "backend_changed=$BACKEND" >> "$GITHUB_OUTPUT"
+          echo "hosting_changed=$HOSTING" >> "$GITHUB_OUTPUT"
+          echo "Backend: $BACKEND, Hosting: $HOSTING"
 
       - name: Authenticate to Google Cloud
+        if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.hosting_changed == 'true'
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
+        if: steps.changes.outputs.backend_changed == 'true'
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
 
       # --update-env-vars, inte --set-env-vars: den senare ersätter HELA
@@ -96,6 +123,7 @@ jobs:
       # avgöra saken, och två parallella driftsättningar av samma tjänst gick
       # inte att skilja åt utifrån alls.
       - name: Deploy to Cloud Run
+        if: steps.changes.outputs.backend_changed == 'true'
         run: |
           gcloud run deploy mcp-las \
             --source . \
@@ -111,6 +139,7 @@ jobs:
       # trafiken redan låg på en äldre revision, så verifiera mot tjänsten
       # själv att det är det här commitet som svarar.
       - name: Verifiera att den nya koden svarar
+        if: steps.changes.outputs.backend_changed == 'true'
         run: |
           URL=$(gcloud run services describe mcp-las \
             --project=paygap-prod --region=europe-west3 \
@@ -129,11 +158,13 @@ jobs:
           exit 1
 
       - name: Set up Node.js
+        if: steps.changes.outputs.hosting_changed == 'true'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "24"
 
       - name: Uppdatera synkjobbets image
+        if: steps.changes.outputs.backend_changed == 'true'
         run: |
           REVISION=$(gcloud run services describe mcp-las --project=paygap-prod --region=europe-west3 --format='value(status.latestReadyRevisionName)')
           IMAGE=$(gcloud run revisions describe "$REVISION" --project=paygap-prod --region=europe-west3 --format='value(status.imageDigest)')
@@ -143,6 +174,7 @@ jobs:
       # anvandare har den redan i sin claude_desktop_config.json. Den far ALDRIG
       # sta och falla for att ett tillaggsalias inte ar klart.
       - name: Deploy to Firebase Hosting (mcp-novro)
+        if: steps.changes.outputs.hosting_changed == 'true'
         run: |
           npx firebase-tools deploy --only hosting:mcp-novro --project=paygap-prod
 
@@ -154,16 +186,24 @@ jobs:
       # borjar deploya sig sjalv automatiskt sa fort siten finns, utan att nagon
       # behover komma ihag att ta bort flaggan, och paverkar aldrig mcp-novro.
       - name: Deploy to Firebase Hosting (mcp-endpoint)
+        if: steps.changes.outputs.hosting_changed == 'true'
         continue-on-error: true
         run: |
           npx firebase-tools deploy --only hosting:mcp-endpoint --project=paygap-prod
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.hosting_changed == 'true'
         with:
           python-version: "3.11"
 
       - name: Installera smoketestets HTTP-klient
+        if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.hosting_changed == 'true'
         run: pip install "requests>=2.33,<3"
 
-      - name: Produktions-smoketest via publik domän
+      - name: Produktions-smoketest efter backenddeploy
+        if: steps.changes.outputs.backend_changed == 'true'
         run: python scripts/production_smoke.py --base-url https://las.novro.se --expected-sha ${{ github.sha }} --check-search-quality
+
+      - name: Produktions-smoketest efter Hosting-deploy
+        if: steps.changes.outputs.backend_changed != 'true' && steps.changes.outputs.hosting_changed == 'true'
+        run: python scripts/production_smoke.py --base-url https://las.novro.se

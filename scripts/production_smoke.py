@@ -83,8 +83,16 @@ def _matches_expected(result: dict, expected: list) -> bool:
     )
 
 
+def smoke_countries(coverage: dict, all_countries: bool) -> list[str]:
+    """Keep deploy checks cheap; the scheduled full check covers every country."""
+    available = [country for country, status in coverage.items() if status.get("statutes")]
+    if all_countries:
+        return available
+    return ["SE"] if "SE" in available else available[:1]
+
+
 def run(base_url: str, expected_sha: str | None = None, max_response_seconds: float = 10,
-        check_search_quality: bool = False):
+        check_search_quality: bool = False, all_countries: bool = False):
     base_url = base_url.rstrip("/")
     health = requests.get(f"{base_url}/health", timeout=20)
     health.raise_for_status()
@@ -116,9 +124,7 @@ def run(base_url: str, expected_sha: str | None = None, max_response_seconds: fl
     if not {"get_legal_coverage", "lookup_statute", "search_labor_law"} <= names:
         raise RuntimeError("required MCP tools are missing")
 
-    for country, status in coverage.items():
-        if not status.get("statutes"):
-            continue
+    for country in smoke_countries(coverage, all_countries):
         result = client.request("tools/call", {
             "name": "search_labor_law",
             "arguments": {"query": SMOKE_QUERIES[country], "jurisdiction": country, "limit": 1},
@@ -149,6 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("--expected-sha")
     parser.add_argument("--max-response-seconds", type=float, default=10)
     parser.add_argument("--check-search-quality", action="store_true")
+    parser.add_argument("--all-countries", action="store_true")
     args = parser.parse_args()
     print(json.dumps(run(args.base_url, args.expected_sha, args.max_response_seconds,
-                         args.check_search_quality), ensure_ascii=False, indent=2))
+                         args.check_search_quality, args.all_countries), ensure_ascii=False, indent=2))

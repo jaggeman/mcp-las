@@ -387,3 +387,21 @@ Projektet innehåller dedikerade instruktionsfiler anpassade för olika AI-assis
 
 
 
+## Prestanda och kostnad
+
+Firestore-versionen för lagkorpusen kontrolleras högst en gång per 60 sekunder.
+En oförändrad, befintlig versionsmarkör återanvänder landets cache utan periodisk
+full omläsning. Äldre data utan versionsmarkör läses om efter högst 300 sekunder.
+Högst tre landskorpusar och sexton sökindex hålls per process. Embeddings
+komprimeras till float32 och semantiska poäng beräknas vektoriserat per sökning.
+Riksdagens dokumentcache är en trådsäker LRU-cache med högst 256 poster.
+
+Produktions-smoketest efter backenddeploy söker som standard bara i Sverige;
+den dagliga övervakningen 04:17 UTC använder `--all-countries`. CI avgör från
+ändrade sökvägar om Cloud Run respektive Firebase Hosting behöver driftsättas,
+så webb-, test- och dokumentationsändringar bygger inte backend i onödan.
+Firebase Hosting skickar endast `/mcp`, `/mcp/**`, `/sse`, `/sse/**`,
+`/api`, `/api/**` och `/health` till Cloud Run; okända skanner-URL:er
+stannar i Hosting. Artifact Registry-policyn i
+`.github/artifact-cleanup-policy.json` tar bort `mcp-las`-images äldre än
+14 dagar men behåller alltid minst de tio senaste versionerna.

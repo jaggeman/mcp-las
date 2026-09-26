@@ -6,6 +6,7 @@ firebase.json.local
 *.json
 !package*.json
 !firebase.json
+!.github/artifact-cleanup-policy.json
 *.sqlite
 .pytest_cache/
 .coverage

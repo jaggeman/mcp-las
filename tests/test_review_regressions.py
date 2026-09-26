@@ -78,7 +78,7 @@ def test_cache_expires_and_retired_rows_are_hidden(monkeypatch):
     monkeypatch.setattr(db_client,'_statute_cache_at',0,raising=False)
     monkeypatch.setattr('src.db.firebase_client.time.monotonic',lambda:clock[0])
     assert len(db_client._get_statute_items())==1
-    rows.extend([{'id':'b'},{'id':'old','active':False}]);clock[0]+=61
+    rows.extend([{'id':'b'},{'id':'old','active':False}]);clock[0]+=301
     assert len(db_client._get_statute_items())==2
 
 def test_excel_mcp_returns_result(monkeypatch):

@@ -8,6 +8,7 @@ import uuid
 from collections import Counter, OrderedDict
 from threading import RLock
 from typing import List, Dict, Any, Optional
+import numpy as np
 from src.config import settings
 from src.embeddings.embedder import Embedder
 from src.db.ad_cases_data import AD_PRECEDENTS_DATA
@@ -94,7 +95,8 @@ class FirebaseLaborLawDB:
         section.setdefault("jurisdiction", "SE")
         section.setdefault("language", "sv")
         doc_id = section.get("id")
-        if not section.get("embedding"):
+        embedding = section.get("embedding")
+        if embedding is None or np.asarray(embedding).size == 0:
             section["embedding"] = Embedder.get_embedding(section.get("raw_text", ""))
         self._local_sections[doc_id] = section
         with self._statute_cache_lock:
@@ -108,7 +110,10 @@ class FirebaseLaborLawDB:
             # processen. Returnera det, sa anroparen inte rapporterar succe.
             return False
         try:
-            self.db.collection("statute_sections").document(doc_id).set(section)
+            stored_section = dict(section)
+            if isinstance(stored_section.get("embedding"), np.ndarray):
+                stored_section["embedding"] = stored_section["embedding"].tolist()
+            self.db.collection("statute_sections").document(doc_id).set(stored_section)
             return True
         except Exception as e:
             # Tidigare "pass". En svald skrivning gjorde att ingestionen
@@ -229,9 +234,16 @@ class FirebaseLaborLawDB:
                 version = self._statute_version_marker()
                 versions = getattr(self, '_country_cache_version', {})
                 full_at = getattr(self, '_country_full_read_at', {})
-                if (jurisdiction in cache and version is not None
-                        and version == versions.get(jurisdiction)
-                        and now - full_at.get(jurisdiction, 0) < 300):
+                same_published_version = (
+                    jurisdiction in cache and version is not None
+                    and version == versions.get(jurisdiction)
+                )
+                legacy_cache_is_fresh = (
+                    jurisdiction in cache and version is None
+                    and versions.get(jurisdiction) is None
+                    and now - full_at.get(jurisdiction, 0) < 300
+                )
+                if same_published_version or legacy_cache_is_fresh:
                     cache_at[jurisdiction] = now
                     cache.move_to_end(jurisdiction)
                     self._cached_statute_sections_by_country = cache
@@ -250,6 +262,7 @@ class FirebaseLaborLawDB:
             items = [row for row in self._local_sections.values()
                      if str(row.get('jurisdiction', 'SE')).upper() == jurisdiction]
         items = [row for row in items if row.get('active', True)]
+        self._compact_embeddings(items)
         cache[jurisdiction] = items
         cache.move_to_end(jurisdiction)
         cache_at[jurisdiction] = now
@@ -273,9 +286,16 @@ class FirebaseLaborLawDB:
         if self.db:
             try:
                 version = self._statute_version_marker()
-                if (version is not None and self._cached_statute_sections is not None
-                        and version == getattr(self, '_statute_version', None)
-                        and time.monotonic() - getattr(self, '_statute_full_read_at', 0) < 300):
+                same_published_version = (
+                    version is not None and self._cached_statute_sections is not None
+                    and version == getattr(self, '_statute_version', None)
+                )
+                legacy_cache_is_fresh = (
+                    version is None and self._cached_statute_sections is not None
+                    and getattr(self, '_statute_version', None) is None
+                    and time.monotonic() - getattr(self, '_statute_full_read_at', 0) < 300
+                )
+                if same_published_version or legacy_cache_is_fresh:
                     self._statute_cache_at = time.monotonic()
                     return self._cached_statute_sections
                 docs = self.db.collection("statute_sections").stream()
@@ -287,6 +307,7 @@ class FirebaseLaborLawDB:
         else:
             items = list(self._local_sections.values())
         items = [row for row in items if row.get('active', True)]
+        self._compact_embeddings(items)
         self._cached_statute_sections = items
         self._statute_cache_at = time.monotonic()
         return items
@@ -409,6 +430,38 @@ class FirebaseLaborLawDB:
         return tuple(Counter(values) for values in (tokens, stems, title,
             [self._stem_sv(w) for w in title], keywords, tokens[:25], stems[:25]))
 
+    @staticmethod
+    def _compact_embeddings(rows):
+        """Store cached vectors as float32 instead of Python float objects."""
+        for row in rows:
+            embedding = row.get('embedding')
+            if embedding is not None and not isinstance(embedding, np.ndarray):
+                try:
+                    row['embedding'] = np.asarray(embedding, dtype=np.float32)
+                except (TypeError, ValueError):
+                    row['embedding'] = np.empty(0, dtype=np.float32)
+
+    @staticmethod
+    def _embedding_matrix(rows):
+        """Build one normalized, aligned matrix for vectorized cosine scores."""
+        dimensions = Counter(
+            int(embedding.size)
+            for row in rows
+            if isinstance((embedding := row.get('embedding')), np.ndarray) and embedding.size
+        )
+        if not dimensions:
+            return np.empty((len(rows), 0), dtype=np.float32)
+        dimension = dimensions.most_common(1)[0][0]
+        matrix = np.zeros((len(rows), dimension), dtype=np.float32)
+        for index, row in enumerate(rows):
+            vector = row.get('embedding')
+            if not isinstance(vector, np.ndarray) or vector.size != dimension:
+                continue
+            norm = np.linalg.norm(vector)
+            if norm:
+                matrix[index] = vector / norm
+        return matrix
+
     def _search_index(self, snapshot, filters):
         country = str(filters.get('jurisdiction') or filters.get('country') or '').upper()
         language = str(filters.get('language') or '').lower()
@@ -431,14 +484,15 @@ class FirebaseLaborLawDB:
                     counters = prepared[id(s)]
                     frequencies.update(set(counters[1]) | set(counters[3]) |
                         {self._stem_sv(w) for w in counters[4]})
-                indexes[key] = snapshot, rows, frequencies, prepared
+                embeddings = self._embedding_matrix(rows)
+                indexes[key] = snapshot, rows, frequencies, prepared, embeddings
                 indexes.move_to_end(key)
                 while len(indexes) > 16:
                     indexes.popitem(last=False)
             else:
                 indexes.move_to_end(key)
-            _, rows, frequencies, prepared = indexes[key]
-            return rows, frequencies, prepared
+            _, rows, frequencies, prepared, embeddings = indexes[key]
+            return rows, frequencies, prepared, embeddings
 
     def search_statute_sections(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 5) -> List[Dict[str, Any]]:
         if not isinstance(query, str) or not query.strip() or len(query) > 2000:
@@ -552,14 +606,21 @@ class FirebaseLaborLawDB:
         q_emb = Embedder.get_embedding(query + " " + " ".join(expanded_query_terms))
 
         requested_country = (filters or {}).get('jurisdiction') or (filters or {}).get('country')
-        items, doc_stem_freqs, prepared = self._search_index(
+        items, doc_stem_freqs, prepared, embedding_matrix = self._search_index(
             self._get_statute_items(requested_country), filters or {})
         if not items:
             return []
         N = len(items)
 
+        semantic_scores = np.zeros(N, dtype=np.float32)
+        query_vector = np.asarray(q_emb, dtype=np.float32)
+        if embedding_matrix.shape == (N, query_vector.size) and query_vector.size:
+            query_norm = np.linalg.norm(query_vector)
+            if query_norm:
+                semantic_scores = embedding_matrix @ (query_vector / query_norm)
+
         scored_sections = []
-        for s in items:
+        for row_index, s in enumerate(items):
             if filters:
                 requested_jurisdiction = filters.get("jurisdiction") or filters.get("country")
                 requested_language = filters.get("language")
@@ -609,9 +670,7 @@ class FirebaseLaborLawDB:
                 elif phrase in content.lower():
                     lex_score += 6.0
 
-            sem_score = 0.0
-            if s.get("embedding"):
-                sem_score = Embedder.cosine_similarity(q_emb, s["embedding"])
+            sem_score = float(semantic_scores[row_index])
 
             # Exception & citation de-weighting
             if '69 år' in content.lower() and '69' not in q_lower:

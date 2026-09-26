@@ -1,5 +1,7 @@
 import re
 import time
+from collections import OrderedDict
+from threading import RLock
 from typing import Optional, Dict, Any, List, Union
 import httpx
 from bs4 import BeautifulSoup
@@ -27,24 +29,28 @@ class RiksdagenAPIService:
         "yttr": "Utskottsyttrande"
     }
 
-    def __init__(self, cache_ttl_seconds: int = 86400):
+    def __init__(self, cache_ttl_seconds: int = 86400, cache_max_entries: int = 256):
         self.cache_ttl_seconds = cache_ttl_seconds
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self.cache_max_entries = max(1, cache_max_entries)
+        self._cache: OrderedDict[str, Dict[str, Any]] = OrderedDict()
+        self._cache_lock = RLock()
 
     def _get_from_cache(self, key: str) -> Optional[Any]:
-        if key in self._cache:
-            entry = self._cache[key]
-            if time.time() - entry["timestamp"] < self.cache_ttl_seconds:
-                return entry["data"]
-            else:
+        with self._cache_lock:
+            entry = self._cache.get(key)
+            if entry is not None:
+                if time.time() - entry["timestamp"] < self.cache_ttl_seconds:
+                    self._cache.move_to_end(key)
+                    return entry["data"]
                 del self._cache[key]
         return None
 
     def _set_cache(self, key: str, data: Any):
-        self._cache[key] = {
-            "data": data,
-            "timestamp": time.time()
-        }
+        with self._cache_lock:
+            self._cache[key] = {"data": data, "timestamp": time.time()}
+            self._cache.move_to_end(key)
+            while len(self._cache) > self.cache_max_entries:
+                self._cache.popitem(last=False)
 
     @staticmethod
     def _clean_html_text(raw_text: Optional[str]) -> str:

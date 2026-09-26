@@ -200,3 +200,12 @@ def test_scheduled_monitor_runs_the_full_public_smoke_test():
     assert "schedule:" in workflow
     assert "production_smoke.py" in workflow
     assert "--max-response-seconds" in workflow
+    assert "--all-countries" in workflow
+
+
+def test_smoke_defaults_to_one_country_and_supports_full_catalogue(monkeypatch):
+    from scripts import production_smoke
+
+    coverage = {"SE": {"statutes": True}, "DK": {"statutes": True}}
+    assert production_smoke.smoke_countries(coverage, False) == ["SE"]
+    assert production_smoke.smoke_countries(coverage, True) == ["SE", "DK"]

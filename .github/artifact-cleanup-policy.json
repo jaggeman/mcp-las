@@ -1,0 +1,19 @@
+[
+  {
+    "name": "delete-mcp-las-old-images",
+    "action": {"type": "Delete"},
+    "condition": {
+      "tagState": "any",
+      "packageNamePrefixes": ["mcp-las"],
+      "olderThan": "14d"
+    }
+  },
+  {
+    "name": "keep-mcp-las-recent-images",
+    "action": {"type": "Keep"},
+    "mostRecentVersions": {
+      "packageNamePrefixes": ["mcp-las"],
+      "keepCount": 10
+    }
+  }
+]
