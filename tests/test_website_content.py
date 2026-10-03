@@ -1,12 +1,13 @@
 from pathlib import Path
 
-def test_website_contains_60_ad_cases_and_no_legacy_30_ad():
+def test_website_does_not_claim_unverified_ad_cases():
     html_path = Path("public/index.html")
     assert html_path.exists(), "public/index.html must exist"
     content = html_path.read_text(encoding="utf-8")
     
-    # Verify 60 AD cases are referenced
-    assert "60 AD-Domar" in content or "60 AD-prejudikat" in content
+    assert "60 AD-Domar" not in content
+    assert "60 AD-prejudikat" not in content
+    assert "officiella referat" in content
     assert "30 AD-Domar" not in content, "Legacy '30 AD-Domar' still found in index.html"
     assert "30 AD-prejudikat" not in content, "Legacy '30 AD-prejudikat' still found in index.html"
     assert "30 Labour Court precedents" not in content, "Legacy '30 Labour Court precedents' still found in index.html"

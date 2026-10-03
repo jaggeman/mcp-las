@@ -59,7 +59,7 @@ def test_benchmark_never_queries_the_answer(monkeypatch):
     monkeypatch.setattr(benchmark, "search_labor_law", search)
     monkeypatch.setattr(benchmark, "search_case_law", search)
     case = dict(id="synthetic", category="test", question="neutral question",
-                expected_statutes=["LAS 7 §"], expected_ad_cases=["AD 2023 nr 45"],
+                expected_statutes=["LAS 7 §"], expected_ad_cases=["AD 9999 nr 1"],
                 expected_keywords=["neutral"])
     result = benchmark.evaluate_single_benchmark(case)
     assert calls == ["neutral question", "neutral question"]
@@ -93,6 +93,11 @@ def test_all_legacy_references_have_supported_syntax():
     for case in HR_EXAM_BENCHMARKS:
         for reference in case.get("expected_statutes", []):
             assert parse_reference(reference)
+
+
+def test_legacy_hr_dataset_contains_no_unverified_ad_gold():
+    from src.benchmarks.hr_exam_data import HR_EXAM_BENCHMARKS
+    assert all("expected_ad_cases" not in case for case in HR_EXAM_BENCHMARKS)
 
 
 def test_empty_gold_is_not_a_perfect_score():

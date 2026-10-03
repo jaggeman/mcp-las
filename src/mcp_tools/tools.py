@@ -206,7 +206,8 @@ def search_labor_law(query: str, filters: Optional[Dict[str, Any]] = None, limit
 
 def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 5, jurisdiction: str = "SE") -> List[Dict[str, Any]]:
     """
-    Searches Arbetsdomstolen (AD) case law precedents. Returns matching cases, citations, and legal certainty score.
+    Searches verified official case summaries published by Arbetsdomstolen (AD).
+    Every result includes its official source URL; unverified records are excluded.
     """
     if jurisdiction.upper() != "SE":
         return [{"error": "search_case_law stöder för närvarande endast jurisdiction=SE (Arbetsdomstolen).", "status": "unsupported_jurisdiction", "jurisdiction": jurisdiction.upper()}]

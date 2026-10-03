@@ -30,6 +30,46 @@ MCP ser inte klientens slutliga AI-svar. End-to-end-bedömning, granskade testfa
 för samtliga länder och kalibrerad AI-bedömare återstår. Langfuse är inte installerat.
 Inga produktionsfrågor eller svar skickas till en extern utvärderingstjänst.
 
+Den valfria Strands Decider-PoC:n i `src/benchmarks/decider_quality.py` körs
+endast offline/shadow mot en separat lokal System One-server. Den ingår inte i
+produktionscontainern eller MCP-anropsvägen. `scripts/decider_quality_report.py`
+mäter land-/verktygsrouting samt om syntetiska svarsutkast håller sig till givna
+källutdrag. Facit skickas aldrig till modellen och rapporten innehåller inte
+frågor, källtext eller utkast. Standardklienten tillåter bara loopback; fjärrserver
+kräver ett explicit `--allow-remote`. Resultatet är beslutsklassificering, inte
+juridisk korrekthet, och får inte skrivas till `certainty.score_pct`.
+Första lokala CPU-baslinjen 2026-10-03 med v19 gav 46/60 beslut (76,7 %),
+21/24 för svarskvalitet (87,5 %) och 25/36 för routing (69,4 %), med cirka
+3,55 sekunders medellatens per fall. Grounding blev 8/8 men inget beslut nådde
+confidence 0,90. PoC:n får därför inte blockera eller godkänna produktionssvar.
+Kör en separat `strands-decider==0.1.0`-server lokalt och därefter
+`.venv\Scripts\python.exe -m scripts.decider_quality_report --base-url http://127.0.0.1:8765`.
+
+JSONL-shadowtestet i `scripts/decider_answer_report.py` läser redan anonymiserade
+svarsutkast via den strikta loadern `src/benchmarks/decider_answer_jsonl.py`.
+Loadern anonymiserar inte innehåll; okända fält nekas och `human_reviewed` kräver
+granskar-ID samt ISO-datum. Det incheckade datasetet har 32 syntetiska, ej juridiskt
+granskade fall: fyra svarstyper per land. Baslinjen 2026-10-03 efter skärpt
+satsvis grounding gav 92/96 klassificeringar (95,8 %), 32/32 på den sammansatta
+shadow-regeln, noll falska godkännanden/avslag och cirka 3,20 sekunder per fall på CPU.
+Inget beslut nådde fortfarande confidence 0,90, så `automated_action` är `observe`.
+Resultatet bevisar inte juridisk riktighet eller produktionsberedskap.
+Kör `.venv\Scripts\python.exe -m scripts.decider_answer_report --input tests\data\decider_answer_cases.jsonl`.
+
+## Verifierad praxis från Arbetsdomstolen
+
+Den tidigare lokala katalogen med 60 manuellt skrivna AD-poster är kasserad och
+får aldrig användas som rättskälla. `search_case_law` returnerar endast aktiva
+poster med `verification_status=official_verified`, källnamnet Arbetsdomstolen
+och en HTTPS-länk under `arbetsdomstolen.se/sv/meddelade-domar/`. Saknas något
+av detta utesluts posten även om den ligger kvar i Firestore. Synken
+`scripts/ingest_ad_cases.py` hämtar enbart domstolens publicerade officiella
+referat från årsarkiven 2003 och framåt. Den skapar inte egna parter, domskäl,
+domslut eller lagrum. Icke refererade avgöranden indexeras inte. Veckosynken kör
+AD-importen efter svenska lagar och skriver bara nya eller ändrade referat.
+Rättsfallscachen uppdateras senast efter fem minuter. Webbplatsen får inte ange
+ett fast antal AD-domar utan ska beskriva dem som officiella referat.
+
 ## Säkerhet för MCP och Excel-export
 
 
