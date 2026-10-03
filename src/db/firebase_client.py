@@ -829,6 +829,9 @@ class FirebaseLaborLawDB:
         for p in items:
             if not self._is_verified_precedent(p):
                 continue
+            if (exact_case_number
+                    and str(p.get("case_number") or "").casefold() != exact_case_number):
+                continue
             # Flexible year filter
             if year_from and p.get("year") and int(p["year"]) < int(year_from):
                 continue
