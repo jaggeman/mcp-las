@@ -73,7 +73,7 @@ def test_save_precedent_rejects_unverified_data_before_local_cache():
     assert database._local_precedents == {}
 
 
-def test_exact_ad_number_is_ranked_first(monkeypatch):
+def test_exact_ad_number_returns_only_that_case(monkeypatch):
     other = dict(
         OFFICIAL_CASE,
         id="AD_2022_nr_34",
@@ -87,4 +87,11 @@ def test_exact_ad_number_is_ranked_first(monkeypatch):
 
     rows = database.search_precedents("AD 2022 nr 12", limit=2)
 
-    assert [row["case_number"] for row in rows] == ["AD 2022 nr 12", "AD 2022 nr 34"]
+    assert [row["case_number"] for row in rows] == ["AD 2022 nr 12"]
+
+
+def test_unknown_exact_ad_number_never_returns_a_different_case(monkeypatch):
+    database = _database_with([OFFICIAL_CASE])
+    monkeypatch.setattr("src.db.firebase_client.Embedder.get_embedding", lambda _text: [1.0, 0.0])
+
+    assert database.search_precedents("AD 2023 nr 45") == []
