@@ -1,7 +1,7 @@
 """Kurerade kollektivavtalsregler.
 
 Bor i src/ och inte i ingestionsskriptet sa att firebase_client kan sa
-_local_rules med dem vid start - samma monster som ad_cases_data.py ger
+_local_rules med dem vid start; kollektivavtalsreglerna använder lokal fallback.
 _local_precedents. Utan det ar fallbacken i get_cba_exception och
 compare_statute_vs_cba dod: den kan bara ge traff om ingestionen redan
 kort i samma process.

@@ -428,6 +428,7 @@ def search_labor_law(query: str, jurisdiction: Optional[str] = None, language: O
 @mcp.tool()
 @tracked_tool
 def search_case_law(query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10, jurisdiction: str = "SE") -> List[Dict[str, Any]]:
+    """Sök endast verifierade officiella referat från Arbetsdomstolen."""
     rl_err = _check_rate_limit()
     if rl_err:
         return [rl_err]

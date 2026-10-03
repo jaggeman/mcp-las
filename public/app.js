@@ -59,8 +59,8 @@
         src_card1_desc: "Fulltext-indexerade lagar med paragrafindelat innehåll: LAS (1982:80), MBL (1976:580), Semesterlagen (1977:480), Arbetstidslagen m.fl.",
         src_card2_title: "17 Kollektivavtal",
         src_card2_desc: "Kurerade avtalsregler för Teknikavtalet, Almega IT, Detaljhandeln, SKR AB, Statliga Villkorsavtal m.fl. som hanterar semidispositivitet.",
-        src_card3_title: "Arbetsdomstolen (60 AD-Domar)",
-        src_card3_desc: "60 vägledande domar och prejudikat: sakliga skäl (nya LAS 2022), personliga skäl, arbetsbrist, hyvling 7 b §, treundantaget 22 §, lojalitetsplikt, 29/29-principen m.fl.",
+        src_card3_title: "Arbetsdomstolen (officiella referat)",
+        src_card3_desc: "Sökbara rättsfall hämtas från Arbetsdomstolens officiella publicering. Poster utan verifierad källänk visas inte.",
         src_card4_title: "Sveriges Riksbank",
         src_card4_desc: "Officiell kalender för bankdagar och helgdagar 2026 för beräkning av löneutbetalningar och lagstadgade frister (Lag 1930:173).",
         src_card5_title: "Försäkringskassan & SGI",
@@ -178,8 +178,8 @@
         src_card1_desc: "Full-text indexed statutes partitioned by section: Employment Protection Act (LAS 1982:80), Co-Determination Act (MBL 1976:580), Annual Leave Act (1977:480), etc.",
         src_card2_title: "17 Collective Agreements",
         src_card2_desc: "Curated CBA rules for Teknikavtalet, Almega IT, Retail, Municipalities (SKR), State agreements handling semi-dispositive deviations.",
-        src_card3_title: "Labour Court (60 AD Precedents)",
-        src_card3_desc: "60 authoritative rulings and precedents on objective grounds, personal misconduct, redundancy, 29/29-principle, redeployment, and turnorder.",
+        src_card3_title: "Labour Court (official case summaries)",
+        src_card3_desc: "Searchable cases come from the Swedish Labour Court's official publication. Records without a verified source link are excluded.",
         src_card4_title: "Sveriges Riksbank",
         src_card4_desc: "Official calendar for Swedish bank days and public holidays 2026 for salary payout dates and statutory deadlines (Act 1930:173).",
         src_card5_title: "Försäkringskassan & SGI",
@@ -281,8 +281,8 @@
         categories: ["lag"],
         title: { sv: "Domstolspraxis & Prejudikat", en: "Labour Court Case Law" },
         desc: {
-          sv: "Söker bland 60 vägledande domar från Arbetsdomstolen (AD) vid tvister, sakliga skäl, personliga skäl, 29/29-principen eller arbetsbrist.",
-          en: "Searches among 60 authoritative Labour Court (AD) precedents regarding objective grounds, personal misconduct, 29/29 principle, or redundancy."
+          sv: "Söker i verifierade officiella referat från Arbetsdomstolen (AD). Poster utan officiell källänk utesluts.",
+          en: "Searches verified official case summaries from the Swedish Labour Court. Records without an official source link are excluded."
         },
         prompt: {
           sv: "Finns det några AD-domar om uppsägning p.g.a. personliga skäl och samarbetssvårigheter?",

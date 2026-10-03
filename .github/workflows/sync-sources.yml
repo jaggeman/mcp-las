@@ -56,6 +56,12 @@ jobs:
           EMBEDDING_PROVIDER: mock
         run: python scripts/sync_sources.py --swedish
 
+      - name: Synka verifierade AD-referat
+        env:
+          FIREBASE_PROJECT_ID: paygap-prod
+          EMBEDDING_PROVIDER: mock
+        run: python scripts/ingest_ad_cases.py
+
       - name: Synka lagtext i Frankfurt
         if: ${{ !cancelled() }}
         run: gcloud run jobs execute mcp-las-source-sync --project=paygap-prod --region=europe-west3 --wait

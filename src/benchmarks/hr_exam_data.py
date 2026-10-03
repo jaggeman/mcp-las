@@ -1,7 +1,8 @@
 """
-Äldre HR-scenarier med förväntade referenser för sökdiagnostik.
+Äldre HR-scenarier med förväntade lagreferenser för sökdiagnostik.
 Ursprung och juridisk granskning är inte dokumenterade. Facit måste granskas
 oberoende innan resultaten används som mått på juridisk svarskvalitet.
+Tidigare AD-facit har tagits bort efter att målnumren visat sig vara felkopplade.
 """
 
 from typing import List, Dict, Any
@@ -13,7 +14,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Uppsägning & Sakliga Skäl",
         "question": "Vad krävs för att en uppsägning av personliga skäl ska vara giltig enligt reformerade LAS (sakliga skäl) och vilken utredning måste arbetsgivaren göra?",
         "expected_statutes": ["LAS 7 §", "LAS 7 a §"],
-        "expected_ad_cases": ["AD 2023 nr 45", "AD 2022 nr 34"],
         "expected_keywords": ["sakliga skäl", "omplacering", "varning"]
     },
     {
@@ -21,7 +21,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Uppsägning & Sakliga Skäl",
         "question": "En anställd har förberett konkurrerande verksamhet och kontaktat kunder under anställningstiden. Föreligger grund för omedelbart avskedande eller uppsägning?",
         "expected_statutes": ["LAS 18 §", "LAS 7 §"],
-        "expected_ad_cases": ["AD 2022 nr 12", "AD 2003 nr 24"],
         "expected_keywords": ["avskedande", "grovt", "lojalitetsplikt"]
     },
     {
@@ -29,7 +28,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Uppsägning & Sakliga Skäl",
         "question": "Vilka varsel- och underrättelsefrister gäller när en arbetsgivare vill avbryta en provanställning i förtid och krävs sakliga skäl?",
         "expected_statutes": ["LAS 6 §", "LAS 31 §"],
-        "expected_ad_cases": ["AD 2024 nr 41", "AD 2015 nr 70"],
         "expected_keywords": ["två veckor", "underrättelse", "provanställning"]
     },
     {
@@ -37,7 +35,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Uppsägning & Sakliga Skäl",
         "question": "En medarbetare uteblir från arbetet i två veckor utan giltigt läkarintyg trots skriftliga påminnelser. Föreligger laglig grund för avskedande?",
         "expected_statutes": ["LAS 18 §", "LAS 7 §"],
-        "expected_ad_cases": ["AD 2021 nr 55"],
         "expected_keywords": ["olovlig frånvaro", "avskedande", "förtroende"]
     },
     {
@@ -45,7 +42,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Uppsägning & Sakliga Skäl",
         "question": "Hur tillämpas tvåmånadersregeln i LAS om arbetsgivaren vill åberopa en händelse som inträffat för fyra månader sedan?",
         "expected_statutes": ["LAS 7 §", "LAS 18 §"],
-        "expected_ad_cases": ["AD 2020 nr 68"],
         "expected_keywords": ["två månader", "kännedom", "underrättelse"]
     },
     {
@@ -60,7 +56,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Uppsägning & Sakliga Skäl",
         "question": "Vad gäller angående anställningens bestånd och löneutbetalning vid tvist om en uppsägnings giltighet enligt reformerade 34 § LAS?",
         "expected_statutes": ["LAS 34 §"],
-        "expected_ad_cases": ["AD 2023 nr 45"],
         "expected_keywords": ["34 §", "upphör", "lön", "ogiltigförklaring"]
     },
     {
@@ -75,7 +70,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Uppsägning & Sakliga Skäl",
         "question": "Vad innebär begreppet fingerad arbetsbrist och hur fördelas bevisbördan enligt Arbetsdomstolens praxis?",
         "expected_statutes": ["LAS 7 §"],
-        "expected_ad_cases": ["AD 2020 nr 30", "AD 2019 nr 32"],
         "expected_keywords": ["fingerad arbetsbrist", "personliga skäl", "bevisbörda", "verkliga skälet"]
     },
     {
@@ -92,7 +86,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Arbetsbrist & Turordning",
         "question": "Hur ska en arbetsgivare gå tillväga vid omreglering till lägre sysselsättningsgrad (hyvling) enligt 7 b § LAS och vilken turordning gäller?",
         "expected_statutes": ["LAS 7 b §", "LAS 22 §"],
-        "expected_ad_cases": ["AD 2024 nr 28"],
         "expected_keywords": ["hyvling", "sysselsättningsgrad", "anställningstid"]
     },
     {
@@ -100,7 +93,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Arbetsbrist & Turordning",
         "question": "Hur många arbetstagare får en arbetsgivare med 85 anställda undanta från turordningen vid arbetsbrist enligt 22 § LAS?",
         "expected_statutes": ["LAS 22 §"],
-        "expected_ad_cases": ["AD 2024 nr 14"],
         "expected_keywords": ["tre arbetstagare", "särskild betydelse", "undantag"]
     },
     {
@@ -108,7 +100,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Arbetsbrist & Turordning",
         "question": "Vad innebär kravet på 'tillräckliga kvalifikationer' vid omplacering och turordning enligt LAS 22 §?",
         "expected_statutes": ["LAS 22 §", "LAS 7 §"],
-        "expected_ad_cases": ["AD 2019 nr 32", "AD 2020 nr 30"],
         "expected_keywords": ["tillräckliga kvalifikationer", "upplärningstid", "omplacering"]
     },
     {
@@ -116,7 +107,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Arbetsbrist & Turordning",
         "question": "Vad krävs för att en uppsagd arbetstagare ska ha företrädesrätt till återanställning enligt 25 § LAS och hur lång är anmälningstiden?",
         "expected_statutes": ["LAS 25 §", "LAS 27 §"],
-        "expected_ad_cases": ["AD 2014 nr 88", "AD 2017 nr 60"],
         "expected_keywords": ["företrädesrätt", "återanställning", "nio månader"]
     },
     {
@@ -124,7 +114,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Arbetsbrist & Turordning",
         "question": "Hur bestäms turordningskretsar om ett företag har flera arbetsställen på samma ort enligt 22 § LAS?",
         "expected_statutes": ["LAS 22 §"],
-        "expected_ad_cases": ["AD 2016 nr 72", "AD 2005 nr 57"],
         "expected_keywords": ["driftsenhet", "samma ort", "turordningskrets"]
     },
     {
@@ -146,7 +135,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Arbetsbrist & Turordning",
         "question": "Vilka rättigheter övergår på den nya arbetsgivaren vid en verksamhetsövergång enligt 6 b § LAS och vad gäller för kollektivavtalet?",
         "expected_statutes": ["LAS 6 b §", "MBL 28 §"],
-        "expected_ad_cases": ["AD 2016 nr 72"],
         "expected_keywords": ["övergång av verksamhet", "rättigheter och skyldigheter", "oförändrade", "ett år"]
     },
 
@@ -156,7 +144,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "MBL & Kollektivavtal",
         "question": "När måste en arbetsgivare på eget initiativ påkalla förhandling enligt 11 § MBL vid organisationsförändring eller outsourcing?",
         "expected_statutes": ["MBL 11 §", "MBL 54 §"],
-        "expected_ad_cases": ["AD 2022 nr 48", "AD 2015 nr 18"],
         "expected_keywords": ["viktigare förändring", "primär förhandlingsskyldighet", "skadestånd"]
     },
     {
@@ -164,7 +151,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "MBL & Kollektivavtal",
         "question": "Vad gäller om ett enskilt anställningsavtal innehåller sämre villkor än tillämpligt kollektivavtal enligt 27 § MBL?",
         "expected_statutes": ["MBL 27 §"],
-        "expected_ad_cases": ["AD 2017 nr 24"],
         "expected_keywords": ["ogiltigt", "kollektivavtal", "förmånligare"]
     },
     {
@@ -172,7 +158,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "MBL & Kollektivavtal",
         "question": "Vad är 29/29-principen och vilka tre kriterier avgör arbetstagarens allmänna arbetsskyldighet?",
         "expected_statutes": ["MBL 4 §"],
-        "expected_ad_cases": ["AD 1994 nr 101", "AD 2021 nr 41"],
         "expected_keywords": ["29/29", "arbetsskyldighet", "kollektivavtalets gränser", "allmänna yrkeskvalifikationer"]
     },
     {
@@ -207,7 +192,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "id": "HR_41_lojalitetsplikt_och_bisyssla",
         "category": "MBL & Kollektivavtal",
         "question": "Hur bedömer Arbetsdomstolen gränserna för en anställds rätt att bedriva bisysslor i relation till lojalitetsplikten?",
-        "expected_ad_cases": ["AD 2017 nr 24", "AD 2003 nr 24"],
         "expected_keywords": ["lojalitetsplikt", "bisyssla", "konkurrerande"]
     },
 
@@ -217,7 +201,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Semester & Arbetstid",
         "question": "Hur många semesterdagar har en arbetstagare rätt till per år och vilka regler gäller för huvudsemester under juni-augusti enligt semesterlagen?",
         "expected_statutes": ["Semesterlagen 4 §", "Semesterlagen 12 §"],
-        "expected_ad_cases": ["AD 2018 nr 37", "AD 2011 nr 54"],
         "expected_keywords": ["tjugofem", "fyra sammanhängande veckor", "juni-augusti"]
     },
     {
@@ -239,7 +222,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Semester & Arbetstid",
         "question": "Hur många timmar allmän övertid får en arbetsgivare maximalt ta ut per kalenderår enligt Arbetstidslagen?",
         "expected_statutes": ["Arbetstidslagen 8 §"],
-        "expected_ad_cases": ["AD 2015 nr 46"],
         "expected_keywords": ["200 timmar", "allmän övertid", "sanktionsavgift"]
     },
     {
@@ -247,7 +229,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Semester & Arbetstid",
         "question": "Får en arbetsgivare göra löneavdrag på slutlönen för skada på ett fordon utan medgivande eller Kronofogdens beslut?",
         "expected_statutes": ["SFS 1970:215 1 §"],
-        "expected_ad_cases": ["AD 2012 nr 69", "AD 2010 nr 82"],
         "expected_keywords": ["kvittningslagen", "otillåten kvittning", "skadestånd"]
     },
     {
@@ -299,7 +280,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Rehabilitering & Myndigheter",
         "question": "Är arbetsgivaren enligt lag skyldig att utfärda arbetsgivarintyg för a-kassa och hur görs detta digitalt?",
         "expected_statutes": ["Lag (1997:238) om arbetslöshetsförsäkring 47 §"],
-        "expected_ad_cases": ["AD 2006 nr 96"],
         "expected_keywords": ["47 § ALF", "arbetsgivarintyg.nu", "a-kassa"]
     },
     {
@@ -319,7 +299,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Rehabilitering & Myndigheter",
         "question": "Hur ser arbetsgivarens rehabiliteringsansvar ut vid alkoholberoende och när föreligger sakliga skäl för uppsägning enligt Arbetsdomstolen?",
         "expected_statutes": ["LAS 7 §"],
-        "expected_ad_cases": ["AD 2018 nr 15"],
         "expected_keywords": ["rehabiliteringsansvar", "rehabilitering", "missbruk"]
     },
     {
@@ -336,7 +315,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Diskriminering & Likabehandling",
         "question": "Vad gäller om en visstidsanställd inte får förlängd anställning i nära anslutning till att hon berättat om sin graviditet?",
         "expected_statutes": ["Diskrimineringslagen 1 kap. 4 §", "Föräldraledighetslagen 16 §"],
-        "expected_ad_cases": ["AD 2023 nr 21", "AD 2015 nr 70"],
         "expected_keywords": ["diskrimineringsersättning", "bevisbörda", "missgynnande"]
     },
     {
@@ -357,7 +335,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "id": "HR_43_drogtestning_arbetsplats",
         "category": "Diskriminering & Likabehandling",
         "question": "Under vilka förutsättningar är drogtestning och alkoholtester av personal tillåtna enligt Arbetsdomstolens praxis?",
-        "expected_ad_cases": ["AD 2018 nr 15", "AD 2016 nr 33"],
         "expected_keywords": ["drogpåverkan", "säkerhetskänslig", "rehabilitering"]
     },
     {
@@ -365,7 +342,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "category": "Diskriminering & Likabehandling",
         "question": "Vilka skyldigheter har en arbetsgivare att genomföra skäliga tillgänglighets- och anpassningsåtgärder för personer med funktionsnedsättning enligt Diskrimineringslagen?",
         "expected_statutes": ["Diskrimineringslagen 2 kap. 1 §"],
-        "expected_ad_cases": ["AD 2023 nr 21"],
         "expected_keywords": ["bristande tillgänglighet", "skäliga åtgärder", "funktionsnedsättning", "anpassning"]
     },
     {
@@ -386,7 +362,6 @@ HR_EXAM_BENCHMARKS: List[Dict[str, Any]] = [
         "id": "HR_50_konkurrensklausuler_skalighet",
         "category": "Diskriminering & Likabehandling",
         "question": "Vad krävs för att en konkurrensklausul i ett anställningsavtal ska bedömas som giltig i relation till lojalitetsplikten och konkurrerande verksamhet?",
-        "expected_ad_cases": ["AD 2022 nr 12", "AD 2003 nr 24"],
         "expected_keywords": ["lojalitetsplikt", "konkurrerande", "verksamhet"]
     }
 ]

@@ -8,10 +8,10 @@ import uuid
 from collections import Counter, OrderedDict
 from threading import RLock
 from typing import List, Dict, Any, Optional
+from urllib.parse import urlparse
 import numpy as np
 from src.config import settings
 from src.embeddings.embedder import Embedder
-from src.db.ad_cases_data import AD_PRECEDENTS_DATA
 from src.db.cba_data import CBA_RULES_DATA
 from src.jurisdictions import JURISDICTION_CODES
 
@@ -29,11 +29,6 @@ class FirebaseLaborLawDB:
         self._local_statutes: Dict[str, Any] = {}
         self._local_sections: Dict[str, Any] = {}
         self._local_precedents: Dict[str, Any] = {}
-        for c in AD_PRECEDENTS_DATA:
-            c_copy = dict(c)
-            if not c_copy.get("embedding"):
-                c_copy["embedding"] = Embedder.get_embedding(c_copy.get("title", "") + " " + c_copy.get("summary", "") + " " + c_copy.get("domskal", ""))
-            self._local_precedents[c_copy["id"]] = c_copy
         # Sas har, som _local_precedents ovan. Utan detta ar fallbacken i
         # get_cba_exception och compare_statute_vs_cba dod utanfor en
         # ingestionskorning. Ingen embedding behovs - bada metoderna
@@ -50,6 +45,7 @@ class FirebaseLaborLawDB:
         self._sync_status_cache_at = 0
         self._statute_cache_lock = RLock()
         self._cached_precedents: Optional[List[Dict[str, Any]]] = None
+        self._precedent_cache_at = 0.0
         self._init_firebase()
 
     def _init_firebase(self):
@@ -337,7 +333,8 @@ class FirebaseLaborLawDB:
             return False
 
     def _get_precedent_items(self) -> List[Dict[str, Any]]:
-        if self._cached_precedents is not None:
+        if (self._cached_precedents is not None
+                and time.monotonic() - getattr(self, "_precedent_cache_at", 0.0) < 300):
             return self._cached_precedents
         items = []
         if self.db:
@@ -350,7 +347,12 @@ class FirebaseLaborLawDB:
             items = list(self._local_precedents.values())
         if items:
             self._cached_precedents = items
+            self._precedent_cache_at = time.monotonic()
         return items
+
+    def list_precedents_for_sync(self) -> List[Dict[str, Any]]:
+        """Return raw records for change detection; search filtering happens separately."""
+        return list(self._get_precedent_items())
 
     def count_sections_by_jurisdiction(self) -> Dict[str, int]:
         """Hur många ingesterade paragrafer finns per land, faktiskt.
@@ -772,9 +774,34 @@ class FirebaseLaborLawDB:
 
 
     # --- Precedents ---
+    @staticmethod
+    def _is_verified_precedent(precedent: Dict[str, Any]) -> bool:
+        """Fail closed: only an active record tied to AD's official site is searchable."""
+        try:
+            parsed = urlparse(str(precedent.get("source_url") or ""))
+        except ValueError:
+            return False
+        official_host = parsed.hostname in {"arbetsdomstolen.se", "www.arbetsdomstolen.se"}
+        official_path = parsed.path.startswith("/sv/meddelade-domar/")
+        return bool(
+            precedent.get("active") is True
+            and precedent.get("verification_status") == "official_verified"
+            and precedent.get("source") == "Arbetsdomstolen"
+            and parsed.scheme == "https"
+            and official_host
+            and official_path
+            and str(precedent.get("case_number") or "").strip()
+            and str(precedent.get("summary") or "").strip()
+        )
+
     def save_precedent(self, precedent: Dict[str, Any]):
+        if not self._is_verified_precedent(precedent):
+            logger.warning("Nekar overifierat AD-prejudikat: %s", precedent.get("case_number"))
+            return False
         doc_id = precedent.get("id")
         self._local_precedents[doc_id] = precedent
+        self._cached_precedents = None
+        self._precedent_cache_at = 0.0
         if not self.db:
             # Ingen databas: raden finns bara i minnet och forsvinner med
             # processen. Returnera det, sa anroparen inte rapporterar succe.
@@ -791,10 +818,17 @@ class FirebaseLaborLawDB:
     def search_precedents(self, query: str, statute_ref: Optional[str] = None, year_from: Optional[int] = None, limit: int = 10) -> List[Dict[str, Any]]:
         q_emb = Embedder.get_embedding(query)
         q_lower = query.lower()
+        case_reference = re.search(r'\bad\s*(\d{4})\s*(?:nr\s*)?(\d+)\b', q_lower)
+        exact_case_number = (
+            f"ad {int(case_reference.group(1))} nr {int(case_reference.group(2))}"
+            if case_reference else None
+        )
         items = self._get_precedent_items()
 
         results = []
         for p in items:
+            if not self._is_verified_precedent(p):
+                continue
             # Flexible year filter
             if year_from and p.get("year") and int(p["year"]) < int(year_from):
                 continue
@@ -843,6 +877,8 @@ class FirebaseLaborLawDB:
                     lex_score += 6.0
 
             total_score = (0.3 * sem_score) + (0.7 * lex_score)
+            if exact_case_number and case_num == exact_case_number:
+                total_score += 100.0
 
             results.append({
                 "score": round(total_score, 3),
@@ -853,7 +889,11 @@ class FirebaseLaborLawDB:
                 "parties": p.get("parties"),
                 "provisions": p.get("legal_provisions_referenced"),
                 "domskal": p.get("domskal"),
-                "slut": p.get("slut")
+                "slut": p.get("slut"),
+                "source": p.get("source"),
+                "source_url": p.get("source_url"),
+                "verification_status": p.get("verification_status"),
+                "verified_at": p.get("verified_at"),
             })
 
         results.sort(key=lambda x: x["score"], reverse=True)
