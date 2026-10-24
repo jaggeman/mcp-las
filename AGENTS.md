@@ -65,7 +65,7 @@ och en HTTPS-länk under `arbetsdomstolen.se/sv/meddelade-domar/`. Saknas något
 av detta utesluts posten även om den ligger kvar i Firestore. Synken
 `scripts/ingest_ad_cases.py` hämtar enbart domstolens publicerade officiella
 referat från årsarkiven 2003 och framåt. Den skapar inte egna parter, domskäl,
-domslut eller lagrum. Icke refererade avgöranden indexeras inte. Veckosynken kör
+domslut eller lagrum. Icke refererade avgöranden indexeras inte. Den manuella källsynken kör
 AD-importen efter svenska lagar och skriver bara nya eller ändrade referat.
 Rättsfallscachen uppdateras senast efter fem minuter. Webbplatsen får inte ange
 ett fast antal AD-domar utan ska beskriva dem som officiella referat.
@@ -130,12 +130,12 @@ GitHub OIDC konfigurerades 2026-09-19: pool `github-mcp-las`, provider
 GitHub-variablerna `GCP_WORKLOAD_IDENTITY_PROVIDER` och `GCP_DEPLOY_SERVICE_ACCOUNT`
 är satta. Det dedikerade `mcp-las-deployer@paygap-prod.iam.gserviceaccount.com`
 används för LAS-deploy; byggkontot är `mcp-las-builder`.
-Veckosynken använder separat OIDC-pool `github-mcp-sync`, provider `github-sync`,
+Den manuella källsynken använder separat OIDC-pool `github-mcp-sync`, provider `github-sync`,
 och `mcp-source-sync@paygap-prod.iam.gserviceaccount.com` med endast
 `roles/datastore.user` på projektet, utan deployroller. Villkoren tillåter endast
-samma repository/ägare, main och `sync-sources.yml` vid schedule/workflow_dispatch.
+samma repository/ägare, main och `sync-sources.yml`. Workflowet har endast `workflow_dispatch`.
 GitHub-variabler: `GCP_SYNC_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SYNC_SERVICE_ACCOUNT`.
-Jobbet synkar Sverige, Danmark, Finland, Norge, Tyskland, Spanien, Nederländerna och Storbritannien måndagar 03:00 UTC, utan överlappande körningar.
+Jobbet startas endast manuellt från GitHub Actions och synkar då Sverige, Danmark, Finland, Norge, Tyskland, Spanien, Nederländerna och Storbritannien, utan överlappande körningar.
 Sverige synkas direkt på GitHub-runnern; Riksdagen-hämtning från Cloud Run misslyckades.
 Danmark, Finland, Norge, Tyskland, Spanien, Nederländerna och Storbritannien körs i Frankfurt. GitHub startar Cloud Run Job `mcp-las-source-sync` i europe-west3 och väntar på resultatet.
 Direkt hämtning från GitHub fick anslutningstimeout till den tyska källan; Frankfurt fungerar.

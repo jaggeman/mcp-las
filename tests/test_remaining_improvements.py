@@ -173,13 +173,21 @@ def test_website_loads_live_coverage_for_country_cards():
     assert "section_count" in script
 
 
-def test_weekly_sync_and_deploy_image_include_danish_and_finnish_catalogs():
+def test_manual_sync_and_deploy_image_include_danish_and_finnish_catalogs():
     sync = Path(".github/workflows/sync-sources.yml").read_text(encoding="utf-8")
     ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 
     for flag in ("--danish", "--finnish"):
         assert flag in ci
     assert "alla åtta lagkataloger" in sync
+
+
+def test_source_sync_is_manual_only():
+    workflow = Path(".github/workflows/sync-sources.yml").read_text(encoding="utf-8")
+
+    assert "workflow_dispatch:" in workflow
+    assert "schedule:" not in workflow
+    assert "cron:" not in workflow
 
 
 def test_search_quality_benchmark_has_at_least_22_ground_truth_questions():
