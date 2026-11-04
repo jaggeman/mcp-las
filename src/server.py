@@ -625,7 +625,11 @@ def check_bank_days_and_deadlines(
 def calculate_redundancy_turnorder_and_exceptions(
     total_employees_in_unit: Optional[int] = None,
     redundancy_count: Optional[int] = None,
-    has_collective_bargaining_agreement: bool = True,
+    has_collective_bargaining_agreement: bool = False,
+    collective_agreement_name: Optional[str] = None,
+    collective_agreement_rules_confirmed: bool = False,
+    legal_employer_name: Optional[str] = None,
+    organization_number: Optional[str] = None,
     single_operating_unit_only: bool = False,
     merged_operating_units_in_municipality: bool = False,
     contract_areas_count: int = 1,
@@ -645,6 +649,10 @@ def calculate_redundancy_turnorder_and_exceptions(
         total_employees_in_unit=total_employees_in_unit,
         redundancy_count=redundancy_count,
         has_collective_bargaining_agreement=has_collective_bargaining_agreement,
+        collective_agreement_name=collective_agreement_name,
+        collective_agreement_rules_confirmed=collective_agreement_rules_confirmed,
+        legal_employer_name=legal_employer_name,
+        organization_number=organization_number,
         single_operating_unit_only=single_operating_unit_only,
         merged_operating_units_in_municipality=merged_operating_units_in_municipality,
         contract_areas_count=contract_areas_count,
@@ -658,14 +666,16 @@ def generate_turordningslista_excel(
     company_name: str = "Företaget AB",
     employees: Optional[List[Dict[str, Any]]] = None,
     redundancy_count: Optional[int] = 0,
-    cba_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
+    cba_name: Optional[str] = None,
+    cba_exemption_rules_confirmed: bool = False,
+    organization_number: Optional[str] = None,
     single_operating_unit: bool = False,
     as_of_date: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Skapar och genererar en nedladdningsbar Excel-fil (.xlsx) med formaterad turordningslista vid arbetsbrist.
-    Inkluderar ID-kolumn (EMP-001...), beräkning av anställningsdagar via Excel-formler (=DATEDIF),
-    sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § och kollektivavtal).
+    Skapar ett nedladdningsbart preliminärt turordningsunderlag i Excel.
+    Ange legal arbetsgivare och arbetsgivar-ID. Kollektivavtalsspecifika undantag
+    används bara när avtalsnamn och cba_exemption_rules_confirmed anges.
     """
     rl_err = _check_rate_limit()
     if rl_err:
@@ -676,6 +686,8 @@ def generate_turordningslista_excel(
         employees=employees,
         redundancy_count=redundancy_count,
         cba_name=cba_name,
+        cba_exemption_rules_confirmed=cba_exemption_rules_confirmed,
+        organization_number=organization_number,
         single_operating_unit=single_operating_unit,
         as_of_date=as_of_date
     )
@@ -685,6 +697,7 @@ def generate_turordningslista_excel(
 def get_hr_document_template(
     template_type: str,
     company_name: Optional[str] = "Arbetsgivaren AB / Organisationen",
+    organization_number: Optional[str] = "[Organisationsnummer / arbetsgivar-ID]",
     employee_name: Optional[str] = "[Arbetstagarens Förnamn Efternamn]",
     personal_identity_number: Optional[str] = "[ÅÅÅÅMMDD-XXXX]",
     job_title: Optional[str] = "[Nuvarande Befattning]",
@@ -714,6 +727,7 @@ def get_hr_document_template(
     res = _get_hr_document_template(
         template_type=template_type,
         company_name=company_name,
+        organization_number=organization_number,
         employee_name=employee_name,
         personal_identity_number=personal_identity_number,
         job_title=job_title,
