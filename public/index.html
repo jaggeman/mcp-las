@@ -845,13 +845,13 @@
         <article data-country="DK" style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:1rem;padding:1.1rem 1.25rem;box-shadow:var(--shadow);">
           <h2 data-i18n="country_DK_title" style="font-size:1rem;margin:0 0 .5rem;">🇩🇰 Danmark (DK)</h2>
           <a href="https://www.retsinformation.dk" style="font-size:.875rem;">Retsinformation · da</a>
-          <p data-i18n="country_DK_desc" style="font-size:.875rem;color:var(--text-muted);line-height:1.6;margin:.6rem 0 0;">Avgränsad arbetsrättskatalog från Beskæftigelsesministeriet och Retsinformation, synkad varje vecka.</p>
+          <p data-i18n="country_DK_desc" style="font-size:.875rem;color:var(--text-muted);line-height:1.6;margin:.6rem 0 0;">Avgränsad arbetsrättskatalog från Beskæftigelsesministeriet och Retsinformation, uppdaterad vid senaste manuella synk.</p>
           <p data-coverage-desc="DK" aria-live="polite" style="font-size:.8rem;color:var(--brand-text);margin:.45rem 0 0;">Hämtar aktuell täckning…</p>
         </article>
         <article data-country="FI" style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:1rem;padding:1.1rem 1.25rem;box-shadow:var(--shadow);">
           <h2 data-i18n="country_FI_title" style="font-size:1rem;margin:0 0 .5rem;">🇫🇮 Finland (FI)</h2>
           <a href="https://opendata.finlex.fi" style="font-size:.875rem;">Finlex · fi</a>
-          <p data-i18n="country_FI_desc" style="font-size:.875rem;color:var(--text-muted);line-height:1.6;margin:.6rem 0 0;">Åtta centrala arbetsrättslagar från Finlex, synkade varje vecka.</p>
+          <p data-i18n="country_FI_desc" style="font-size:.875rem;color:var(--text-muted);line-height:1.6;margin:.6rem 0 0;">Åtta centrala arbetsrättslagar från Finlex, uppdaterade vid senaste manuella synk.</p>
           <p data-coverage-desc="FI" aria-live="polite" style="font-size:.8rem;color:var(--brand-text);margin:.45rem 0 0;">Hämtar aktuell täckning…</p>
         </article>
         <article data-country="NO" style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:1rem;padding:1.1rem 1.25rem;box-shadow:var(--shadow);">
@@ -1105,7 +1105,7 @@ Strukturera alltid svaren med:
         <div class="feature-card">
           <div class="feature-icon"><i class="fa-solid fa-flag"></i></div>
           <h3 data-i18n="src_card7_title">Danmark (Retsinformation.dk)</h3>
-          <p data-i18n="src_card7_desc">Avgränsad arbetsrättskatalog från Beskæftigelsesministeriet och Retsinformation, synkad varje vecka.</p>
+          <p data-i18n="src_card7_desc">Avgränsad arbetsrättskatalog från Beskæftigelsesministeriet och Retsinformation, uppdaterad vid senaste manuella synk.</p>
           <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_jurisdiction">Jurisdiktion:</span></span>
@@ -1121,7 +1121,7 @@ Strukturera alltid svaren med:
         <div class="feature-card">
           <div class="feature-icon"><i class="fa-solid fa-building-columns"></i></div>
           <h3 data-i18n="src_card8_title">Finland (Finlex.fi)</h3>
-          <p data-i18n="src_card8_desc">Åtta centrala arbetsrättslagar från Finlex, synkade varje vecka.</p>
+          <p data-i18n="src_card8_desc">Åtta centrala arbetsrättslagar från Finlex, uppdaterade vid senaste manuella synk.</p>
           <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--card-border); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span><i class="fa-regular fa-clock" style="color: var(--brand); margin-right: 0.35rem;"></i> <span data-i18n="badge_jurisdiction">Jurisdiktion:</span></span>
@@ -1231,8 +1231,8 @@ Strukturera alltid svaren med:
             <i class="fa-solid fa-arrows-rotate"></i>
           </div>
           <div>
-            <h2 style="font-size: 1.2rem; font-weight: 800; margin: 0 0 0.45rem;" data-i18n="sync_title">Automatisk källsynkronisering & Multi-Jurisdiktion</h2>
-            <p style="margin: 0 0 0.9rem; color: var(--text-muted); line-height: 1.6;" data-i18n="sync_desc">Veckovis synk av åtta länder. Sverige hämtas på GitHub-runnern och övriga via Cloud Run Job i Frankfurt. Ändrade texter versionskontrolleras före indexering. Välj jurisdiction: SE, DK, FI, NO, DE, ES, NL eller GB.</p>
+            <h2 style="font-size: 1.2rem; font-weight: 800; margin: 0 0 0.45rem;" data-i18n="sync_title">Manuell källsynkronisering & Multi-Jurisdiktion</h2>
+            <p style="margin: 0 0 0.9rem; color: var(--text-muted); line-height: 1.6;" data-i18n="sync_desc">Synken av åtta länder startas manuellt från GitHub Actions. Sverige hämtas på GitHub-runnern och övriga via Cloud Run Job i Frankfurt. Ändrade texter versionskontrolleras före indexering. Välj jurisdiction: SE, DK, FI, NO, DE, ES, NL eller GB.</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.82rem;">
               <span class="tech-badge"><i class="fa-solid fa-cloud"></i> Cloud Run Job</span>
               <span class="tech-badge"><i class="fa-solid fa-database"></i> Firestore versionsstatus</span>
@@ -1246,6 +1246,60 @@ Strukturera alltid svaren med:
       <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; padding: 1.5rem 1.75rem; margin-top: 1rem; box-shadow: var(--shadow);">
         <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0 0 0.45rem;"><i class="fa-solid fa-earth-europe" style="color: var(--brand); margin-right: 0.4rem;"></i> <span data-i18n="danish_title">Europeiska lagar och officiella källor</span></h3>
         <p style="margin: 0; color: var(--text-muted); line-height: 1.6;" data-i18n="danish_desc">Källspråk: svenska (sv), danska (da), finska (fi), norska bokmål (nb), tyska (de) och spanska (es). Sök på källspråket; översättning garanteras inte. Länderna hålls åtskilda. Ingen utländsk praxis, kollektivavtalstolkning eller HR-beräkning utlovas.</p>
+      </div>
+    </section>
+
+    <section id="arbetsbrist-process" style="padding-top: 2rem;">
+      <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; padding: clamp(1.25rem, 3vw, 2rem); box-shadow: var(--shadow);">
+        <div style="max-width: 800px; margin-bottom: 1.5rem;">
+          <span style="display:inline-flex;align-items:center;gap:0.45rem;background:var(--brand-light);color:var(--brand-text);padding:0.35rem 0.7rem;border-radius:999px;font-size:0.78rem;font-weight:800;margin-bottom:0.75rem;">
+            <i class="fa-solid fa-people-arrows"></i> <span data-i18n="redundancy_badge">Svensk arbetsbristprocess</span>
+          </span>
+          <h2 style="font-size:clamp(1.45rem,3vw,2rem);font-weight:900;margin-bottom:0.65rem;" data-i18n="redundancy_title">Arbetsbrist och turordning – steg för steg</h2>
+          <p style="color:var(--text-muted);line-height:1.7;margin:0;" data-i18n="redundancy_intro">Få hjälp med hela processen, inte bara själva lagturlistan. AI:n kan guida genom underlag, tidsfrister och beslutspunkter samt skapa redigerbara mallar. Kontrollera alltid kollektivavtalet och låt behörig rådgivare granska innan beslut.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:0.85rem;">
+          <article style="border:1px solid var(--card-border);border-radius:0.9rem;padding:1rem;">
+            <strong style="display:block;margin-bottom:0.35rem;"><span style="color:var(--brand);">1.</span> <span data-i18n="redundancy_step1">Planera och avgränsa</span></strong>
+            <p style="font-size:0.86rem;color:var(--text-muted);line-height:1.55;margin:0;" data-i18n="redundancy_step1_desc">Dokumentera verksamhetsskäl, målbild, berörda roller, driftsenheter, kollektivavtal och preliminär tidsplan utan att låsa beslutet.</p>
+          </article>
+          <article style="border:1px solid var(--card-border);border-radius:0.9rem;padding:1rem;">
+            <strong style="display:block;margin-bottom:0.35rem;"><span style="color:var(--brand);">2.</span> <span data-i18n="redundancy_step2">Riskbedömning före förändringen</span></strong>
+            <p style="font-size:0.86rem;color:var(--text-muted);line-height:1.55;margin:0;" data-i18n="redundancy_step2_desc">Bedöm skriftligen risker för bland annat arbetsbelastning, bemanning, arbetstid, kompetens och organisatorisk eller social arbetsmiljö.</p>
+          </article>
+          <article style="border:1px solid var(--card-border);border-radius:0.9rem;padding:1rem;">
+            <strong style="display:block;margin-bottom:0.35rem;"><span style="color:var(--brand);">3.</span> <span data-i18n="redundancy_step3">Varsel till Arbetsförmedlingen</span></strong>
+            <p style="font-size:0.86rem;color:var(--text-muted);line-height:1.55;margin:0;" data-i18n="redundancy_step3_desc">Vid risk för minst fem uppsägningar i samma län: kontrollera varseltiden, anmäl i myndighetens e-tjänst och komplettera ärendet.</p>
+          </article>
+          <article style="border:1px solid var(--card-border);border-radius:0.9rem;padding:1rem;">
+            <strong style="display:block;margin-bottom:0.35rem;"><span style="color:var(--brand);">4.</span> <span data-i18n="redundancy_step4">MBL-förhandling före beslut</span></strong>
+            <p style="font-size:0.86rem;color:var(--text-muted);line-height:1.55;margin:0;" data-i18n="redundancy_step4_desc">Skicka förhandlingsframställan och 15 §-underlag, förhandla i rätt ordning och dokumentera när förhandlingen avslutas.</p>
+          </article>
+          <article style="border:1px solid var(--card-border);border-radius:0.9rem;padding:1rem;">
+            <strong style="display:block;margin-bottom:0.35rem;"><span style="color:var(--brand);">5.</span> <span data-i18n="redundancy_step5">Omplaceringsutredning</span></strong>
+            <p style="font-size:0.86rem;color:var(--text-muted);line-height:1.55;margin:0;" data-i18n="redundancy_step5_desc">Inventera lediga arbeten, bedöm tillräckliga kvalifikationer individuellt och lämna tydliga skriftliga erbjudanden.</p>
+          </article>
+          <article style="border:1px solid var(--card-border);border-radius:0.9rem;padding:1rem;">
+            <strong style="display:block;margin-bottom:0.35rem;"><span style="color:var(--brand);">6.</span> <span data-i18n="redundancy_step6">Turordning och uppsägningsbesked</span></strong>
+            <p style="font-size:0.86rem;color:var(--text-muted);line-height:1.55;margin:0;" data-i18n="redundancy_step6_desc">Fastställ kretsar, undantag, anställningstid och kvalifikationer. Fatta därefter beslut och hantera besked, omställning och företrädesrätt.</p>
+          </article>
+        </div>
+
+        <div style="margin-top:1.25rem;padding:1rem;background:var(--code-bg);border-radius:0.85rem;border:1px solid var(--card-border);">
+          <strong style="display:block;margin-bottom:0.55rem;" data-i18n="redundancy_templates_title">Mallar som AI:n kan skapa</strong>
+          <div style="display:flex;flex-wrap:wrap;gap:0.45rem;font-size:0.76rem;">
+            <code>arbetsbrist_processchecklista</code>
+            <code>riskbedomning_organisationsforandring</code>
+            <code>mbl_forhandlingsframstallan_arbetsbrist</code>
+            <code>forhandlingsprotokoll_arbetsbrist</code>
+            <code>varsel_arbetsformedlingen</code>
+            <code>omplaceringsutredning</code>
+            <code>omplaceringserbjudande</code>
+            <code>uppsagningsbesked_arbetsbrist</code>
+          </div>
+          <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.5;margin:0.65rem 0 0;" data-i18n="redundancy_templates_note">Varselmallen är ett förberedande underlag. Själva varselanmälan görs alltid i Arbetsförmedlingens officiella e-tjänst eller med myndighetens blankett.</p>
+        </div>
       </div>
     </section>
 

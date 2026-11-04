@@ -790,6 +790,113 @@ def check_bank_days_and_deadlines(
     return response
 
 
+_LAS_SOURCE_URL = "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-198280-om-anstallningsskydd_sfs-1982-80/"
+_MBL_SOURCE_URL = "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1976580-om-medbestammande-i-arbetslivet_sfs-1976-580/"
+_WORK_ENVIRONMENT_RISK_URL = "https://www.av.se/arbetsmiljoarbete-och-inspektioner/arbeta-med-arbetsmiljon/systematiskt-arbetsmiljoarbete/riskbedomning/"
+_PUBLIC_EMPLOYMENT_NOTICE_URL = "https://arbetsformedlingen.se/for-arbetsgivare/anmal-varsel-och-permittering"
+
+
+def _redundancy_process_guide() -> Dict[str, Dict[str, Any]]:
+    """Return an ordered, source-backed workflow for a Swedish redundancy."""
+    return {
+        "1_planera_forandringen": {
+            "title": "Planera förändringen utan att fatta slutligt beslut",
+            "timing": "När arbetsbristen eller omorganisationen övervägs",
+            "actions": [
+                "Dokumentera verksamhetsskälen, målbilden, berörda roller, driftsenheter och preliminär tidsplan.",
+                "Kontrollera kollektivavtal, avtalsområden, fackliga motparter och eventuell omställningsorganisation.",
+                "Ta fram nuvarande och föreslagen organisation samt ett preliminärt beslutsunderlag.",
+            ],
+            "template_types": ["arbetsbrist_processchecklista"],
+            "decision_gate": "Underlaget ska vara ett förslag; beslutet får inte vara låst före MBL-förhandlingen.",
+            "source_urls": [_MBL_SOURCE_URL],
+        },
+        "2_riskbedom_arbetsmiljon": {
+            "title": "Riskbedöm arbetsmiljön före förändringen",
+            "timing": "Skriftligen innan förändringen genomförs",
+            "must_be_written": True,
+            "actions": [
+                "Beskriv förändringen, var den sker och vilka arbetstagare som berörs.",
+                "Bedöm sannolikhet och konsekvens för bland annat arbetsbelastning, arbetstid, kompetens, ensamarbete och organisatorisk eller social arbetsmiljö.",
+                "Besluta åtgärd, ansvarig, deadline och hur åtgärden ska följas upp; samverka med skyddsombud och arbetstagare.",
+            ],
+            "template_types": ["riskbedomning_organisationsforandring"],
+            "source_urls": [_WORK_ENVIRONMENT_RISK_URL],
+        },
+        "3_varsla_arbetsformedlingen": {
+            "title": "Varsla Arbetsförmedlingen när tröskeln nås",
+            "timing": "Så tidigt att den lagstadgade varseltiden hålls",
+            "threshold": "Minst 5 berörda i samma län",
+            "actions": [
+                "Anmäl risk för uppsägning i Arbetsförmedlingens officiella e-tjänst eller på deras signerade blankett.",
+                "Spara ärendenumret och komplettera efter förhandling med personförteckning och förhandlingsprotokoll.",
+                "Skilj på varseltid till Arbetsförmedlingen och arbetstagarens uppsägningstid.",
+            ],
+            "template_types": ["varsel_arbetsformedlingen"],
+            "source_urls": [_PUBLIC_EMPLOYMENT_NOTICE_URL],
+        },
+        "4_forhandla_mbl": {
+            "title": "Förhandla enligt MBL före beslut",
+            "timing": "På eget initiativ och i så god tid att facket reellt kan påverka",
+            "actions": [
+                "Skicka förhandlingsframställan och ett motiverat förslag till berörda arbetstagarorganisationer.",
+                "Lämna skriftlig information enligt 15 § MBL om skäl, antal, kategorier, normal bemanning, tidsperiod och eventuell extra ersättning.",
+                "Dokumentera yrkanden, arbetsgivarens svar, enighet eller oenighet och när förhandlingen avslutas.",
+            ],
+            "template_types": [
+                "mbl_forhandlingsframstallan_arbetsbrist",
+                "forhandlingsprotokoll_arbetsbrist",
+            ],
+            "decision_gate": "Fatta inte beslut innan förhandlingsskyldigheten är fullgjord",
+            "source_urls": [_MBL_SOURCE_URL],
+        },
+        "5_utred_omplacering": {
+            "title": "Genomför omplaceringsutredning",
+            "timing": "Före uppsägning och innan den slutliga turordningen verkställs",
+            "actions": [
+                "Inventera lediga arbeten hos arbetsgivaren och dokumentera sökområde, period och resultat.",
+                "Bedöm tillräckliga kvalifikationer individuellt och dokumentera krav, underlag och rimlig upplärningstid.",
+                "Lämna ett tydligt skriftligt omplaceringserbjudande med villkor och skälig svarstid när ett arbete finns.",
+            ],
+            "template_types": ["omplaceringsutredning", "omplaceringserbjudande"],
+            "source_urls": [_LAS_SOURCE_URL],
+        },
+        "6_faststall_turordning": {
+            "title": "Fastställ turordningskretsar och turordning",
+            "timing": "När organisation, omplacering och förhandling ger ett stabilt underlag",
+            "actions": [
+                "Fastställ driftsenhet, ort och avtalsområde samt om facket har begärt gemensam krets på orten.",
+                "Dokumentera eventuella undantag, sammanlagd anställningstid, åldersregel vid lika tid och tillräckliga kvalifikationer.",
+                "Kontrollera avtalsturlista och kollektivavtalsavvikelser innan lagturlistan används.",
+            ],
+            "template_types": ["turordningslista_excel"],
+            "source_urls": [_LAS_SOURCE_URL],
+        },
+        "7_fatta_beslut_och_lamna_besked": {
+            "title": "Fatta beslut och lämna korrekta uppsägningsbesked",
+            "timing": "Efter avslutad förhandling och individuell kontroll",
+            "actions": [
+                "Protokollför beslutet och kontrollera behörig beslutsfattare.",
+                "Lämna skriftligt uppsägningsbesked personligen eller enligt delgivningsreglerna i LAS.",
+                "Ange uppsägningstid, sista anställningsdag, hur talan förs och om företrädesrätt finns eller kräver anmälan.",
+            ],
+            "template_types": ["uppsagningsbesked_arbetsbrist"],
+            "source_urls": [_LAS_SOURCE_URL],
+        },
+        "8_omstallning_och_foretradesratt": {
+            "title": "Hantera omställning, uppföljning och företrädesrätt",
+            "timing": "Under uppsägningstiden och därefter",
+            "actions": [
+                "Aktivera kollektivavtalad omställning och lämna arbetsgivarintyg när det behövs.",
+                "Registrera anspråk på företrädesrätt och kontrollera den inför varje nyanställning.",
+                "Följ upp arbetsmiljöåtgärder för kvarvarande organisation och komplettera varselärendet hos Arbetsförmedlingen.",
+            ],
+            "template_types": ["anmalan_foretradesratt", "arbetsbrist_processchecklista"],
+            "source_urls": [_LAS_SOURCE_URL, _WORK_ENVIRONMENT_RISK_URL, _PUBLIC_EMPLOYMENT_NOTICE_URL],
+        },
+    }
+
+
 def calculate_redundancy_turnorder_and_exceptions(
     total_employees_in_unit: Optional[int] = None,
     redundancy_count: Optional[int] = None,
@@ -981,6 +1088,25 @@ def calculate_redundancy_turnorder_and_exceptions(
             )
         },
         "sorted_turordningslista": processed_employees,
+        "redundancy_process_guide": _redundancy_process_guide(),
+        "arbetsformedlingen_notice_guide": {
+            "threshold": "Minst 5 berörda i samma län",
+            "permanent_employees": {
+                "5–25": "Minst 2 månader",
+                "26–100": "Minst 4 månader",
+                "fler än 100": "Minst 6 månader",
+            },
+            "fixed_term_ended_early": "Minst 6 veckor",
+            "person_list_deadline": "Senast 1 månad före den första sista anställningsdagen",
+            "official_form_note": "Gör själva anmälan i Arbetsförmedlingens e-tjänst eller med deras signerade PDF. MCP-mallen är endast ett förberedande underlag.",
+            "source_url": _PUBLIC_EMPLOYMENT_NOTICE_URL,
+        },
+        "terminology": {
+            "riskbedomning": "Skriftlig arbetsmiljöbedömning före en planerad personalförändring.",
+            "mbl_forhandling": "Förhandling med berörda arbetstagarorganisationer före arbetsgivarens beslut.",
+            "varsel_arbetsformedlingen": "Förhandsanmälan till myndigheten; är inte samma sak som ett uppsägningsbesked.",
+            "uppsagningsbesked": "Individuellt skriftligt besked som avslutar anställningen efter uppsägningstiden.",
+        },
         "certainty": {
             "score_pct": None, "measurement": "not_calibrated",
             "badge": "🟢 Hög — Unionens officiella turordningsregler & LAS (1982:80)",
@@ -1444,13 +1570,13 @@ def get_hr_document_template(
     date_str: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Genererar officiella svenska mallar för arbetsrättsliga HR-dokument (SKR / LAS-standard)
-    som användaren kan ladda ner eller kopiera och skriva vidare i:
-    1. 'omplaceringsutredning' (7 § andra stycket LAS - arbetsbrist / personliga skäl)
-    2. 'omplaceringserbjudande' (skriftligt erbjudande med svarsalternativ Ja/Nej och signatur)
-    3. 'varsel_personliga_skal' (Varsel till facklig organisation enligt 30 § LAS)
-    4. 'underrattelse_personliga_skal' (Underrättelse till arbetstagaren enligt 30 § LAS)
-    5. 'uppsagningsbesked_arbetsbrist' (Uppsägningsbesked vid arbetsbrist med företrädesrätt 8 § & 25 § LAS)
+    Genererar källstödda svenska HR-mallar och arbetsunderlag som användaren kan
+    kopiera och redigera vidare. För arbetsbrist stöds processchecklista,
+    riskbedömning, MBL-framställan, förhandlingsprotokoll, förberedande
+    varselunderlag, omplaceringsutredning, omplaceringserbjudande och
+    uppsägningsbesked. Äldre malltyper för personliga skäl och övriga LAS-besked
+    stöds fortsatt. Myndighetsunderlaget ersätter aldrig Arbetsförmedlingens
+    officiella e-tjänst eller blankett.
     """
     today = date_str or datetime.date.today().strftime("%Y-%m-%d")
     c_name = company_name or "Arbetsgivaren AB / Organisationen"
@@ -1464,8 +1590,252 @@ def get_hr_document_template(
     resp_dl = response_deadline or "[Datum för svar, t.ex. inom 7 dagar]"
 
     t_type = template_type.lower().strip()
+    official_source_urls = [_LAS_SOURCE_URL]
 
-    if "omplaceringsutredning" in t_type or "utredning" in t_type:
+    if "riskbedomning_organisationsforandring" in t_type or "riskbedömning_organisationsförändring" in t_type:
+        title = "Skriftlig riskbedömning inför organisations- eller personalförändring"
+        legal_basis = "AFS 2023:1 om systematiskt arbetsmiljöarbete"
+        official_source_urls = [_WORK_ENVIRONMENT_RISK_URL]
+        required_elements = [
+            "Beskrivning och avgränsning av den planerade förändringen",
+            "Berörda arbetsställen, funktioner och arbetstagargrupper",
+            "Identifierade risker med bedömning av sannolikhet och konsekvens",
+            "Åtgärd, ansvarig, slutdatum och uppföljning för varje risk",
+            "Dokumenterad medverkan av arbetstagare och skyddsombud",
+        ]
+        doc_text = f"""Datum: {today}
+Arbetsgivare: {c_name}
+Arbetsställe / berörd verksamhet: {w_loc}
+
+SKRIFTLIG RISKBEDÖMNING INFÖR ORGANISATIONS- ELLER PERSONALFÖRÄNDRING
+
+Riskbedömningen görs innan förändringen genomförs enligt AFS 2023:1.
+
+1. PLANERAD FÖRÄNDRING
+Beskriv vad som ska förändras, varför, var och när:
+.....................................................................................................
+Berörda funktioner och arbetstagargrupper:
+.....................................................................................................
+
+2. MEDVERKAN OCH UNDERLAG
+Arbetstagare/skyddsombud som medverkat: ....................................................................
+Underlag som använts (tillbud, sjukfrånvaro, arbetsbelastning, intervjuer m.m.):
+.....................................................................................................
+
+3. RISKBEDÖMNING OCH HANDLINGSPLAN
+Bedöm sannolikhet och konsekvens var för sig. Prioritera de allvarligaste riskerna först.
+
+| Risk / berörd grupp | Sannolikhet | Konsekvens | Risknivå | Förebyggande åtgärd | Ansvarig | Klar senast | Uppföljning |
+|---------------------|-------------|------------|----------|---------------------|----------|-------------|-------------|
+| Arbetsbelastning    | [L/M/H]     | [L/M/H]    | [ ]      | [ ]                 | [ ]      | [ ]         | [ ]         |
+| Arbetstid/bemanning | [L/M/H]     | [L/M/H]    | [ ]      | [ ]                 | [ ]      | [ ]         | [ ]         |
+| Kompetens/introduktion | [L/M/H]  | [L/M/H]    | [ ]      | [ ]                 | [ ]      | [ ]         | [ ]         |
+| Otydliga roller/mandat | [L/M/H]  | [L/M/H]    | [ ]      | [ ]                 | [ ]      | [ ]         | [ ]         |
+| Annan risk: [ ]     | [L/M/H]     | [L/M/H]    | [ ]      | [ ]                 | [ ]      | [ ]         | [ ]         |
+
+4. BESLUT OCH UPPFÖLJNING
+Åtgärder som måste vara genomförda före förändringen: ................................................
+Datum för uppföljning efter genomförandet: ................................................................
+
+Ansvarig chef: ........................................  Datum: ........................................
+Skyddsombud/medverkande: ...............................  Datum: ........................................
+
+Officiell vägledning: {_WORK_ENVIRONMENT_RISK_URL}
+"""
+
+    elif "mbl_forhandlingsframstallan_arbetsbrist" in t_type:
+        title = "Förhandlingsframställan inför arbetsbrist och omorganisation"
+        legal_basis = "11–15 §§ Lag (1976:580) om medbestämmande i arbetslivet (MBL)"
+        official_source_urls = [_MBL_SOURCE_URL, _PUBLIC_EMPLOYMENT_NOTICE_URL]
+        required_elements = [
+            "Förhandlingsfråga och motiverat förslag",
+            "Skälen till de planerade uppsägningarna",
+            "Antal och kategorier som berörs samt normal bemanning",
+            "Planerad tidsperiod och metod för eventuell extra ersättning",
+            "Kopia av varsel till Arbetsförmedlingen när sådant har lämnats",
+        ]
+        doc_text = f"""Datum: {today}
+Från: {c_name}
+Till: {u_name}
+Berörd driftsenhet: {w_loc}
+
+FÖRHANDLINGSFRAMSTÄLLAN – ARBETSBRIST / ORGANISATIONSFÖRÄNDRING
+Förhandling påkallas enligt 11–15 §§ MBL före arbetsgivarens beslut.
+
+1. FÖRHANDLINGSFRÅGA OCH FÖRSLAG
+Arbetsgivaren överväger följande förändring: ................................................................
+Förslag till ny organisation och planerad beslutsdag: ....................................................
+
+2. SKRIFTLIG INFORMATION ENLIGT 15 § MBL
+- skälen till de planerade uppsägningarna: ...............................................................
+- antal arbetstagare som kan sägas upp och berörda kategorier: ..........................................
+- antal arbetstagare som normalt sysselsätts och deras kategorier: .....................................
+- tidsperiod under vilken uppsägningarna avses verkställas: .............................................
+- beräkningsmetod för ersättningar utöver lag eller kollektivavtal: ....................................
+
+3. BILAGOR
+[ ] Nuvarande och föreslagen organisation
+[ ] Skriftlig riskbedömning och handlingsplan
+[ ] Preliminär omplaceringsinventering
+[ ] Preliminära turordningskretsar och bemanningsunderlag
+[ ] Kopia av varsel till Arbetsförmedlingen, om varselskyldighet finns
+
+4. FÖRESLAGEN TID OCH PLATS
+Datum/tid: ........................................  Plats/digital länk: ................................
+Kontaktperson hos arbetsgivaren: ........................................................................
+
+Detta är ett förhandlingsunderlag. Slutligt arbetsgivarbeslut fattas först när förhandlingsskyldigheten är fullgjord.
+
+Officiell lagtext: {_MBL_SOURCE_URL}
+"""
+
+    elif "forhandlingsprotokoll_arbetsbrist" in t_type:
+        title = "Förhandlingsprotokoll vid arbetsbrist"
+        legal_basis = "11–16 §§ Lag (1976:580) om medbestämmande i arbetslivet (MBL)"
+        official_source_urls = [_MBL_SOURCE_URL]
+        required_elements = [
+            "Parter, tid, plats och deltagare",
+            "Arbetsgivarens förslag och arbetstagarorganisationens yrkanden",
+            "Parternas ståndpunkter samt enighet eller oenighet",
+            "Tidpunkt då förhandlingen avslutades",
+            "Justerings- och reservationsfält",
+        ]
+        doc_text = f"""FÖRHANDLINGSPROTOKOLL – ARBETSBRIST / ORGANISATIONSFÖRÄNDRING
+
+Arbetsgivare: {c_name}
+Arbetstagarorganisation: {u_name}
+Datum, tid och plats: {today}, .............................................................................
+Berörd driftsenhet: {w_loc}
+
+Närvarande för arbetsgivaren: .............................................................................
+Närvarande för arbetstagarorganisationen: .................................................................
+
+§ 1 Förhandlingsfråga
+.....................................................................................................
+
+§ 2 Arbetsgivarens förslag och underlag
+.....................................................................................................
+
+§ 3 Arbetstagarorganisationens yrkanden och synpunkter
+.....................................................................................................
+
+§ 4 Arbetsgivarens svar
+.....................................................................................................
+
+§ 5 Resultat
+[ ] Parterna är eniga enligt följande: ..................................................................
+[ ] Parterna är oense. Respektive parts slutliga ståndpunkt: ..............................................
+[ ] Central förhandling har begärts / kan begäras enligt tillämpligt avtal och MBL.
+
+§ 6 Avslutande
+Förhandlingen avslutades den [datum] klockan [tid].
+Protokollet justeras av parterna. Reservationer/bilagor: .................................................
+
+För arbetsgivaren: ................................  För arbetstagarorganisationen: ......................
+Namnförtydligande: .................................  Namnförtydligande: ..................................
+
+Officiell lagtext: {_MBL_SOURCE_URL}
+"""
+
+    elif "varsel_arbetsformedlingen" in t_type:
+        title = "Underlag inför varselanmälan till Arbetsförmedlingen"
+        legal_basis = "Lag (1974:13) om vissa anställningsfrämjande åtgärder"
+        official_source_urls = [_PUBLIC_EMPLOYMENT_NOTICE_URL]
+        required_elements = [
+            "Antal berörda i samma län och anställningsform",
+            "Första planerade sista anställningsdag",
+            "Lagstadgad varseltid",
+            "Personförteckning och förhandlingsprotokoll som komplettering",
+            "Hänvisning till Arbetsförmedlingens officiella e-tjänst",
+        ]
+        doc_text = f"""Datum: {today}
+Arbetsgivare: {c_name}
+Berört arbetsställe / län: {w_loc} / [Län]
+
+UNDERLAG INFÖR VARSELANMÄLAN TILL ARBETSFÖRMEDLINGEN
+
+Detta dokument är en intern checklista, inte själva varselanmälan. Skicka anmälan i
+Arbetsförmedlingens officiella e-tjänst eller med myndighetens signerade PDF.
+
+1. OMFATTNING
+Antal som riskerar uppsägning i samma län: [ ]
+Anställningsform: [ ] tillsvidare  [ ] visstid som avbryts i förtid
+Första planerade sista anställningsdag: [ÅÅÅÅ-MM-DD]
+
+2. KONTROLL AV VARSELTID FÖR TILLSVIDAREANSTÄLLDA
+- 5–25 berörda: minst 2 månader
+- 26–100 berörda: minst 4 månader
+- fler än 100 berörda: minst 6 månader
+- visstidsanställning som avbryts i förtid: minst 6 veckor
+
+Senaste dag att lämna varslet enligt vald rad: [ÅÅÅÅ-MM-DD]
+
+3. UPPGIFTER TILL ANMÄLAN
+[ ] Organisationsnummer och kontaktperson
+[ ] Arbetsställe, län och berörda yrkeskategorier
+[ ] Skäl till driftsinskränkningen
+[ ] Antal berörda och planerad tidsperiod
+[ ] Kopia sparad samt ärendenummer registrerat
+
+4. KOMPLETTERING
+[ ] Personförteckning uppladdad senast en månad före den första sista anställningsdagen
+[ ] Förhandlingsprotokoll inskickat när facklig förhandling har förts
+
+Officiell anmälan och aktuell vägledning: {_PUBLIC_EMPLOYMENT_NOTICE_URL}
+"""
+
+    elif "arbetsbrist_processchecklista" in t_type:
+        title = "Processchecklista vid arbetsbrist"
+        legal_basis = "LAS, MBL, AFS 2023:1 och främjandelagen"
+        official_source_urls = [
+            _LAS_SOURCE_URL,
+            _MBL_SOURCE_URL,
+            _WORK_ENVIRONMENT_RISK_URL,
+            _PUBLIC_EMPLOYMENT_NOTICE_URL,
+        ]
+        required_elements = [
+            "Planering och beslutsgrind",
+            "Riskbedömning och MBL-förhandling",
+            "Omplaceringsutredning och turordning",
+            "Varsel, uppsägningsbesked och företrädesrätt",
+            "Ansvarig, deadline, status och dokumentlänk per aktivitet",
+        ]
+        doc_text = f"""PROCESSCHECKLISTA VID ARBETSBRIST
+
+Arbetsgivare: {c_name}
+Berörd verksamhet: {w_loc}
+Startdatum: {today}
+
+Fyll i ansvarig, deadline, status och var underlaget sparas för varje steg.
+
+| Steg | Aktivitet / dokument | Ansvarig | Deadline | Status | Dokumentlänk |
+|------|----------------------|----------|----------|--------|--------------|
+| 1 | Verksamhetsskäl, målbild och preliminär tidsplan | [ ] | [ ] | [ ] | [ ] |
+| 2 | Riskbedömning före förändringen enligt AFS 2023:1 | [ ] | [ ] | [ ] | [ ] |
+| 3 | Varsel till Arbetsförmedlingen om minst 5 berörs i samma län | [ ] | [ ] | [ ] | [ ] |
+| 4 | MBL-förhandling före beslut och förhandlingsprotokoll | [ ] | [ ] | [ ] | [ ] |
+| 5 | Omplaceringsutredning och individuella kvalifikationsbedömningar | [ ] | [ ] | [ ] | [ ] |
+| 6 | Omplaceringserbjudanden med villkor och svarstid | [ ] | [ ] | [ ] | [ ] |
+| 7 | Turordning, kretsar, undantag och eventuell avtalsturlista | [ ] | [ ] | [ ] | [ ] |
+| 8 | Formellt beslut efter avslutad förhandling | [ ] | [ ] | [ ] | [ ] |
+| 9 | Individuella uppsägningsbesked och delgivning | [ ] | [ ] | [ ] | [ ] |
+| 10 | Omställning, arbetsgivarintyg och företrädesrätt | [ ] | [ ] | [ ] | [ ] |
+| 11 | Uppföljning av arbetsmiljöåtgärder | [ ] | [ ] | [ ] | [ ] |
+
+BESLUTSGRINDAR
+[ ] Inget slutligt beslut är fattat före avslutad MBL-förhandling.
+[ ] Omplaceringsskyldigheten är utredd och dokumenterad för varje berörd person.
+[ ] Kollektivavtal och eventuella centrala förhandlingar är kontrollerade.
+[ ] Varseltid och uppsägningstid har beräknats var för sig.
+
+Officiella källor:
+- LAS: {_LAS_SOURCE_URL}
+- MBL: {_MBL_SOURCE_URL}
+- Riskbedömning: {_WORK_ENVIRONMENT_RISK_URL}
+- Varselanmälan: {_PUBLIC_EMPLOYMENT_NOTICE_URL}
+"""
+
+    elif "omplaceringsutredning" in t_type or "utredning" in t_type:
         title = "Mall för omplaceringsutredning enligt 7 § andra stycket LAS"
         legal_basis = "7 § andra stycket Lagen (1982:80) om anställningsskydd (LAS)"
         required_elements = [
@@ -2080,6 +2450,7 @@ Namnteckning ({e_name})
         "template_type": t_type,
         "title": title,
         "legal_basis": legal_basis,
+        "official_source_urls": official_source_urls,
         "statutory_required_elements": required_elements,
         "document_template_text": doc_text,
         "instructions_for_ai": (

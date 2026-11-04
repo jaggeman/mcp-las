@@ -35,10 +35,14 @@ def test_website_navbar_does_not_contain_unauthenticated_rest_api_link():
     nav_section = content[content.find("<nav>"):content.find("</nav>")]
     assert "REST API" not in nav_section, "'REST API' link still present in navigation bar"
 
-def test_website_documents_automated_source_sync_and_live_coverage():
+def test_website_documents_manual_source_sync_and_live_coverage():
     html_path = Path("public/index.html")
-    content = html_path.read_text(encoding="utf-8")
-    assert "Automatisk källsynkronisering" in content
+    content = html_path.read_text(encoding="utf-8") + Path("public/app.js").read_text(encoding="utf-8")
+    assert "Manuell källsynkronisering" in content
+    assert "startas manuellt från GitHub Actions" in content
+    assert "Automatisk källsynkronisering" not in content
+    assert "Veckovis synk" not in content
+    assert "synchronized weekly" not in content
     assert "Cloud Run Job" in content
     assert "Europeiska lagar" in content
     assert "data-coverage-desc" in content

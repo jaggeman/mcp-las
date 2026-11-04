@@ -57,8 +57,9 @@ mcp = FastMCP(
         "get_legal_coverage visar faktisk datatäckning per land; kontrollera den före uppslag. "
         "Specialverktyg för beräkningar, praxis, kollektivavtal och mallar gäller endast Sverige. "
         "Innehåller verktyg för lagparagrafer (LAS, MBL, Semesterlagen, Arbetstidslagen, Diskrimineringslagen), "
-        "HR-dokumentmallar (omplaceringsutredning 7 § LAS, omplaceringserbjudande, varsel 30 § LAS, uppsägningsbesked), "
-        "turordningsregler, Excel-export av turordningslista vid arbetsbrist (Unionen & 22 § LAS), "
+        "arbetsbristflöde med riskbedömning, varsel till Arbetsförmedlingen, MBL-förhandling, omplacering och turordning, "
+        "HR-dokumentmallar (processchecklista, riskbedömning, MBL-underlag och protokoll, omplaceringsutredning, erbjudande och uppsägningsbesked), "
+        "turordningsregler och Excel-export av turordningslista vid arbetsbrist (Unionen & 22 § LAS), "
         "Arbetsdomstolens prejudikat, 13 kollektivavtal, semesterberäkningar, Försäkringskassans plan för återgång i arbete (FK 7459), "
         "arbetsgivarintyg (arbetsgivarintyg.nu / 47 § ALF), DO:s vägledning samt Riksbankens bankdagar och helgdagar för löneutbetalning och lagstadgade frister."
     )
@@ -631,8 +632,10 @@ def calculate_redundancy_turnorder_and_exceptions(
     employees_list: Optional[List[Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
-    Beräknar turordningslista och undantag vid arbetsbrist (undantagsregler 1-4, procentregeln 15%/10%, LAS 22 § vs kollektivavtal)
-    samt krav på omplaceringsutredning (7 § LAS) och anställningstid (3 § LAS).
+    Guidar hela arbetsbristprocessen och beräknar turordningslista och undantag:
+    skriftlig riskbedömning, varsel till Arbetsförmedlingen, MBL-förhandling,
+    omplaceringsutredning (7 § LAS), turordning (22 § LAS), uppsägningsbesked,
+    företrädesrätt och kollektivavtalets undantagsalternativ.
     """
     rl_err = _check_rate_limit()
     if rl_err:
@@ -694,12 +697,15 @@ def get_hr_document_template(
     date_str: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Hämtar och anpassar officiella svenska HR-dokumentmallar enligt SKR / LAS-standard:
-    1. 'omplaceringsutredning' (7 § andra stycket LAS - arbetsbrist / personliga skäl)
-    2. 'omplaceringserbjudande' (skriftligt erbjudande med svarsfält Ja/Nej och signatur)
-    3. 'varsel_personliga_skal' (Varsel till facklig organisation enligt 30 § LAS)
-    4. 'underrattelse_personliga_skal' (Underrättelse till arbetstagaren enligt 30 § LAS)
-    5. 'uppsagningsbesked_arbetsbrist' (Uppsägningsbesked vid arbetsbrist med företrädesrätt 8 § & 25 § LAS)
+    Hämtar och anpassar källstödda svenska HR-dokumentmallar och arbetsunderlag:
+    1. 'arbetsbrist_processchecklista' (hela flödet med beslutspunkter)
+    2. 'riskbedomning_organisationsforandring' (skriftlig riskbedömning enligt AFS 2023:1)
+    3. 'mbl_forhandlingsframstallan_arbetsbrist' och 'forhandlingsprotokoll_arbetsbrist'
+    4. 'varsel_arbetsformedlingen' (förberedande underlag; inte myndighetens anmälningsblankett)
+    5. 'omplaceringsutredning' (7 § andra stycket LAS - arbetsbrist / personliga skäl)
+    6. 'omplaceringserbjudande' (skriftligt erbjudande med svarsfält Ja/Nej och signatur)
+    7. 'uppsagningsbesked_arbetsbrist' (uppsägningsbesked med företrädesrätt 8 § & 25 § LAS)
+    Äldre malltyper för personliga skäl, avskedande och övriga LAS-besked stöds fortsatt.
     """
     rl_err = _check_rate_limit()
     if rl_err:
