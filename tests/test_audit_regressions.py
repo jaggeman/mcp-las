@@ -59,7 +59,13 @@ def test_excel_enforces_three_or_four_exemptions():
     four = [employee(name=f"Person {n}", is_exempt=True) for n in range(4)]
     assert generate_turordningslista_excel(employees=four)["success"] is False
     assert generate_turordningslista_excel(
-        employees=four, single_operating_unit=True)["success"] is True
+        employees=four, single_operating_unit=True)["success"] is False
+    assert generate_turordningslista_excel(
+        employees=four,
+        single_operating_unit=True,
+        cba_name="Verifierat tjänstemannaavtal",
+        cba_exemption_rules_confirmed=True,
+    )["success"] is True
     assert generate_turordningslista_excel(
         employees=four, single_operating_unit=True, cba_name=None)["success"] is False
     five = four + [employee(name="Person 5", is_exempt=True)]

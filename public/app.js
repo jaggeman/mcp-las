@@ -91,6 +91,12 @@
         redundancy_step5_desc: "Inventera lediga arbeten, bedöm tillräckliga kvalifikationer individuellt och lämna tydliga skriftliga erbjudanden.",
         redundancy_step6: "Turordning och uppsägningsbesked",
         redundancy_step6_desc: "Fastställ kretsar, undantag, anställningstid och kvalifikationer. Fatta därefter beslut och hantera besked, omställning och företrädesrätt.",
+        redundancy_scope_title: "Legal arbetsgivare och öppna roller",
+        redundancy_scope_desc: "Omplaceringsutredningen ska omfatta relevanta lediga arbeten hos samma legala arbetsgivare, även vid andra driftsenheter och orter. Pågående rekryteringar och kända vakanser ska dokumenteras; andra koncernbolag ingår inte automatiskt.",
+        redundancy_scope_mbl: "MBL: identifiera samtliga berörda arbetstagarorganisationer, förhandla lokalt först, fullfölj central förhandling när den begärs och ta upp förhandlingen igen om förslaget ändras materiellt.",
+        redundancy_scope_notice: "Arbetsförmedlingen: kontrollera både minst 5 berörda i samma län och regeln om minst 20 uppsägningar under 90 dagar.",
+        redundancy_scope_protection: "Kontrollera särskilt 23 § LAS, fackliga förtroendemän och 7 a–7 b §§ LAS innan beslut.",
+        redundancy_scope_warning: "Turordningsverktyget och Excel-filen ger preliminära arbetsunderlag. Omplacering, kvalifikationer, rätt krets, kollektivavtal, särskilda skydd och slutförd MBL-förhandling kan ändra utfallet.",
         redundancy_templates_title: "Mallar som AI:n kan skapa",
         redundancy_templates_note: "Varselmallen är ett förberedande underlag. Själva varselanmälan görs alltid i Arbetsförmedlingens officiella e-tjänst eller med myndighetens blankett.",
         tools_title: "Vad du kan fråga din AI",
@@ -227,6 +233,12 @@
         redundancy_step5_desc: "Inventory vacancies, assess sufficient qualifications individually and make clear written offers.",
         redundancy_step6: "Selection order and dismissal notices",
         redundancy_step6_desc: "Determine pools, exemptions, tenure and qualifications. Then decide and manage notices, transition support and re-employment priority.",
+        redundancy_scope_title: "Legal employer and vacancies",
+        redundancy_scope_desc: "The redeployment investigation must cover relevant vacancies with the same legal employer, including other operating units and locations. Document active recruitment and known vacancies. Other group companies are not included automatically.",
+        redundancy_scope_mbl: "MBL: identify every affected employee organisation, consult locally first, complete central consultation when requested and reopen consultation if the proposal changes materially.",
+        redundancy_scope_notice: "Arbetsförmedlingen: check both the threshold of at least five affected employees in one county and at least 20 dismissals over 90 days.",
+        redundancy_scope_protection: "Check LAS Section 23, trade-union representatives and LAS Sections 7a–7b before deciding.",
+        redundancy_scope_warning: "The selection-order tool and spreadsheet are preliminary working papers. Redeployment, qualifications, the correct pool, collective agreements, special protections and completed MBL consultation can change the outcome.",
         redundancy_templates_title: "Templates your AI can generate",
         redundancy_templates_note: "The notice template is preparatory material. The actual filing must use Arbetsförmedlingen's official e-service or form.",
         tools_title: "What you can ask your AI",
@@ -455,8 +467,8 @@
         categories: ["turordning"],
         title: { sv: "Turordning & Undantagsberäkning", en: "Redundancy Turnorder & Exceptions" },
         desc: {
-          sv: "Guidar hela arbetsbristprocessen: skriftlig riskbedömning, varsel till Arbetsförmedlingen, MBL-förhandling, omplaceringsutredning, turordningskretsar, undantag, uppsägningsbesked och företrädesrätt. Beräknar även LAS 22 § och kollektivavtalsalternativ.",
-          en: "Guides the full Swedish redundancy process: written risk assessment, authority notification, MBL consultation, redeployment, selection pools, exemptions, dismissal notices and re-employment priority, including LAS Section 22 calculations."
+          sv: "Guidar hela arbetsbristprocessen och skapar ett preliminärt turordningsunderlag avgränsat till rätt legal arbetsgivare. Avtalsspecifika undantag aktiveras bara när kollektivavtalet har identifierats och reglerna bekräftats.",
+          en: "Guides the full Swedish redundancy process and creates a preliminary selection-order worksheet scoped to the correct legal employer. Agreement-specific exemptions activate only after the agreement and its rules are confirmed."
         },
         prompt: {
           sv: "Gör en steg-för-steg-plan för vår arbetsbrist med riskbedömning, varsel, MBL, omplacering och turordning. Visa tidsfrister, beslutspunkter och vilka mallar vi behöver.",
@@ -467,10 +479,10 @@
         id: "generate_turordningslista_excel",
         icon: "fa-solid fa-file-excel",
         categories: ["turordning"],
-        title: { sv: "Skapa Turordningslista (Excel .xlsx)", en: "Generate Redundancy List (Excel .xlsx)" },
+        title: { sv: "Preliminärt turordningsunderlag (Excel)", en: "Preliminary Redundancy Worksheet (Excel)" },
         desc: {
-          sv: "Genererar och laddar ner en komplett formaterad Excel-arbetsbok (.xlsx) med ID-kolumner, beräkning av anställningsdagar via Excel-formler (=DATEDIF), sortering (sist in först ut, äldre före yngre) och automatisk färgkodning.",
-          en: "Generates and downloads a fully formatted Excel workbook (.xlsx) with ID columns, automated tenure day formulas (=DATEDIF), sorting (LIFO, age tie-break), and status color-coding."
+          sv: "Genererar ett preliminärt Excel-underlag med legal arbetsgivare, anställningstid, markerade undantag och färgkodning. Underlaget avgör inte omplacering, kvalifikationer eller ett slutligt uppsägningsutfall.",
+          en: "Generates a preliminary spreadsheet with the legal employer, tenure, marked exemptions and colour coding. It does not determine redeployment, qualifications or a final dismissal outcome."
         },
         prompt: {
           sv: "Skapa en turordningslista i Excel för vårt företag med följande anställda och ladda ner den.",

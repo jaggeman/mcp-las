@@ -794,6 +794,7 @@ _LAS_SOURCE_URL = "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svens
 _MBL_SOURCE_URL = "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1976580-om-medbestammande-i-arbetslivet_sfs-1976-580/"
 _WORK_ENVIRONMENT_RISK_URL = "https://www.av.se/arbetsmiljoarbete-och-inspektioner/arbeta-med-arbetsmiljon/systematiskt-arbetsmiljoarbete/riskbedomning/"
 _PUBLIC_EMPLOYMENT_NOTICE_URL = "https://arbetsformedlingen.se/for-arbetsgivare/anmal-varsel-och-permittering"
+_PROMOTION_ACT_SOURCE_URL = "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-197413-om-vissa-anstallningsframjande_sfs-1974-13/"
 
 
 def _redundancy_process_guide() -> Dict[str, Dict[str, Any]]:
@@ -829,11 +830,12 @@ def _redundancy_process_guide() -> Dict[str, Dict[str, Any]]:
             "threshold": "Minst 5 berörda i samma län",
             "actions": [
                 "Anmäl risk för uppsägning i Arbetsförmedlingens officiella e-tjänst eller på deras signerade blankett.",
+                "Kontrollera även 90-dagarsregeln: varselskyldighet gäller när uppsägningarna sammanlagt kan bli minst 20 under 90 dagar.",
                 "Spara ärendenumret och komplettera efter förhandling med personförteckning och förhandlingsprotokoll.",
                 "Skilj på varseltid till Arbetsförmedlingen och arbetstagarens uppsägningstid.",
             ],
             "template_types": ["varsel_arbetsformedlingen"],
-            "source_urls": [_PUBLIC_EMPLOYMENT_NOTICE_URL],
+            "source_urls": [_PUBLIC_EMPLOYMENT_NOTICE_URL, _PROMOTION_ACT_SOURCE_URL],
         },
         "4_forhandla_mbl": {
             "title": "Förhandla enligt MBL före beslut",
@@ -841,7 +843,8 @@ def _redundancy_process_guide() -> Dict[str, Dict[str, Any]]:
             "actions": [
                 "Skicka förhandlingsframställan och ett motiverat förslag till berörda arbetstagarorganisationer.",
                 "Lämna skriftlig information enligt 15 § MBL om skäl, antal, kategorier, normal bemanning, tidsperiod och eventuell extra ersättning.",
-                "Dokumentera yrkanden, arbetsgivarens svar, enighet eller oenighet och när förhandlingen avslutas.",
+                "Förhandla lokalt först och fullfölj central förhandling när behörig organisation begär det.",
+                "Dokumentera yrkanden, arbetsgivarens svar, enighet eller oenighet och när förhandlingen avslutas; fortsätt eller ta upp förhandlingen på nytt om förslaget materiellt ändras.",
             ],
             "template_types": [
                 "mbl_forhandlingsframstallan_arbetsbrist",
@@ -854,7 +857,8 @@ def _redundancy_process_guide() -> Dict[str, Dict[str, Any]]:
             "title": "Genomför omplaceringsutredning",
             "timing": "Före uppsägning och innan den slutliga turordningen verkställs",
             "actions": [
-                "Inventera lediga arbeten hos arbetsgivaren och dokumentera sökområde, period och resultat.",
+                "Fastställ först den legala arbetsgivaren och inventera alla relevanta lediga arbeten hos samma arbetsgivare över samtliga driftsenheter och orter.",
+                "Ta med pågående rekryteringar samt godkända och kända kommande vakanser; andra koncernbolag ingår inte automatiskt i lagens sökområde.",
                 "Bedöm tillräckliga kvalifikationer individuellt och dokumentera krav, underlag och rimlig upplärningstid.",
                 "Lämna ett tydligt skriftligt omplaceringserbjudande med villkor och skälig svarstid när ett arbete finns.",
             ],
@@ -865,8 +869,10 @@ def _redundancy_process_guide() -> Dict[str, Dict[str, Any]]:
             "title": "Fastställ turordningskretsar och turordning",
             "timing": "När organisation, omplacering och förhandling ger ett stabilt underlag",
             "actions": [
-                "Fastställ driftsenhet, ort och avtalsområde samt om facket har begärt gemensam krets på orten.",
+                "Avgränsa först samma legala arbetsgivare och fastställ därefter driftsenhet, ort och, när kollektivavtal finns, avtalsområde.",
+                "Kontrollera om behörig arbetstagarorganisation i rätt tid har begärt gemensam krets för driftsenheter på samma ort.",
                 "Dokumentera eventuella undantag, sammanlagd anställningstid, åldersregel vid lika tid och tillräckliga kvalifikationer.",
+                "Kontrollera särskilt 23 § LAS, fackliga förtroendemän, hyvling enligt 7 a–7 b §§ LAS och andra skyddsregler innan listan används.",
                 "Kontrollera avtalsturlista och kollektivavtalsavvikelser innan lagturlistan används.",
             ],
             "template_types": ["turordningslista_excel"],
@@ -900,16 +906,21 @@ def _redundancy_process_guide() -> Dict[str, Dict[str, Any]]:
 def calculate_redundancy_turnorder_and_exceptions(
     total_employees_in_unit: Optional[int] = None,
     redundancy_count: Optional[int] = None,
-    has_collective_bargaining_agreement: bool = True,
+    has_collective_bargaining_agreement: bool = False,
+    collective_agreement_name: Optional[str] = None,
+    collective_agreement_rules_confirmed: bool = False,
+    legal_employer_name: Optional[str] = None,
+    organization_number: Optional[str] = None,
     single_operating_unit_only: bool = False,
     merged_operating_units_in_municipality: bool = False,
     contract_areas_count: int = 1,
     employees_list: Optional[List[Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
-    Beräknar turordning och undantag vid uppsägning på grund av arbetsbrist enligt
-    Unionens kollektivavtalsregler och Lagen om anställningsskydd (LAS 3 §, 7 §, 22 § och 25-27 §§).
-    Källa: https://www.unionen.se/rad-och-stod/regler-turordning-vid-uppsagning
+    Skapar ett preliminärt turordningsunderlag enligt LAS. Avtalsspecifika
+    alternativ markeras som tillämpliga endast när det exakta kollektivavtalet
+    anges och användaren bekräftar att just de visade reglerna har kontrollerats.
+    Underlaget ersätter inte omplacerings-, kvalifikations- eller MBL-prövningen.
     """
     for name, value in (("total_employees_in_unit", total_employees_in_unit),
                         ("redundancy_count", redundancy_count)):
@@ -921,10 +932,16 @@ def calculate_redundancy_turnorder_and_exceptions(
     if type(contract_areas_count) is not int or contract_areas_count < 1:
         raise ValueError("contract_areas_count must be a positive integer")
     for name, value in (("has_collective_bargaining_agreement", has_collective_bargaining_agreement),
+                        ("collective_agreement_rules_confirmed", collective_agreement_rules_confirmed),
                         ("single_operating_unit_only", single_operating_unit_only),
                         ("merged_operating_units_in_municipality", merged_operating_units_in_municipality)):
         if type(value) is not bool:
             raise ValueError(f"{name} must be a boolean")
+    for name, value in (("collective_agreement_name", collective_agreement_name),
+                        ("legal_employer_name", legal_employer_name),
+                        ("organization_number", organization_number)):
+        if value is not None and not isinstance(value, str):
+            raise ValueError(f"{name} must be text")
     if employees_list is not None and not isinstance(employees_list, list):
         raise ValueError("employees_list must be a list")
     if employees_list is not None and redundancy_count is not None and redundancy_count > len(employees_list):
@@ -933,6 +950,11 @@ def calculate_redundancy_turnorder_and_exceptions(
     # 1. Undantagsberäkningar (Exemption calculations)
     las_max_exemptions = 3
     cba_alternatives = {}
+    cba_rules_applicable = (
+        has_collective_bargaining_agreement
+        and bool((collective_agreement_name or "").strip())
+        and collective_agreement_rules_confirmed
+    )
 
     # Alternativ 1: 3 arbetstagare per berörd driftsenhet och avtalsområde
     cba_alternatives["alternativ_1"] = {
@@ -940,7 +962,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         "allowed_exemptions": 3,
         "rule": "Arbetsgivaren kan vid berörd driftsenhet och avtalsområde undanta 3 arbetstagare.",
         "applies_per": "Per berörd driftsenhet och avtalsområde",
-        "is_applicable": has_collective_bargaining_agreement,
+        "is_applicable": cba_rules_applicable,
     }
 
     # Alternativ 2: Om arbetsgivaren endast har en enda driftsenhet totalt
@@ -948,7 +970,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         "name": "Ensam driftsenhet i företaget (totalt för samtliga avtalsområden)",
         "allowed_exemptions": 4 if single_operating_unit_only else None,
         "rule": "Arbetsgivare som endast har en driftsenhet i hela bolaget kan istället välja att undanta totalt 4 arbetstagare för samtliga avtalsområden gemensamt.",
-        "is_applicable": has_collective_bargaining_agreement and single_operating_unit_only
+        "is_applicable": cba_rules_applicable and single_operating_unit_only
     }
 
     # Alternativ 3: Sammanslagna driftsenheter på samma ort (22 § 3 st LAS)
@@ -969,7 +991,7 @@ def calculate_redundancy_turnorder_and_exceptions(
         "name": "Sammanslagna driftsenheter på samma ort",
         "allowed_exemptions": alt3_count,
         "rule": alt3_rule,
-        "is_applicable": has_collective_bargaining_agreement and merged_operating_units_in_municipality
+        "is_applicable": cba_rules_applicable and merged_operating_units_in_municipality
     }
 
     # Alternativ 4: Procentregeln (15% av de uppsagda, max 10% av enhetens totala personal)
@@ -988,7 +1010,7 @@ def calculate_redundancy_turnorder_and_exceptions(
                 "final_allowed": final_pct_exemptions
             },
             "rule": "Undanta 15 % av de som slutligen sägs upp på grund av arbetsbrist, dock högst 10 % av totala personalen vid driftsenheten per avtalsområde.",
-            "is_applicable": has_collective_bargaining_agreement
+            "is_applicable": cba_rules_applicable
         }
     else:
         cba_alternatives["alternativ_4_procentregel"] = {
@@ -1010,7 +1032,7 @@ def calculate_redundancy_turnorder_and_exceptions(
                 if field in emp and type(emp[field]) is not bool:
                     raise ValueError(f"employees_list[{index}].{field} must be a boolean")
         applicable_counts = [las_max_exemptions]
-        if has_collective_bargaining_agreement:
+        if cba_rules_applicable:
             applicable_counts.extend(
                 option["allowed_exemptions"] for option in cba_alternatives.values()
                 if option.get("is_applicable") and type(option.get("allowed_exemptions")) is int
@@ -1028,8 +1050,23 @@ def calculate_redundancy_turnorder_and_exceptions(
             key=lambda x: (x.get("seniority_days", 0), x.get("age", 0)),
             reverse=True
         )
+        non_exempt = [emp for emp in sorted_emps if not emp.get("is_exempt", False)]
+        if (redundancy_count or 0) > len(non_exempt):
+            raise ValueError("redundancy_count cannot exceed the number of non-exempt employees")
+        preliminary_at_risk = {
+            id(emp) for emp in non_exempt[-(redundancy_count or 0):]
+        } if redundancy_count else set()
         processed_employees = []
         for rank, emp in enumerate(sorted_emps, start=1):
+            if emp.get("is_exempt"):
+                status_code = "EXEMPT"
+                protection_status = "⭐ Undantagen från den preliminära lagturlistan"
+            elif id(emp) in preliminary_at_risk:
+                status_code = "PRELIMINARY_AT_RISK"
+                protection_status = "🚨 Preliminär risk för uppsägning enligt anställningstid — Risk för uppsägning är inte slutligt fastställd"
+            else:
+                status_code = "PRELIMINARY_RETAINED"
+                protection_status = "🛡️ Preliminärt företräde enligt anställningstid — kräver roll- och kvalifikationsprövning"
             processed_employees.append({
                 "rank_seniority": rank,
                 "name": emp.get("name", f"Anställd {rank}"),
@@ -1037,17 +1074,24 @@ def calculate_redundancy_turnorder_and_exceptions(
                 "age": emp.get("age", 0),
                 "has_qualifications": emp.get("has_qualifications", True),
                 "is_exempt": emp.get("is_exempt", False),
-                "protection_status": (
-                    "⭐ Undantagen från turordning (Behåller tjänst)" if emp.get("is_exempt") else
-                    "⚠️ Saknar tillräckliga kvalifikationer (Kan gå före i uppsägning)" if not emp.get("has_qualifications", True) else
-                    "🛡️ Skyddad genom turordning (Längre anställningstid)" if rank <= (len(sorted_emps) - (redundancy_count or 0)) else
-                    "🚨 Risk för uppsägning (Kortast anställningstid)"
-                )
+                "status_code": status_code,
+                "protection_status": protection_status,
             })
 
     result = {
-        "source": "Unionen & Lagen om anställningsskydd (LAS 3 §, 7 §, 22 §, 25-27 §§)",
-        "source_url": "https://www.unionen.se/rad-och-stod/regler-turordning-vid-uppsagning",
+        "decision_status": "preliminary_seniority_order_only",
+        "legal_use_warning": (
+            "Resultatet är ett arbetsunderlag, inte ett slutligt uppsägningsbeslut. "
+            "Kvarvarande arbeten, individuella kvalifikationer, rätt turordningskrets, särskilda skyddsregler och kollektivavtal måste prövas separat."
+        ),
+        "employer_scope": {
+            "legal_employer_name": legal_employer_name,
+            "organization_number": organization_number,
+            "statutory_scope": "Samma juridiska eller fysiska arbetsgivare som är part i anställningsavtalet",
+            "group_companies_included_by_default": False,
+        },
+        "source": "Lagen om anställningsskydd (LAS 3 §, 7 §, 22–23 §§, 25–27 §§)",
+        "source_url": _LAS_SOURCE_URL,
         "core_steps_and_rules": {
             "step_1_omplacering": {
                 "legal_basis": "7 § 2 st LAS",
@@ -1056,7 +1100,7 @@ def calculate_redundancy_turnorder_and_exceptions(
             },
             "step_2_turordningskrets": {
                 "title": "Indelning i turordningskretsar",
-                "description": "Kretsen fastställs utifrån organisationsnummer, driftsenhet (geografiskt arbetsställe) och avtalsområde (tjänstemän vs arbetare). Facket kan begära gemensam krets för flera driftsenheter på samma ort. Yttersta gränsen är alltid kommunen."
+                "description": "Kretsen avgränsas först till samma legala arbetsgivare och därefter per driftsenhet. Om arbetsgivaren är eller brukar vara kollektivavtalsbunden fastställs en särskild turordning per avtalsområde. Behörig organisation kan i rätt tid begära gemensam krets för flera driftsenheter på samma ort."
             },
             "step_3_anstallningstid": {
                 "legal_basis": "3 § LAS",
@@ -1068,8 +1112,8 @@ def calculate_redundancy_turnorder_and_exceptions(
                 "description": "För att behålla en tjänst med stöd av längre anställningstid krävs 'tillräckliga kvalifikationer'. Det innebär allmänna kvalifikationer som normalt ställs och möjlighet att lära sig inom rimlig tid (ej krav på att vara bäst kvalificerad)."
             },
             "step_5_huvudregel_kollektivavtal": {
-                "title": "Avtalsturlista (Huvudregel vid kollektivavtal)",
-                "description": "Fack och arbetsgivare (PTK-L) förhandlar i första hand om en avtalsturlista utifrån verksamhetens behov av kompetens med 'sist in, först ut' som grund."
+                "title": "Kontrollera kollektivavtal och eventuell avtalsturlista",
+                "description": "Identifiera det exakt tillämpliga kollektivavtalet. Avtalsturlista och avtalsspecifika undantag får inte antas gälla utan stöd i det avtalet och fullgjord förhandling."
             }
         },
         "exemption_rules": {
@@ -1082,9 +1126,9 @@ def calculate_redundancy_turnorder_and_exceptions(
             },
             "cba_exemption_alternatives": cba_alternatives,
             "recommendation_summary": (
-                "Vid kollektivavtal kan arbetsgivaren välja det mest förmånliga alternativet (Alternativ 1, 2, 3 eller 4/Procentregeln) om inte avtalsturlista träffas."
-                if has_collective_bargaining_agreement else
-                "Utan kollektivavtal gäller strikt 22 § LAS med max 3 undantagna arbetstagare."
+                f"Kollektivavtalsalternativen visas som tillämpliga för {collective_agreement_name} eftersom avtalets aktuella regler har bekräftats."
+                if cba_rules_applicable else
+                "Endast 22 § LAS kan användas utan identifierat och verifierat kollektivavtal. Kollektivavtalsalternativen är därför inte markerade som tillämpliga."
             )
         },
         "sorted_turordningslista": processed_employees,
@@ -1097,9 +1141,11 @@ def calculate_redundancy_turnorder_and_exceptions(
                 "fler än 100": "Minst 6 månader",
             },
             "fixed_term_ended_early": "Minst 6 veckor",
+            "rolling_ninety_day_rule": "Minst 20 uppsägningar sammanlagt under 90 dagar",
             "person_list_deadline": "Senast 1 månad före den första sista anställningsdagen",
             "official_form_note": "Gör själva anmälan i Arbetsförmedlingens e-tjänst eller med deras signerade PDF. MCP-mallen är endast ett förberedande underlag.",
             "source_url": _PUBLIC_EMPLOYMENT_NOTICE_URL,
+            "statute_source_url": _PROMOTION_ACT_SOURCE_URL,
         },
         "terminology": {
             "riskbedomning": "Skriftlig arbetsmiljöbedömning före en planerad personalförändring.",
@@ -1109,8 +1155,8 @@ def calculate_redundancy_turnorder_and_exceptions(
         },
         "certainty": {
             "score_pct": None, "measurement": "not_calibrated",
-            "badge": "🟢 Hög — Unionens officiella turordningsregler & LAS (1982:80)",
-            "level": "CBA_AND_STATUTORY_RULE"
+            "badge": "Källstött preliminärt arbetsunderlag — juridisk kontroll krävs före beslut",
+            "level": "PRELIMINARY_LEGAL_WORKSHEET"
         }
     }
 
@@ -1162,19 +1208,24 @@ def generate_turordningslista_excel(
     company_name: str = "Företaget AB",
     employees: Optional[List[Dict[str, Any]]] = None,
     redundancy_count: Optional[int] = 0,
-    cba_name: Optional[str] = "Unionen / Tjänstemannaavtalet",
+    cba_name: Optional[str] = None,
+    cba_exemption_rules_confirmed: bool = False,
+    organization_number: Optional[str] = None,
     single_operating_unit: bool = False,
     as_of_date: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Skapar och formaterar en professionell Excel-arbetsbok (.xlsx) för turordningslista vid arbetsbrist.
-    Inkluderar automatisk ID-generering, beräkning av anställningsdagar med Excel-formler (=DATEDIF),
-    sortering efter anställningstid (sist in, först ut) och ålder, samt undantagsregler (LAS 22 § vs kollektivavtal).
+    Skapar ett preliminärt Excel-underlag för turordning vid arbetsbrist.
+    Inkluderar legal arbetsgivare, ID, anställningstid, ålder och markerade
+    undantag. Avtalsspecifik fyrpersonersregel används endast när avtalsnamn
+    anges och reglerna uttryckligen bekräftas.
     """
-    if not isinstance(company_name, str) or (cba_name is not None and not isinstance(cba_name, str)):
-        return {"success": False, "error": "company_name och cba_name måste vara text."}
-    if type(single_operating_unit) is not bool:
-        return {"success": False, "error": "single_operating_unit måste vara true eller false."}
+    if (not isinstance(company_name, str)
+            or (cba_name is not None and not isinstance(cba_name, str))
+            or (organization_number is not None and not isinstance(organization_number, str))):
+        return {"success": False, "error": "company_name, cba_name och organization_number måste vara text."}
+    if type(single_operating_unit) is not bool or type(cba_exemption_rules_confirmed) is not bool:
+        return {"success": False, "error": "single_operating_unit och cba_exemption_rules_confirmed måste vara true eller false."}
     if employees is not None and not isinstance(employees, list):
         return {"success": False, "error": "employees måste vara en lista."}
     if employees and (len(employees) > 1000 or any(
@@ -1184,14 +1235,21 @@ def generate_turordningslista_excel(
         ) for emp in employees
     )):
         return {"success": False, "error": "Max 1000 anställda, 32 fält per anställd och 2000 tecken per fält."}
-    if len(company_name) > 200 or (cba_name and len(cba_name) > 200):
-        return {"success": False, "error": "Företagsnamn och avtalsnamn får vara högst 200 tecken."}
+    if (len(company_name) > 200 or (cba_name and len(cba_name) > 200)
+            or (organization_number and len(organization_number) > 100)):
+        return {"success": False, "error": "Företagsnamn/avtalsnamn får vara högst 200 tecken och arbetsgivar-ID högst 100 tecken."}
     if ILLEGAL_CHARACTERS_RE.search(company_name) or (
-            cba_name and ILLEGAL_CHARACTERS_RE.search(cba_name)):
+            cba_name and ILLEGAL_CHARACTERS_RE.search(cba_name)) or (
+            organization_number and ILLEGAL_CHARACTERS_RE.search(organization_number)):
         return {"success": False, "error": "Textfält innehåller otillåtna kontrolltecken."}
-    has_collective_agreement = bool(cba_name and cba_name.strip())
+    has_collective_agreement = bool(
+        cba_name and cba_name.strip() and cba_exemption_rules_confirmed
+    )
     company_name = str(_excel_safe_value(company_name))
-    cba_name = str(_excel_safe_value(cba_name or "Inget angivet"))
+    cba_name = str(_excel_safe_value(
+        cba_name if has_collective_agreement else "Inget verifierat kollektivavtal"
+    ))
+    organization_number = str(_excel_safe_value(organization_number or "Ej angivet"))
 
     target_date = datetime.date.today()
     if as_of_date:
@@ -1291,24 +1349,30 @@ def generate_turordningslista_excel(
 
     total_count = len(sorted_employees)
     red_count = redundancy_count
-    cutoff_rank = total_count - red_count
+    non_exempt_employees = [emp for emp in sorted_employees if not emp["is_exempt"]]
+    if red_count > len(non_exempt_employees):
+        return {"success": False, "error": (
+            "redundancy_count får inte överstiga antalet anställda efter markerade undantag.")}
+    preliminary_at_risk = {
+        emp["orig_index"] for emp in non_exempt_employees[-red_count:]
+    } if red_count else set()
 
     # Tilldela ID och status
     table_rows = []
     for rank, emp in enumerate(sorted_employees, start=1):
         emp_id = f"EMP-{rank:03d}"
         if emp["is_exempt"]:
-            status = "⭐ Undantagen (Behåller tjänst)"
+            status = "⭐ Preliminärt undantagen enligt angiven regel"
             status_code = "EXEMPT"
+        elif emp["orig_index"] in preliminary_at_risk:
+            status = "🚨 Preliminär risk för uppsägning enligt anställningstid"
+            status_code = "PRELIMINARY_AT_RISK"
         elif not emp["has_qualifications"]:
-            status = "⚠️ Saknar tillräckliga kvalifikationer"
-            status_code = "NO_QUAL"
-        elif rank <= cutoff_rank:
-            status = "🛡️ Skyddad enligt turordning"
-            status_code = "PROTECTED"
+            status = "⚠️ Kräver separat kvalifikationsbedömning"
+            status_code = "QUALIFICATION_REVIEW"
         else:
-            status = "🚨 Risk för uppsägning (Kortast anställningstid)"
-            status_code = "AT_RISK"
+            status = "🛡️ Preliminärt kvar enligt anställningstid"
+            status_code = "PRELIMINARY_RETAINED"
 
         emp["id"] = emp_id
         emp["rank"] = rank
@@ -1344,14 +1408,16 @@ def generate_turordningslista_excel(
 
     # Banner Header
     ws1.merge_cells("A1:M1")
-    ws1["A1"] = f"TURORDNINGSLISTA VID ARBETSBRIST — {company_name.upper()}"
+    ws1["A1"] = f"PRELIMINÄRT TURORDNINGSUNDERLAG — {company_name.upper()}"
     ws1["A1"].font = font_title
     ws1["A1"].fill = fill_header_banner
     ws1["A1"].alignment = Alignment(horizontal="center", vertical="center")
     ws1.row_dimensions[1].height = 35
 
     ws1.merge_cells("A2:M2")
-    ws1["A2"] = f"Upprättad: {target_date.strftime('%Y-%m-%d')} | Lagstöd: LAS 3 §, 7 §, 22 § & Kollektivavtal: {cba_name} | Berörda vid arbetsbrist: {red_count} av {total_count}"
+    ws1["A2"] = (f"Upprättad: {target_date.strftime('%Y-%m-%d')} | Legal arbetsgivare/ID: "
+                 f"{company_name} / {organization_number} | Kollektivavtal: {cba_name} | "
+                 f"Preliminärt antal berörda: {red_count} av {total_count}")
     ws1["A2"].font = font_subtitle
     ws1["A2"].fill = fill_header_banner
     ws1["A2"].alignment = Alignment(horizontal="center", vertical="center")
@@ -1414,15 +1480,15 @@ def generate_turordningslista_excel(
                 if col_i in [11, 13]:
                     cell.fill = fill_exempt
                     cell.font = Font(name="Calibri", size=10, bold=True, color="854D0E")
-            elif emp["status_code"] == "AT_RISK":
+            elif emp["status_code"] == "PRELIMINARY_AT_RISK":
                 if col_i == 13:
                     cell.fill = fill_risk
                     cell.font = Font(name="Calibri", size=10, bold=True, color="991B1B")
-            elif emp["status_code"] == "NO_QUAL":
+            elif emp["status_code"] == "QUALIFICATION_REVIEW":
                 if col_i in [10, 13]:
                     cell.fill = fill_no_qual
                     cell.font = Font(name="Calibri", size=10, bold=True, color="C2410C")
-            elif emp["status_code"] == "PROTECTED":
+            elif emp["status_code"] == "PRELIMINARY_RETAINED":
                 if col_i == 13:
                     cell.fill = fill_protected
                     cell.font = Font(name="Calibri", size=10, bold=True, color="166534")
@@ -1447,16 +1513,16 @@ def generate_turordningslista_excel(
     ws2.row_dimensions[1].height = 35
 
     rules_info = [
-        ("1. Omplaceringsutredning (7 § LAS)", "Innan turordning får tillämpas måste arbetsgivaren utreda och erbjuda eventuella lediga tjänster i organisationen som arbetstagaren har tillräckliga kvalifikationer för."),
-        ("2. Turordningskretsar", "Kretsen bestäms av driftsenhet (geografisk plats) och avtalsområde (tjänstemän vs arbetare). Facket kan begära gemensam krets för driftsenheter på samma ort."),
+        ("1. Legal arbetsgivare och omplacering (7 § LAS)", "Inventera relevanta lediga arbeten hos samma legala arbetsgivare, även på andra driftsenheter och orter. Andra koncernbolag ingår inte automatiskt. Bedöm kvalifikationer och skälig upplärningstid för varje vakant roll."),
+        ("2. Turordningskretsar", "Kretsen avgränsas per driftsenhet och, när arbetsgivaren är eller brukar vara kollektivavtalsbunden, per avtalsområde. Behörig arbetstagarorganisation kan begära gemensam krets för driftsenheter på samma ort."),
         ("3. Sist in, först ut (22 § LAS)", "Huvudregeln är att längst sammanlagd anställningstid ger företräde. Vid lika anställningstid prioriteras högre ålder."),
-        ("4. Tillräckliga kvalifikationer", "Kräver allmänna kvalifikationer med rimlig inlärningstid. Arbetsgivaren kan ej välja den 'bäste' om en person med längre anställningstid uppfyller baskraven."),
-        ("5. Avtalsturlista (Kollektivavtal)", "Huvudregeln vid kollektivavtalsbundenhet är att fack och arbetsgivare förhandlar om en överenskommen avtalsturlista (PTK-L)."),
+        ("4. Tillräckliga kvalifikationer", "Kräver en individuell bedömning för fortsatt arbete, inklusive skälig upplärningstid. Markeringen i underlaget är inte ett juridiskt avgörande."),
+        ("5. Kollektivavtal och avtalsturlista", "Kontrollera det exakt tillämpliga kollektivavtalet och förhandla enligt MBL. Avtalsturlista eller alternativa undantagsregler får inte antas gälla utan verifierat avtalsstöd."),
         ("6. LAS Undantagsregel (22 § LAS)", "Arbetsgivaren får undanta högst 3 personer av särskild betydelse för verksamheten (3 månaders spärrtid/karens)."),
-        ("7. Kollektivavtal Alternativ 1", "Arbetsgivaren kan vid berörd driftsenhet och avtalsområde undanta 3 arbetstagare."),
-        ("8. Kollektivavtal Alternativ 2", "Vid endast 1 driftsenhet i hela företaget kan arbetsgivaren undanta totalt 4 arbetstagare gemensamt."),
-        ("9. Kollektivavtal Alternativ 3", "Vid sammanslagna driftsenheter på samma ort medges 3 undantag + 1 extra per avtalsområde."),
-        ("10. Kollektivavtal Alternativ 4 (Procentregeln)", f"Undanta 15 % av de uppsagda ({int(red_count * 0.15)} st), dock max 10 % av enhetens personal ({int(total_count * 0.10)} st).")
+        ("7. Särskilda skyddsregler", "Kontrollera bland annat 23 § LAS, fackliga förtroendemän och 7 a–7 b §§ LAS innan något beslut fattas."),
+        ("8. MBL före beslut", "Förhandla med samtliga berörda arbetstagarorganisationer före beslut. Lokal förhandling genomförs först och central förhandling fullföljs när behörig organisation begär det."),
+        ("9. Underlagets status", "Utfallet är en preliminär sortering efter angivna data. Omplacering, kvalifikationer, kretsar, särskilda skydd, kollektivavtal och slutförd förhandling kan ändra utfallet."),
+        ("10. Angivet kollektivavtal", f"{cba_name}. Avtalsspecifika undantag används endast när cba_exemption_rules_confirmed=true.")
     ]
 
     ws2.cell(row=3, column=1, value="Regel / Område").font = font_col_header
@@ -1512,8 +1578,8 @@ def generate_turordningslista_excel(
 
     # Skapa markdown-tabell för AI-chatten
     md_lines = [
-        f"### 📋 Turordningslista vid Arbetsbrist — {_markdown_cell(company_name)}",
-        f"*Upprättad: {target_date.strftime('%Y-%m-%d')} | Kollektivavtal: {_markdown_cell(cba_name)} | Varsel: {red_count} av {total_count} anställda*",
+        f"### 📋 Preliminärt turordningsunderlag — {_markdown_cell(company_name)}",
+        f"*Legal arbetsgivare/ID: {_markdown_cell(company_name)} / {_markdown_cell(organization_number)} | Upprättad: {target_date.strftime('%Y-%m-%d')} | Kollektivavtal: {_markdown_cell(cba_name)} | Preliminärt berörda: {red_count} av {total_count} anställda. Endast arbetsunderlag: kontrollera omplacering, kvalifikationer, krets, särskilda skydd, kollektivavtal och MBL före beslut.*",
         "",
         "| ID | Namn | Befattning | Driftsenhet | Anställd sedan | Dagar (Formel) | Rang | Utfall / Status |",
         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |"
@@ -1541,6 +1607,12 @@ def generate_turordningslista_excel(
         "file_size_bytes": len(excel_bytes),
         "total_employees": total_count,
         "redundancy_count": red_count,
+        "decision_status": "preliminary_seniority_order_only",
+        "employer_scope": {
+            "legal_employer_name": company_name,
+            "organization_number": organization_number,
+            "group_companies_included_by_default": False,
+        },
         "markdown_table": "\n".join(md_lines),
         "instructions_for_ai": (
             f"Excel-filen har genererats och sparats. Erbjuda användaren att ladda ner Excel-filen via länken: "
@@ -1549,8 +1621,8 @@ def generate_turordningslista_excel(
         ),
         "certainty": {
             "score_pct": None, "measurement": "not_calibrated",
-            "badge": "🟢 Mycket hög — Komplett Excel-arbetsbok med DATEDIF-formler & LAS-undantag",
-            "level": "EXACT_CALCULATION"
+            "badge": "Källstött preliminärt arbetsunderlag — juridisk kontroll krävs före beslut",
+            "level": "UNREVIEWED_EDITABLE_TEMPLATE"
         }
     }
 
@@ -1558,6 +1630,7 @@ def generate_turordningslista_excel(
 def get_hr_document_template(
     template_type: str,
     company_name: Optional[str] = "Arbetsgivaren AB / Organisationen",
+    organization_number: Optional[str] = "[Organisationsnummer / arbetsgivar-ID]",
     employee_name: Optional[str] = "[Arbetstagarens Förnamn Efternamn]",
     personal_identity_number: Optional[str] = "[ÅÅÅÅMMDD-XXXX]",
     job_title: Optional[str] = "[Nuvarande Befattning]",
@@ -1580,6 +1653,7 @@ def get_hr_document_template(
     """
     today = date_str or datetime.date.today().strftime("%Y-%m-%d")
     c_name = company_name or "Arbetsgivaren AB / Organisationen"
+    org_no = organization_number or "[Organisationsnummer / arbetsgivar-ID]"
     e_name = employee_name or "[Arbetstagarens Förnamn Efternamn]"
     p_num = personal_identity_number or "[ÅÅÅÅMMDD-XXXX]"
     j_title = job_title or "[Nuvarande Befattning]"
@@ -1594,7 +1668,7 @@ def get_hr_document_template(
 
     if "riskbedomning_organisationsforandring" in t_type or "riskbedömning_organisationsförändring" in t_type:
         title = "Skriftlig riskbedömning inför organisations- eller personalförändring"
-        legal_basis = "AFS 2023:1 om systematiskt arbetsmiljöarbete"
+        legal_basis = "5–6, 11 och 13 §§ AFS 2023:1 om systematiskt arbetsmiljöarbete"
         official_source_urls = [_WORK_ENVIRONMENT_RISK_URL]
         required_elements = [
             "Beskrivning och avgränsning av den planerade förändringen",
@@ -1605,11 +1679,12 @@ def get_hr_document_template(
         ]
         doc_text = f"""Datum: {today}
 Arbetsgivare: {c_name}
+Organisationsnummer / arbetsgivar-ID: {org_no}
 Arbetsställe / berörd verksamhet: {w_loc}
 
 SKRIFTLIG RISKBEDÖMNING INFÖR ORGANISATIONS- ELLER PERSONALFÖRÄNDRING
 
-Riskbedömningen görs innan förändringen genomförs enligt AFS 2023:1.
+Riskbedömningen görs när förändringen planeras och innan den genomförs enligt 11 § AFS 2023:1.
 
 1. PLANERAD FÖRÄNDRING
 Beskriv vad som ska förändras, varför, var och när:
@@ -1656,6 +1731,7 @@ Officiell vägledning: {_WORK_ENVIRONMENT_RISK_URL}
         ]
         doc_text = f"""Datum: {today}
 Från: {c_name}
+Organisationsnummer / arbetsgivar-ID: {org_no}
 Till: {u_name}
 Berörd driftsenhet: {w_loc}
 
@@ -1680,7 +1756,13 @@ Förslag till ny organisation och planerad beslutsdag: .........................
 [ ] Preliminära turordningskretsar och bemanningsunderlag
 [ ] Kopia av varsel till Arbetsförmedlingen, om varselskyldighet finns
 
-4. FÖRESLAGEN TID OCH PLATS
+4. PARTER OCH FÖRHANDLINGSGÅNG
+[ ] Kontrollera att samtliga berörda arbetstagarorganisationer har identifierats enligt 11 och 13 §§ MBL.
+[ ] Lokal förhandling genomförs först.
+[ ] Kontrollera att central förhandling är avslutad om behörig organisation har begärt den enligt 14 § MBL.
+[ ] Förhandlingen fortsätter eller tas upp på nytt om arbetsgivarens förslag materiellt ändras.
+
+5. FÖRESLAGEN TID OCH PLATS
 Datum/tid: ........................................  Plats/digital länk: ................................
 Kontaktperson hos arbetsgivaren: ........................................................................
 
@@ -1703,6 +1785,7 @@ Officiell lagtext: {_MBL_SOURCE_URL}
         doc_text = f"""FÖRHANDLINGSPROTOKOLL – ARBETSBRIST / ORGANISATIONSFÖRÄNDRING
 
 Arbetsgivare: {c_name}
+Organisationsnummer / arbetsgivar-ID: {org_no}
 Arbetstagarorganisation: {u_name}
 Datum, tid och plats: {today}, .............................................................................
 Berörd driftsenhet: {w_loc}
@@ -1740,7 +1823,7 @@ Officiell lagtext: {_MBL_SOURCE_URL}
     elif "varsel_arbetsformedlingen" in t_type:
         title = "Underlag inför varselanmälan till Arbetsförmedlingen"
         legal_basis = "Lag (1974:13) om vissa anställningsfrämjande åtgärder"
-        official_source_urls = [_PUBLIC_EMPLOYMENT_NOTICE_URL]
+        official_source_urls = [_PUBLIC_EMPLOYMENT_NOTICE_URL, _PROMOTION_ACT_SOURCE_URL]
         required_elements = [
             "Antal berörda i samma län och anställningsform",
             "Första planerade sista anställningsdag",
@@ -1750,6 +1833,7 @@ Officiell lagtext: {_MBL_SOURCE_URL}
         ]
         doc_text = f"""Datum: {today}
 Arbetsgivare: {c_name}
+Organisationsnummer / arbetsgivar-ID: {org_no}
 Berört arbetsställe / län: {w_loc} / [Län]
 
 UNDERLAG INFÖR VARSELANMÄLAN TILL ARBETSFÖRMEDLINGEN
@@ -1759,6 +1843,7 @@ Arbetsförmedlingens officiella e-tjänst eller med myndighetens signerade PDF.
 
 1. OMFATTNING
 Antal som riskerar uppsägning i samma län: [ ]
+[ ] 90-dagarsregeln kontrollerad: minst 20 uppsägningar sammanlagt under 90 dagar
 Anställningsform: [ ] tillsvidare  [ ] visstid som avbryts i förtid
 Första planerade sista anställningsdag: [ÅÅÅÅ-MM-DD]
 
@@ -1792,6 +1877,7 @@ Officiell anmälan och aktuell vägledning: {_PUBLIC_EMPLOYMENT_NOTICE_URL}
             _MBL_SOURCE_URL,
             _WORK_ENVIRONMENT_RISK_URL,
             _PUBLIC_EMPLOYMENT_NOTICE_URL,
+            _PROMOTION_ACT_SOURCE_URL,
         ]
         required_elements = [
             "Planering och beslutsgrind",
@@ -1803,6 +1889,7 @@ Officiell anmälan och aktuell vägledning: {_PUBLIC_EMPLOYMENT_NOTICE_URL}
         doc_text = f"""PROCESSCHECKLISTA VID ARBETSBRIST
 
 Arbetsgivare: {c_name}
+Organisationsnummer / arbetsgivar-ID: {org_no}
 Berörd verksamhet: {w_loc}
 Startdatum: {today}
 
@@ -1825,6 +1912,8 @@ Fyll i ansvarig, deadline, status och var underlaget sparas för varje steg.
 BESLUTSGRINDAR
 [ ] Inget slutligt beslut är fattat före avslutad MBL-förhandling.
 [ ] Omplaceringsskyldigheten är utredd och dokumenterad för varje berörd person.
+[ ] Alla relevanta öppna roller hos samma legala arbetsgivare har inventerats; andra koncernbolag ingår inte automatiskt.
+[ ] 23 § LAS, fackliga förtroendemän och hyvling enligt 7 a–7 b §§ LAS har kontrollerats.
 [ ] Kollektivavtal och eventuella centrala förhandlingar är kontrollerade.
 [ ] Varseltid och uppsägningstid har beräknats var för sig.
 
@@ -1833,6 +1922,7 @@ Officiella källor:
 - MBL: {_MBL_SOURCE_URL}
 - Riskbedömning: {_WORK_ENVIRONMENT_RISK_URL}
 - Varselanmälan: {_PUBLIC_EMPLOYMENT_NOTICE_URL}
+- Främjandelagen: {_PROMOTION_ACT_SOURCE_URL}
 """
 
     elif "omplaceringsutredning" in t_type or "utredning" in t_type:
@@ -1848,7 +1938,8 @@ Officiella källor:
             "Ort, datum och behörig företrädares underskrift"
         ]
         doc_text = f"""Datum: {today}
-Arbetsgivare: {c_name}
+Legal arbetsgivare: {c_name}
+Organisationsnummer / arbetsgivar-ID: {org_no}
 
 MALL AVSEENDE OMPLACERINGSUTREDNING ENLIGT 7 § ANDRA STYCKET LAS
 
@@ -1868,9 +1959,15 @@ Omplaceringsutredningen är föranledd av:
 
 4. Genomförande och inventering av lediga befattningar
 Omplaceringsutredningen är genomförd under perioden: [ÅÅÅÅ-MM-DD] till [ÅÅÅÅ-MM-DD].
-Nedan anges de lediga anställningar inom organisationen som inventerats under perioden (se fullständig förteckning i Bilaga 2):
-1. [Befattning 1, Driftsenhet, Sysselsättningsgrad]
-2. [Befattning 2, Driftsenhet, Sysselsättningsgrad]
+Sökområdet omfattar alla relevanta lediga anställningar hos samma legala arbetsgivare över samtliga driftsenheter och orter. Andra koncernbolag ingår inte automatiskt i den lagstadgade omplaceringsskyldigheten, men frivilliga eller kollektivavtalade möjligheter dokumenteras separat.
+
+För varje roll ska Bilaga 2 ange: befattning, driftsenhet/ort, anställningsform, sysselsättningsgrad, lön och villkor, när rollen är eller blir ledig, om pågående rekrytering finns, obligatoriska kvalifikationskrav, bedömd rimlig upplärningstid samt skälet till erbjudande eller avslag.
+
+[ ] Lediga publicerade roller
+[ ] Godkända men ännu inte publicerade roller
+[ ] Pågående rekrytering
+[ ] Kända kommande vakanser under processen
+[ ] Uppgifter verifierade med verksamhets- och HR-ansvariga hos arbetsgivaren
 *(Obs: Vid personliga skäl/sjukdom ska även lämpliga tidsbegränsade anställningar redovisas om tillsvidareanställning saknas).*
 
 5. Bedömning av tillräckliga kvalifikationer
@@ -1901,13 +1998,14 @@ Namnförtydligande och befattning
             "Upplysning om att nej till skäligt erbjudande kan utgöra sakliga skäl för uppsägning"
         ]
         doc_text = f"""Datum: {today}
-Arbetsgivare: {c_name}
+Legal arbetsgivare: {c_name}
+Organisationsnummer / arbetsgivar-ID: {org_no}
 
 OMPLACERINGSERBJUDANDE
 
 Till: {e_name} ({p_num})
 
-I enlighet med den omplaceringsutredning som {c_name} har genomfört och kommunicerat till dig den {today} erbjuds du härmed följande befattning som ett skäligt omplaceringserbjudande:
+I enlighet med genomförd omplaceringsutredning erbjuder {c_name} dig följande befattning. Arbetsgivaren bedömer att erbjudandet är ett skäligt omplaceringserbjudande enligt 7 § andra stycket LAS. Bedömningen kan prövas rättsligt och ska därför motiveras och dokumenteras.
 
 Erbjuden befattning: {off_title}
 
@@ -1918,6 +2016,10 @@ Placeringsort / Driftsenhet: {w_loc}
 Tillträdesdag: [ÅÅÅÅ-MM-DD]
 
 Ditt skriftliga svar önskas senast den: {resp_dl}
+
+Om erbjudandet enbart innebär sänkt sysselsättningsgrad ska turordningen och omställningstiden enligt 7 a–7 b §§ LAS kontrolleras särskilt.
+
+Om du utan godtagbart skäl tackar nej till ett erbjudande som bedöms vara skäligt kan det innebära att arbetsgivarens omplaceringsskyldighet anses fullgjord och att uppsägning på grund av arbetsbrist därefter kan bli aktuell. Du bör ges möjlighet att rådgöra med din arbetstagarorganisation eller annat ombud före svar.
 
 Ort och datum: .....................................................................................
 
@@ -2378,8 +2480,8 @@ För {c_name}:                                      Arbetstagaren:
 Signatur & Namnförtydligande                       {e_name}
 """
 
-    else:
-        # Standard: Fullständigt 2-sidigt Uppsägningsbesked vid arbetsbrist (SKR & Arbetsgivarverket)
+    elif "uppsagningsbesked_arbetsbrist" in t_type or "uppsägningsbesked_arbetsbrist" in t_type:
+        # Fullständigt 2-sidigt uppsägningsbesked vid arbetsbrist.
         title = "Uppsägningsbesked på grund av arbetsbrist (Fullständigt standardformulär)"
         legal_basis = "8–10 §§ och 25–27 §§ Lagen (1982:80) om anställningsskydd (LAS)"
         required_elements = [
@@ -2446,6 +2548,9 @@ Namnteckning ({e_name})
 (Arbetsgivaren och arbetstagaren ska ha varsitt exemplar av denna blankett).
 """
 
+    else:
+        raise ValueError(f"Okänd template_type: {template_type}")
+
     return {
         "template_type": t_type,
         "title": title,
@@ -2459,8 +2564,8 @@ Namnteckning ({e_name})
         ),
         "certainty": {
             "score_pct": None, "measurement": "not_calibrated",
-            "badge": "🟢 Mycket hög — SKR & Arbetsgivarverket Officiell LAS-standard",
-            "level": "STATUTORY_LEGAL_TEMPLATE"
+            "badge": "Källstött redigerbart arbetsunderlag — kräver kontroll mot kollektivavtal och omständigheterna i ärendet",
+            "level": "UNREVIEWED_EDITABLE_TEMPLATE"
         }
     }
 

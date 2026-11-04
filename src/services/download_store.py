@@ -9,6 +9,9 @@ from collections.abc import MutableMapping
 from threading import RLock, Timer
 
 
+_BACKGROUND_CLEANUP_SLOP_SECONDS = 0.01
+
+
 class DownloadStore(MutableMapping):
     def __init__(self, max_files=32, max_bytes=32 * 1024 * 1024,
                  max_file_bytes=2 * 1024 * 1024, ttl=600):
@@ -45,7 +48,14 @@ class DownloadStore(MutableMapping):
                 self._remove(key)
             while self._items and (len(self._items) >= self.max_files or self._bytes + size > self.max_bytes):
                 self._remove(next(iter(self._items)))
-            timer = Timer(self.ttl, self._expire_in_background)
+            # Timer/Event.wait may wake a fraction before the perf_counter
+            # deadline. Run memory cleanup just after the access deadline so
+            # an early wake cannot leave an expired item without a timer.
+            # __getitem__ still enforces the exact deadline via _expire().
+            timer = Timer(
+                self.ttl + _BACKGROUND_CLEANUP_SLOP_SECONDS,
+                self._expire_in_background,
+            )
             timer.daemon = True
             self._items[key] = (dict(value), time.perf_counter() + self.ttl, timer)
             self._bytes += size
